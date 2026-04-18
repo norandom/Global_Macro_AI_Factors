@@ -1,0 +1,2040 @@
+{
+  "macro_state": {
+    "2019-01-02 00:00:00": {
+      "cpi_yoy_z": 0.5541598920989352,
+      "t10y2y_z": -1.587154677704434,
+      "hy_oas_z": 0.6476557360397242
+    },
+    "2019-02-01 00:00:00": {
+      "cpi_yoy_z": -0.030214850297427612,
+      "t10y2y_z": -1.5993293961144175,
+      "hy_oas_z": -0.18449514449502943
+    },
+    "2019-03-01 00:00:00": {
+      "cpi_yoy_z": -0.0021927516902561306,
+      "t10y2y_z": -1.516197875771257,
+      "hy_oas_z": -0.5758279031839763
+    },
+    "2019-04-01 00:00:00": {
+      "cpi_yoy_z": 0.407358639790977,
+      "t10y2y_z": -1.6058040268479976,
+      "hy_oas_z": -0.46845827974303833
+    },
+    "2019-05-01 00:00:00": {
+      "cpi_yoy_z": 0.5413410330103348,
+      "t10y2y_z": -1.4016029592763628,
+      "hy_oas_z": -0.7466039824271945
+    },
+    "2019-06-03 00:00:00": {
+      "cpi_yoy_z": 0.3165708673118683,
+      "t10y2y_z": -1.4612467288577182,
+      "hy_oas_z": -0.013528182864449284
+    },
+    "2019-07-01 00:00:00": {
+      "cpi_yoy_z": 0.18199304719087073,
+      "t10y2y_z": -1.3211010921187085,
+      "hy_oas_z": -0.4779387090763863
+    },
+    "2019-08-01 00:00:00": {
+      "cpi_yoy_z": 0.36308874381759365,
+      "t10y2y_z": -1.5199057924022576,
+      "hy_oas_z": -0.5986751580695617
+    },
+    "2019-09-03 00:00:00": {
+      "cpi_yoy_z": 0.2608492471128396,
+      "t10y2y_z": -1.7217993683379098,
+      "hy_oas_z": -0.4285426424443932
+    },
+    "2019-10-01 00:00:00": {
+      "cpi_yoy_z": 0.19986000589160635,
+      "t10y2y_z": -1.5882412788183007,
+      "hy_oas_z": -0.5186294208163088
+    },
+    "2019-11-01 00:00:00": {
+      "cpi_yoy_z": 0.25413905825455535,
+      "t10y2y_z": -1.319770106833833,
+      "hy_oas_z": -0.40208468712914547
+    },
+    "2019-12-02 00:00:00": {
+      "cpi_yoy_z": 0.646892399328742,
+      "t10y2y_z": -1.2864750600897117,
+      "hy_oas_z": -0.505446794663532
+    },
+    "2020-01-02 00:00:00": {
+      "cpi_yoy_z": 0.8768066824179515,
+      "t10y2y_z": -0.9053367466170259,
+      "hy_oas_z": -0.8476413187369347
+    },
+    "2020-02-03 00:00:00": {
+      "cpi_yoy_z": 1.1733818782667989,
+      "t10y2y_z": -1.1980254730033062,
+      "hy_oas_z": -0.4561052562400025
+    },
+    "2020-03-02 00:00:00": {
+      "cpi_yoy_z": 0.8461180977892364,
+      "t10y2y_z": -0.978298087930216,
+      "hy_oas_z": 0.43219148747990427
+    },
+    "2020-04-01 00:00:00": {
+      "cpi_yoy_z": -0.21747233485310472,
+      "t10y2y_z": -0.5346804547621423,
+      "hy_oas_z": 3.258349815318701
+    },
+    "2020-05-01 00:00:00": {
+      "cpi_yoy_z": -1.7380915981432887,
+      "t10y2y_z": -0.5729330556818126,
+      "hy_oas_z": 2.2206080330904117
+    },
+    "2020-06-01 00:00:00": {
+      "cpi_yoy_z": -1.9016088154035258,
+      "t10y2y_z": -0.43883388501303916,
+      "hy_oas_z": 1.3537362798797505
+    },
+    "2020-07-01 00:00:00": {
+      "cpi_yoy_z": -1.2702750436300658,
+      "t10y2y_z": -0.389049725519219,
+      "hy_oas_z": 1.2453875681990205
+    },
+    "2020-08-03 00:00:00": {
+      "cpi_yoy_z": -0.943104412017258,
+      "t10y2y_z": -0.5028587892330026,
+      "hy_oas_z": 0.3123448378829533
+    },
+    "2020-09-01 00:00:00": {
+      "cpi_yoy_z": -0.6030156844182942,
+      "t10y2y_z": -0.1355163716168305,
+      "hy_oas_z": 0.21904688194165337
+    },
+    "2020-10-01 00:00:00": {
+      "cpi_yoy_z": -0.506560622258382,
+      "t10y2y_z": -0.1547502003858054,
+      "hy_oas_z": 0.528046935057131
+    },
+    "2020-11-02 00:00:00": {
+      "cpi_yoy_z": -0.8016213046429121,
+      "t10y2y_z": 0.34923095987146496,
+      "hy_oas_z": 0.47051337994434816
+    },
+    "2020-12-01 00:00:00": {
+      "cpi_yoy_z": -0.9295941952745816,
+      "t10y2y_z": 0.2214079092344364,
+      "hy_oas_z": -0.2487764172358102
+    },
+    "2021-01-04 00:00:00": {
+      "cpi_yoy_z": -0.7378404586172282,
+      "t10y2y_z": 0.5813522257713508,
+      "hy_oas_z": -0.5804036731876546
+    },
+    "2021-02-01 00:00:00": {
+      "cpi_yoy_z": -0.657813234863497,
+      "t10y2y_z": 1.1636115753420107,
+      "hy_oas_z": -0.5742703021176203
+    },
+    "2021-03-01 00:00:00": {
+      "cpi_yoy_z": -0.20869572971402123,
+      "t10y2y_z": 1.9496705475594895,
+      "hy_oas_z": -0.7827799658101903
+    },
+    "2021-04-01 00:00:00": {
+      "cpi_yoy_z": 1.3801681857751387,
+      "t10y2y_z": 2.5759113127201,
+      "hy_oas_z": -0.9466558377793912
+    },
+    "2021-05-03 00:00:00": {
+      "cpi_yoy_z": 3.3581860750563357,
+      "t10y2y_z": 2.2447047494469823,
+      "hy_oas_z": -0.9892768852423331
+    },
+    "2021-06-01 00:00:00": {
+      "cpi_yoy_z": 3.8655041220222093,
+      "t10y2y_z": 2.035544378852916,
+      "hy_oas_z": -0.9049739177407041
+    },
+    "2021-07-01 00:00:00": {
+      "cpi_yoy_z": 3.7516231696329863,
+      "t10y2y_z": 1.4102848307794504,
+      "hy_oas_z": -1.151924861445801
+    },
+    "2021-08-02 00:00:00": {
+      "cpi_yoy_z": 3.3024448902978008,
+      "t10y2y_z": 1.0247086328954302,
+      "hy_oas_z": -0.8592131938902663
+    },
+    "2021-09-01 00:00:00": {
+      "cpi_yoy_z": 2.9230734592463166,
+      "t10y2y_z": 1.122123011006286,
+      "hy_oas_z": -0.9323530335043136
+    },
+    "2021-10-01 00:00:00": {
+      "cpi_yoy_z": 2.84305379748479,
+      "t10y2y_z": 1.419789277769462,
+      "hy_oas_z": -0.9573738529637862
+    },
+    "2021-11-01 00:00:00": {
+      "cpi_yoy_z": 3.2419544230676753,
+      "t10y2y_z": 1.0105417556187999,
+      "hy_oas_z": -0.9267297255045415
+    },
+    "2021-12-01 00:00:00": {
+      "cpi_yoy_z": 3.3474818744574413,
+      "t10y2y_z": 0.6565720507685603,
+      "hy_oas_z": -0.42115601378975054
+    },
+    "2022-01-03 00:00:00": {
+      "cpi_yoy_z": 3.170994984442265,
+      "t10y2y_z": 0.3944610174881134,
+      "hy_oas_z": -0.9341662189623211
+    },
+    "2022-02-01 00:00:00": {
+      "cpi_yoy_z": 3.084259814936979,
+      "t10y2y_z": -0.018251564909004824,
+      "hy_oas_z": -0.4315468087630016
+    },
+    "2022-03-01 00:00:00": {
+      "cpi_yoy_z": 3.00118227170346,
+      "t10y2y_z": -0.541288392507874,
+      "hy_oas_z": -0.30119309643756575
+    },
+    "2022-04-01 00:00:00": {
+      "cpi_yoy_z": 3.030296237468926,
+      "t10y2y_z": -1.3756336244535858,
+      "hy_oas_z": -0.6095983681817746
+    },
+    "2022-05-02 00:00:00": {
+      "cpi_yoy_z": 2.6306946318654236,
+      "t10y2y_z": -0.9654974536610583,
+      "hy_oas_z": -0.10879596914058576
+    },
+    "2022-06-01 00:00:00": {
+      "cpi_yoy_z": 2.5708933100371874,
+      "t10y2y_z": -0.6144628507701556,
+      "hy_oas_z": 0.11696957348332213
+    },
+    "2022-07-01 00:00:00": {
+      "cpi_yoy_z": 2.566599670491537,
+      "t10y2y_z": -1.2286654411456814,
+      "hy_oas_z": 1.589688030857888
+    },
+    "2022-08-01 00:00:00": {
+      "cpi_yoy_z": 2.2019483900232033,
+      "t10y2y_z": -1.8447304147300887,
+      "hy_oas_z": 0.6202810672642749
+    },
+    "2022-09-01 00:00:00": {
+      "cpi_yoy_z": 1.991249485623362,
+      "t10y2y_z": -1.9382837698757387,
+      "hy_oas_z": 0.7811436526481803
+    },
+    "2022-10-03 00:00:00": {
+      "cpi_yoy_z": 1.881682659059769,
+      "t10y2y_z": -2.0392143595053387,
+      "hy_oas_z": 1.1071033684575802
+    },
+    "2022-11-01 00:00:00": {
+      "cpi_yoy_z": 1.639356862455669,
+      "t10y2y_z": -1.9774054716273253,
+      "hy_oas_z": 0.37053568738658765
+    },
+    "2022-12-01 00:00:00": {
+      "cpi_yoy_z": 1.3453993675044407,
+      "t10y2y_z": -2.445524594998103,
+      "hy_oas_z": 0.2847277439416599
+    },
+    "2023-01-03 00:00:00": {
+      "cpi_yoy_z": 1.0396793184424116,
+      "t10y2y_z": -1.9764932156325854,
+      "hy_oas_z": 0.5022849184753698
+    },
+    "2023-02-01 00:00:00": {
+      "cpi_yoy_z": 0.9789250608028621,
+      "t10y2y_z": -2.1702840435660993,
+      "hy_oas_z": 0.025804348392094514
+    },
+    "2023-03-01 00:00:00": {
+      "cpi_yoy_z": 0.8153265760509635,
+      "t10y2y_z": -2.3918750838695977,
+      "hy_oas_z": -0.05870785266727296
+    },
+    "2023-04-03 00:00:00": {
+      "cpi_yoy_z": 0.4125029179493442,
+      "t10y2y_z": -1.7308339525556724,
+      "hy_oas_z": 0.25799741423340855
+    },
+    "2023-05-01 00:00:00": {
+      "cpi_yoy_z": 0.4094538363557224,
+      "t10y2y_z": -1.6921695297330097,
+      "hy_oas_z": 0.1967662238985049
+    },
+    "2023-06-01 00:00:00": {
+      "cpi_yoy_z": 0.09607416882397811,
+      "t10y2y_z": -1.88229304932056,
+      "hy_oas_z": 0.32866953730867843
+    },
+    "2023-07-03 00:00:00": {
+      "cpi_yoy_z": -0.3019816643968776,
+      "t10y2y_z": -2.255025128352505,
+      "hy_oas_z": -0.2680307885557191
+    },
+    "2023-08-01 00:00:00": {
+      "cpi_yoy_z": -0.22374810713816706,
+      "t10y2y_z": -1.9111686891718729,
+      "hy_oas_z": -0.5154740029842827
+    },
+    "2023-09-01 00:00:00": {
+      "cpi_yoy_z": -0.06804122300269161,
+      "t10y2y_z": -1.607781231386104,
+      "hy_oas_z": -0.46700381142403496
+    },
+    "2023-10-02 00:00:00": {
+      "cpi_yoy_z": -0.08998718989799026,
+      "t10y2y_z": -1.079106901348585,
+      "hy_oas_z": -0.3133607644944911
+    },
+    "2023-11-01 00:00:00": {
+      "cpi_yoy_z": -0.25901957799759806,
+      "t10y2y_z": -0.6776160576595395,
+      "hy_oas_z": 0.0434577830153087
+    },
+    "2023-12-01 00:00:00": {
+      "cpi_yoy_z": -0.3105551823292983,
+      "t10y2y_z": -0.9181710494257772,
+      "hy_oas_z": -0.49443170859102553
+    },
+    "2024-01-02 00:00:00": {
+      "cpi_yoy_z": -0.2509313552062502,
+      "t10y2y_z": -0.882632163575107,
+      "hy_oas_z": -0.887036283728881
+    },
+    "2024-02-01 00:00:00": {
+      "cpi_yoy_z": -0.34966296102228084,
+      "t10y2y_z": -0.7608589263513402,
+      "hy_oas_z": -0.6841198965927963
+    },
+    "2024-03-01 00:00:00": {
+      "cpi_yoy_z": -0.3361422362647872,
+      "t10y2y_z": -0.9055577036609855,
+      "hy_oas_z": -0.9487680607047239
+    },
+    "2024-04-01 00:00:00": {
+      "cpi_yoy_z": -0.22088703567186144,
+      "t10y2y_z": -0.8863303508302459,
+      "hy_oas_z": -1.0552453775232298
+    },
+    "2024-05-01 00:00:00": {
+      "cpi_yoy_z": -0.2796961792982639,
+      "t10y2y_z": -0.807478217030982,
+      "hy_oas_z": -1.0124911897893047
+    },
+    "2024-06-03 00:00:00": {
+      "cpi_yoy_z": -0.3362776589643087,
+      "t10y2y_z": -0.8328464375247228,
+      "hy_oas_z": -0.965776130993496
+    },
+    "2024-07-01 00:00:00": {
+      "cpi_yoy_z": -0.4545127258130366,
+      "t10y2y_z": -0.7699972615386088,
+      "hy_oas_z": -0.9367566431821762
+    },
+    "2024-08-01 00:00:00": {
+      "cpi_yoy_z": -0.47556508828621114,
+      "t10y2y_z": -0.5406570844691769,
+      "hy_oas_z": -0.8850661065970119
+    },
+    "2024-09-02 00:00:00": {
+      "cpi_yoy_z": -0.616158728122895,
+      "t10y2y_z": -0.24814648872390532,
+      "hy_oas_z": -0.9353690972607186
+    },
+    "2024-10-01 00:00:00": {
+      "cpi_yoy_z": -0.6956659053104807,
+      "t10y2y_z": -0.031209108270879006,
+      "hy_oas_z": -1.0358064768381692
+    },
+    "2024-11-01 00:00:00": {
+      "cpi_yoy_z": -0.6435323526157567,
+      "t10y2y_z": -0.07387433861640572,
+      "hy_oas_z": -1.136533753267569
+    },
+    "2024-12-02 00:00:00": {
+      "cpi_yoy_z": -0.5932285347089613,
+      "t10y2y_z": -0.17330382076077944,
+      "hy_oas_z": -1.2240723638683666
+    }
+  },
+  "views": {
+    "2019-01-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Gold (Asset_C) is a classic stagflation hedge \u2014 it benefits from real rate uncertainty and credit stress while carrying low volatility. Tech/growth equities (Asset_B) are highly sensitive to elevated discount rates from persistent inflation and are the most vulnerable to multiple compression in a late-cycle, inverted-curve regime. The relative trade exploits gold's defensive properties against high-beta growth exposure."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.45,
+        "rationale": "Short-duration cash/treasuries (Asset_D) offer positive carry with near-zero volatility in a high-rate environment, while world equity (Asset_A) faces headwinds from slowing global growth signaled by the deeply inverted curve and widening HY spreads. This defensive tilt reduces equity beta while capturing the front-end yield advantage that persists as long as the curve remains inverted."
+      }
+    ],
+    "2019-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.45,
+        "rationale": "A deeply inverted curve at -1.6z historically precedes rate cuts. Tech/growth assets (long duration by nature) are disproportionate beneficiaries of falling short rates and a steepening curve. Short-duration cash (Asset_D) becomes a drag as front-end rates decline. The near-zero trailing return on Asset_B suggests the repricing has not yet occurred, offering asymmetric upside relative to cash."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Gold benefits from real rate compression that typically accompanies a pivot cycle triggered by curve inversion. With inflation neutral and the curve deeply inverted, real yields are likely to fall as nominal rates are cut, supporting gold. The compressed HY spreads also suggest a risk-on complacency that could reverse, and gold provides tail-risk hedging against that credit repricing. Modest confidence given gold's slightly negative trailing return suggests near-term headwinds."
+      }
+    ],
+    "2019-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deeply inverted curve signals late-cycle growth risk while compressed HY spreads suggest credit complacency. Tech (high beta, long duration) is most exposed to a repricing of growth expectations and spread normalization. Short-duration cash equivalents provide defensive carry with near-zero vol, making this a high-conviction relative value tilt."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Gold historically outperforms broad equities when the yield curve is deeply inverted and a growth slowdown materializes. World equity has modest trailing returns and elevated vol relative to gold's recent underperformance, suggesting gold offers asymmetric upside if the late-cycle signal resolves into risk-off. Confidence is moderate given neutral inflation provides no additional gold tailwind."
+      }
+    ],
+    "2019-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deeply inverted curve signals elevated recession probability. Tech/high-duration equity (Asset_B) is most vulnerable to multiple compression in a stagflationary or growth-shock scenario. Gold (Asset_C) has underperformed despite inflation, leaving it cheap relative to the macro risk backdrop; a growth scare resolving the inversion would likely trigger safe-haven flows into gold while punishing high-beta growth equities."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "Credit spreads are compressed (HY OAS z = -0.47) while the curve is severely inverted \u2014 credit markets are not pricing the recession risk that rates markets are signaling. World equity (Asset_A) carries meaningful downside if credit spreads mean-revert toward the curve's implied growth pessimism. Short-duration cash/treasury (Asset_D) provides positive carry with near-zero vol, offering a defensive tilt while the macro contradiction resolves."
+      }
+    ],
+    "2019-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deeply inverted curve signals elevated recession probability while credit spreads remain complacent, creating asymmetric downside for high-beta tech (Asset_B) which has already run +19.4% on stretched multiples. Gold (Asset_C) is a laggard with low vol that historically benefits from late-cycle uncertainty, real-rate ambiguity, and flight-to-safety flows when the curve inversion resolves via growth deterioration rather than inflation normalization."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "Short-duration treasuries (Asset_D) offer near-riskless carry with minimal drawdown risk in a regime where the curve is inverted and recession risk is elevated. World equity (Asset_A) faces headwinds from slowing global growth implied by the curve signal and the eventual credit spread normalization from compressed levels; the risk/reward of holding equity at current trailing returns is unfavorable relative to the defensive short-end anchor."
+      }
+    ],
+    "2019-06-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deeply inverted curve signals growth deceleration risk while inflation remains above trend \u2014 a stagflationary mix that historically benefits gold (real store of value, negative real rate hedge) at the expense of high-multiple tech equities, which are acutely sensitive to both growth disappointment and any persistence of elevated discount rates. Tech's trailing vol (21%) also implies significant drawdown risk if the growth narrative cracks."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.45,
+        "rationale": "Short-duration cash/treasury offers a near-riskless carry that is competitive given the inverted curve, while world equity faces a deteriorating leading indicator environment. Credit spreads being flat (not yet widening) suggests the equity risk premium has not adjusted for the recessionary signal in the curve \u2014 a complacency that historically resolves via equity repricing rather than spread compression. Defensive cash positioning is warranted until the curve/credit contradiction resolves."
+      }
+    ],
+    "2019-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deep curve inversion signals late-cycle or recessionary conditions. Gold (low-vol, real asset) historically outperforms in such regimes as a safe haven, while high-beta tech equity carries elevated duration and earnings-growth risk. The contradiction between tight credit spreads and an inverted curve suggests credit and equity risk is underpriced, making the long-gold/short-tech pair a high-conviction relative value trade."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity has delivered solid trailing returns with moderate vol, but the deeply inverted curve is a leading indicator of global growth headwinds. Gold's trailing Sharpe is superior and its defensive properties are additive in a late-cycle environment. This is a lower-conviction overlay to reduce broad equity beta while maintaining real-asset exposure."
+      }
+    ],
+    "2019-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Gold benefits from the late-cycle stagflationary setup: persistent above-norm inflation erodes real yields while the deeply inverted curve signals impending growth stress. Tech/growth equities (high duration, high beta) are most vulnerable to a growth disappointment combined with sticky inflation, and their trailing momentum makes them crowded. Gold's low vol and strong trailing return relative to its vol profile supports this relative value tilt."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity broadly faces headwinds from curve inversion signaling a growth slowdown, and tight HY spreads leave little cushion if credit conditions normalize. Gold's defensive properties and inflation sensitivity make it a preferred alternative to broad equity exposure in this regime, though the lower confidence reflects that equity momentum remains intact and the timing of any growth inflection is uncertain."
+      }
+    ],
+    "2019-09-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Deep curve inversion signals late-cycle/recessionary risk while inflation remains above norm \u2014 a regime historically favorable to gold as a real-asset hedge. High-vol tech (Asset_B) is particularly exposed to a risk-off repricing given its elevated volatility and modest trailing return relative to risk taken. Long gold / short tech captures the flight-to-safety tilt with asymmetric payoff if the curve's recessionary signal materializes."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.42,
+        "rationale": "World equity (Asset_A) is exposed to a global growth slowdown implied by the extreme curve inversion, and compressed HY spreads suggest credit risk is not yet priced \u2014 a spread-widening event would drag equities. Gold's momentum and macro tailwinds (inversion + above-norm inflation) support continued outperformance versus broad equities on a risk-adjusted basis."
+      }
+    ],
+    "2019-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deeply inverted curve signals impending growth deceleration; gold benefits from expected rate normalization and safe-haven demand, while high-volatility tech is most exposed to multiple compression as the curve's recessionary signal materializes. Credit spreads are still tight, meaning tech has not yet repriced the macro risk."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.38,
+        "rationale": "With the curve at extreme inversion and credit spreads compressed, world equity faces asymmetric downside if the late-cycle credit repricing occurs. Short-duration cash/treasury locks in positive carry with near-zero volatility, providing a defensive hedge against the equity drawdown risk embedded in the curve signal."
+      }
+    ],
+    "2019-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.52,
+        "rationale": "Gold (low-vol real asset) is well-positioned in a mild stagflationary regime with an inverted curve signaling growth risk. Tech/high-beta equities carry elevated valuation and vol risk when the curve inversion eventually transmits to earnings and credit; the spread between their trailing returns is stretched, increasing mean-reversion probability."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "World equity broadly faces headwinds from curve inversion and above-trend inflation compressing real margins. Gold's low correlation to growth assets and its role as an inflation hedge with momentum support a modest long/short tilt, though the tight credit spread environment limits conviction on the timing of equity weakness."
+      }
+    ],
+    "2019-12-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Gold benefits from above-trend inflation and late-cycle uncertainty, while high-momentum tech is vulnerable to a growth deceleration implied by the deeply inverted curve. Tech's elevated trailing return and volatility suggest crowding; gold's lower vol and real-asset properties make it a superior hedge in a stagflationary regime."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity broadly faces headwinds from curve inversion signaling slowing global growth. Gold's inflation-hedge properties and lower realized volatility provide a more defensive return profile. The compressed HY spreads suggest credit risk is underpriced, which typically precedes equity drawdowns when the cycle turns."
+      }
+    ],
+    "2020-01-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.52,
+        "rationale": "Elevated inflation z-score supports real assets like gold, while the inverted curve and complacent credit spreads signal late-cycle risk that disproportionately threatens high-multiple tech. Asset_B's outsized trailing return and elevated vol make it vulnerable to a risk-premia repricing; Asset_C provides an inflation hedge with lower drawdown risk."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) has also rallied strongly into tight credit spreads, leaving it exposed to the recessionary signal embedded in the inverted curve. Gold offers a defensive tilt with positive carry from the inflation environment, making this a modest hedge against a macro regime shift."
+      }
+    ],
+    "2020-02-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Gold (real asset, inflation hedge) is well-positioned in a late-cycle stagflation-risk regime with elevated CPI and an inverted curve. Tech sector has extreme trailing momentum (+43.8%) and high sensitivity to real rate repricing; an inverted curve historically precedes growth disappointments that compress high-multiple equities. Long gold / short tech captures the inflation hedge vs. growth-risk premium divergence."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "World equity broadly faces headwinds from the inverted curve signaling a forward growth slowdown, while credit spread complacency (HY OAS z = -0.46) suggests the equity risk premium is not yet compensating for the macro tail risk. Gold offers a more defensive real-return profile in this environment. Confidence is moderate given world equity's diversification and the ambiguity of timing."
+      }
+    ],
+    "2020-03-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Gold (real asset, inflation hedge) is well-positioned in a stagflation-adjacent regime with elevated CPI and widening credit spreads. Tech sector carries high valuation risk given its extended trailing return and sensitivity to tightening financial conditions implied by the inverted curve and credit spread widening. This long/short pair isolates the inflation-hedge vs. growth-risk factor."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "Short-duration treasury/cash provides a defensive anchor with near-zero volatility and positive real carry in a high-rate environment, while world equity faces headwinds from the inverted curve signaling growth deceleration and modestly widening HY spreads indicating rising credit risk. This pair reduces overall portfolio beta in a late-cycle regime."
+      }
+    ],
+    "2020-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "Extreme HY spread widening (+3.26z) signals a credit stress / risk-off regime. Gold (Asset_C) historically outperforms in flight-to-quality episodes and has already demonstrated strong momentum (+22.3% trailing), while world equity (Asset_A) faces headwinds from tightening credit conditions and negative trailing returns. The mildly inverted curve reinforces growth deterioration, further pressuring equities relative to gold."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "Tech sector (Asset_B) carries the highest volatility (35.2% ann.) and is acutely sensitive to credit spread widening via duration-like valuation compression and tightening financial conditions. Short-duration treasury/cash (Asset_D) offers near-zero volatility and capital preservation in a distress environment. This pair captures the de-risking impulse without taking a directional macro bet on inflation or rates."
+      }
+    ],
+    "2020-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "Severely wide HY spreads signal credit stress and risk-off regime. Gold (Asset_C) is a classic safe-haven beneficiary in growth-scare / credit-crunch environments, with strong trailing momentum confirming the trend. High-beta tech (Asset_B) is acutely exposed to tightening financial conditions and multiple compression when credit spreads widen, making it the natural short leg."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "Disinflation (CPI z = -1.74) reduces the carry penalty of holding short-duration cash/treasuries (Asset_D), while world equity (Asset_A) faces dual headwinds from credit stress and slowing global growth implied by the inverted curve. Short-duration instruments provide capital preservation with minimal drawdown risk in this regime."
+      }
+    ],
+    "2020-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Disinflation combined with widening credit spreads and a mildly inverted curve signals a growth-scare / early recession regime. Gold (low-vol, strong momentum, safe-haven properties) is well-positioned to outperform high-multiple tech, which carries elevated volatility and is acutely sensitive to risk-off credit repricing and deteriorating growth expectations."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "World equity broadly faces headwinds from elevated HY spreads signaling credit stress and below-trend inflation implying weak nominal growth. Gold's defensive characteristics and established upward momentum provide a superior risk-adjusted profile relative to global equities in this regime, though the view is held with moderate confidence given world equity's diversification."
+      }
+    ],
+    "2020-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Gold benefits from credit stress and growth-scare regimes where real rates are falling and risk appetite deteriorates. Tech sector is highly leveraged to risk-on sentiment and has already delivered outsized trailing returns; widening HY spreads historically precede multiple compression in high-duration growth equities. This long gold / short tech pair exploits the divergence between safe-haven demand and stretched growth valuations."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "World equity broadly faces headwinds from elevated credit spreads signaling deteriorating financial conditions globally, while gold's low trailing volatility and strong momentum in a disinflationary credit-stress environment support continued outperformance. The modest confidence reflects that world equity is more diversified and less stretched than tech, limiting conviction on the short leg."
+      }
+    ],
+    "2020-08-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "Disinflationary late-cycle with mild credit spread widening favors gold (real asset, low vol, strong momentum) over high-volatility tech, which is exposed to crowded positioning and growth deceleration risk. Gold's Sharpe profile is superior in this regime."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "World equity has near-zero trailing return with high volatility, suggesting poor risk-adjusted compensation. In a softening growth regime with an inverted curve, gold's defensive properties and strong trailing momentum make it preferable to broad global equities."
+      }
+    ],
+    "2020-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.42,
+        "rationale": "Disinflationary macro with modestly elevated credit spreads favors broad diversified equity over concentrated high-volatility tech. Tech's trailing 12m return of +55% at 38% vol implies significant mean-reversion risk in a soft-landing regime where multiple expansion is constrained by residual credit uncertainty. World equity offers more balanced risk-adjusted exposure."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Gold's strong trailing return (+29%) was likely driven by inflation hedging demand and safe-haven flows; with CPI z at -0.6 (disinflation), the fundamental driver for gold weakens. Short-duration cash/treasuries offer stable carry with near-zero vol, and the near-neutral curve means duration penalty is minimal. This pair fades the inflation-hedge premium in gold as disinflation takes hold."
+      }
+    ],
+    "2020-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "Gold benefits from late-cycle credit stress (elevated HY OAS) and disinflationary deceleration, which historically compresses real yields and supports non-yielding real assets. Tech sector equities carry extreme trailing momentum (+46% TTM) and high volatility, making them vulnerable to mean-reversion when credit conditions tighten at the margin. The long gold / short tech pair exploits the divergence between defensive real asset demand and high-beta growth risk."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "World equity broadly faces headwinds from modestly widening credit spreads signaling risk-off pressure, while gold's low correlation and real-asset properties provide a defensive tilt. The view is held with lower confidence given world equity's more moderate valuation and volatility profile relative to tech."
+      }
+    ],
+    "2020-11-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "Disinflationary regime with widening credit spreads historically pressures high-multiple, high-volatility tech equities while gold benefits from falling real rate expectations and residual macro uncertainty. Asset_B's trailing return of 32.5% at 39.6% vol looks stretched relative to the credit environment; Asset_C offers a lower-vol defensive hedge with strong momentum."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) has underperformed with modest 3.8% trailing return yet carries 23.3% vol \u2014 suggesting poor risk-adjusted compensation in a late-cycle credit-spread-widening environment. Gold's Sharpe profile is superior here, and a mildly steepening curve does not yet signal the growth reacceleration needed to justify broad equity overweight."
+      }
+    ],
+    "2020-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "Disinflationary regime with neutral curve supports broad risk assets, but tech has dramatically outrun fundamentals (+40% trailing, 40% vol). A rotation from crowded tech into diversified world equity captures the soft-landing tailwind while reducing concentration risk and mean-reversion exposure. The spread in trailing returns (+29pp) and the vol differential make this a favorable risk-adjusted relative trade."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.32,
+        "rationale": "Gold's lower volatility (19% vs 40%) and its role as a tail-risk hedge provide portfolio ballast if the disinflationary trend overshoots into growth concern. While gold's inflation-hedge premium is diminished, real-rate sensitivity and potential dollar softness in a dovish pivot environment offer modest upside. This view is held with lower confidence given gold's own extended trailing return."
+      }
+    ],
+    "2021-01-04 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.45,
+        "rationale": "Disinflation with tight credit spreads and a steepening curve supports risk appetite. Tech/growth equities historically outperform cash in soft-landing regimes where real rates are falling and earnings multiples expand. Short cash (short_treasury_cash) captures the opportunity cost of holding near-zero-yielding instruments in a risk-on environment. However, elevated trailing vol and stretched valuations after a +39% run cap confidence."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Gold provides a convex hedge against the primary tail risk: a growth disappointment that exposes the fragility of tight credit spreads and high-multiple tech equities. With inflation already below norm, gold's role shifts from inflation hedge to safe-haven and dollar-hedge. Pairing long gold against a partial short in the highest-beta, highest-valuation asset (tech) creates a barbell that profits if the soft-landing narrative cracks, at modest cost if it holds."
+      }
+    ],
+    "2021-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.48,
+        "rationale": "Steepening curve and below-average inflation with tight credit spreads favor risk-on positioning. Tech sector has demonstrated strong momentum (31.5% trailing return) and benefits disproportionately from a disinflationary, growth-positive regime. Short cash/short treasury is the natural funding leg given near-zero real return and a macro backdrop that does not reward defensiveness."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "Gold has delivered solid risk-adjusted returns (16.5% trailing, 19.7% vol) and serves as a hedge against tail risks that the current benign macro reading may be underpricing \u2014 particularly if the steepening curve reflects fiscal/supply concerns rather than pure growth optimism. Below-average inflation does not strongly suppress gold when real rates are ambiguous, and tight spreads suggest the hedge is cheap relative to potential regime shifts."
+      }
+    ],
+    "2021-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "Extreme curve steepening with a rising term premium is a structural headwind for high-multiple, long-duration growth equities (tech). World equity, with broader sector diversification and lower implied duration, should outperform tech on a risk-adjusted basis as the long end reprices. Tech's trailing 12m return of +49% at 40% vol also suggests mean-reversion risk is elevated."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Gold provides a hedge against the tail risk that the curve steepening is supply/fiscal-driven rather than growth-driven \u2014 a scenario where real yields rise but confidence in sovereign credit quality erodes. With HY spreads tight and inflation near neutral, gold is not the primary trade, but its moderate vol and low correlation to equities justify a modest allocation as a regime-uncertainty buffer."
+      }
+    ],
+    "2021-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Above-trend inflation with tight credit spreads and a steep curve creates a late-cycle, inflation-risk regime. Gold (real asset, low trailing return = underowned) should outperform high-multiple tech (elevated trailing return, high vol, most sensitive to rate-shock or multiple compression). The long gold / short tech trade hedges both the inflation tail and the complacency embedded in compressed HY spreads."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "Short-duration cash/treasury is effectively a free option in a high-inflation, steep-curve environment \u2014 it reprices quickly with policy rates and carries positive real yield relative to its near-zero vol. Against a richly valued, high-vol tech sector that has priced in a soft landing, this pair captures the asymmetry if credit spreads mean-revert from their compressed levels and risk appetite deteriorates."
+      }
+    ],
+    "2021-05-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.55,
+        "rationale": "Extreme inflation z-score (+3.36\u03c3) historically favors real assets like gold over long-duration growth equities. Tech (Asset_B) has priced in a benign disinflation/soft-landing scenario with +52.8% trailing returns, leaving it highly exposed to an inflation-persistence repricing. Gold (Asset_C) is underowned relative to the inflation signal (+4.6% trailing), offering asymmetric upside as a real-asset hedge. The steep curve (+2.24\u03c3) adds further risk to high-multiple tech if the front end reprices upward to combat inflation."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.45,
+        "rationale": "Short-duration cash/treasury (Asset_D) provides a convex hedge against the scenario where tight credit spreads (-0.99\u03c3) snap back as inflation forces policy tightening. If the curve steepness reflects a growth premium that gets eroded by persistent inflation, short-duration instruments preserve capital while high-beta tech corrects. The risk/reward of holding near-zero-vol cash against an overextended tech position is favorable given the macro contradiction between hot inflation and complacent credit pricing."
+      }
+    ],
+    "2021-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.55,
+        "rationale": "Extreme inflation z-score (+3.87) with a steepening curve creates a hostile environment for long-duration growth equities (tech). Tech carries high valuation sensitivity to rising real rates and is priced for perfection after a +41% trailing return. Gold, as a real asset, benefits from inflation persistence and acts as a hedge when credit complacency (HY OAS at -0.9z) eventually unwinds. The long gold / short tech pair captures both the inflation tailwind and the mean-reversion of stretched tech multiples."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "With inflation severely elevated and the curve steepening, short-duration cash-like instruments (short treasury/cash) offer positive real carry relative to world equity, which has already delivered +26% trailing and faces headwinds from tightening financial conditions. If credit spreads mean-revert from their compressed levels, global equities are vulnerable to a de-rating. Short-duration instruments provide defensive carry while the macro imbalance resolves."
+      }
+    ],
+    "2021-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Extreme inflation z-score (+3.75\u03c3) historically favors real assets like gold over long-duration growth equities. Tech carries the highest duration risk among the assets listed \u2014 its trailing 12m return of +41% and elevated vol suggest crowded positioning. Gold has lagged badly despite the inflation signal, creating a mean-reversion opportunity. If inflation persistence forces tighter financial conditions, high-multiple tech de-rates while gold reprices as a real store of value. The long gold / short tech pair captures this rotation with asymmetric payoff."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": null,
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.38,
+        "rationale": "With HY spreads at -1.15\u03c3 (historically tight), credit risk is severely underpriced relative to the inflationary backdrop. Short-duration cash/treasury provides a low-volatility anchor and benefits from elevated short-end yields in a high-inflation regime, while avoiding the spread-widening risk embedded in credit-sensitive assets. This is a defensive overlay rather than an aggressive view, sized to reduce tail exposure if credit reprices sharply."
+      }
+    ],
+    "2021-08-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.55,
+        "rationale": "Extreme inflation z-score (+3.3\u03c3) with compressed HY spreads creates a fragile risk-on environment. Gold has underperformed despite the inflationary signal, making it cheap relative to regime; tech/growth is richly priced with high trailing returns and elevated vol, most vulnerable to real discount rate repricing as inflation forces the curve higher. Long gold vs. short tech captures the inflation hedge rotation and mean-reversion in relative valuations."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.42,
+        "rationale": "World equity has also run strongly (+25% trailing) with credit spreads at -0.86\u03c3, suggesting broad complacency. If inflation persistence forces a policy tightening response or triggers a credit spread normalization, global equities face headwinds. Gold's negative trailing return despite a +3.3\u03c3 inflation reading implies a catch-up trade with moderate confidence as the macro signal reasserts."
+      }
+    ],
+    "2021-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Extreme inflation surprise (CPI z = +2.92) with tight credit spreads signals market complacency. Gold (Asset_C) is deeply underperforming despite a strong inflation signal and is historically a beneficiary of persistent above-trend inflation. Tech (Asset_B) carries high duration risk \u2014 its elevated trailing return and high vol make it vulnerable to a discount-rate repricing if inflation forces real rate normalization. The long gold / short tech pair exploits the divergence between inflation reality and market pricing."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Within equities, world equity (Asset_A) is more value/cyclical-tilted relative to tech (Asset_B) and benefits from nominal growth in an inflationary environment while carrying lower duration sensitivity. The steepening curve (t10y2y_z = +1.12) tends to favor cyclical/value over growth, supporting a modest rotation from tech into broader world equity."
+      }
+    ],
+    "2021-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Gold has significantly underperformed despite CPI running nearly 3 standard deviations above norm \u2014 a historically anomalous divergence. Tech (Asset_B) is priced for a benign disinflation scenario with a 28% trailing run and elevated vol; if inflation persistence forces real rate repricing or a risk-off rotation, gold should outperform high-duration growth equities. The tight HY spreads suggest complacency that amplifies the downside for risk assets when the inflation regime reasserts."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "Within equities, world equity (Asset_A) offers broader sector diversification and lower vol (12.5% vs 20%) at a similar trailing return. In a stagflation-risk regime where inflation is elevated and the curve is steepening, value-tilted and international exposures embedded in world equity tend to outperform concentrated tech. This is a quality/defensiveness tilt within the equity sleeve rather than a directional macro bet."
+      }
+    ],
+    "2021-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "Gold (real asset) vs. high-multiple tech equity is the canonical inflation-repricing trade. CPI at +3.24\u03c3 is an extreme reading; tech's trailing 42.5% return and compressed HY spreads signal crowded risk-on positioning. If inflation persistence forces a hawkish repricing, long-duration growth equities face multiple compression while gold benefits from negative real rate fears and safe-haven demand. Gold's negative trailing return (-4.8%) also suggests mean-reversion potential as the inflation signal is not yet priced into commodity hedges."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.42,
+        "rationale": "Within equities, rotating from concentrated tech exposure to diversified world equity reduces duration-of-earnings risk. Tech's valuation sensitivity to rate repricing is disproportionate; world equity includes value, energy, and financials sectors that historically outperform in steepening-curve, high-inflation regimes. The vol differential (19.1% vs. 12.3%) also favors world equity on a risk-adjusted basis given the macro uncertainty."
+      }
+    ],
+    "2021-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Extreme inflation z-score (+3.35) historically favors real assets like gold over high-duration, high-multiple tech equities. Tech (Asset_B) has already delivered +36.6% trailing with elevated vol, making it acutely vulnerable to multiple compression if real rates rise to combat inflation. Gold (Asset_C) is essentially flat on a trailing basis despite the inflation signal, suggesting it is underpriced relative to the macro regime. This long/short captures the rotation from nominal growth assets to real-asset inflation hedges."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) has also run strongly (+24.6%) with tight credit spreads masking the inflation risk. As the inflation shock propagates into tighter monetary conditions globally, broad equity risk premiums should widen. Gold provides a partial hedge. Confidence is lower here than the tech short because world equity has lower valuation sensitivity and broader diversification, but the directional tilt remains valid under the inflationary overheat regime."
+      }
+    ],
+    "2022-01-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Extreme inflation z-score (+3.17\u03c3) historically favors real assets like gold over high-duration, high-multiple tech equities. Tech (Asset_B) has already delivered outsized trailing returns (+33.7%) with elevated vol, making it vulnerable to a rate-repricing driven by persistent inflation. Gold (Asset_C) is cheap on a trailing basis (-4%) despite the strongest inflation signal in the window, creating a mean-reversion opportunity with macro tailwind."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) has benefited from compressed credit spreads and momentum, but the combination of extreme inflation and tight HY spreads (-0.93\u03c3) signals late-cycle complacency. A spread-widening or inflation-driven derating would disproportionately hurt equities relative to gold. This is a lower-conviction secondary tilt reinforcing the inflation-hedge theme."
+      }
+    ],
+    "2022-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Extreme inflation z-score (+3.08) strongly favors gold as a real-asset inflation hedge. Tech/growth equities carry high duration risk via elevated multiples and are most exposed to real yield normalization as the central bank responds to persistent inflation. Gold's negative trailing return (-3.4%) vs. tech's strong run (+22.6%) also suggests mean-reversion potential in this regime. The flat curve (not yet inverted) means the policy tightening cycle is ongoing, sustaining the headwind for long-duration growth assets."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "Short-duration treasuries/cash (Asset_D) offer near-zero nominal return and deeply negative real return in a +3 sigma inflation environment. Gold, despite recent underperformance, historically preserves real purchasing power during sustained inflationary regimes. The tight HY spreads suggest no imminent flight-to-safety bid for cash, reducing the defensive appeal of Asset_D relative to a hard-asset hedge."
+      }
+    ],
+    "2022-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.55,
+        "rationale": "Gold (Asset_C) is a canonical inflation hedge and benefits from real-rate suppression in a stagflation-risk regime. Tech (Asset_B) carries the highest duration risk among equities \u2014 its elevated trailing vol and sensitivity to discount-rate increases make it the most exposed to a persistent inflation overshoot. The long gold / short tech pair directly fades the market's complacency embedded in tight HY spreads and still-elevated equity multiples."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "World equity (Asset_A) has delivered strong trailing returns at moderate vol, but a CPI z-score of +3.0 historically precedes central bank overtightening that compresses global equity multiples. Gold offers a lower-correlation, inflation-resilient alternative. This is a secondary, lower-conviction tilt to reduce broad equity beta in favor of the real asset."
+      }
+    ],
+    "2022-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "Extreme inflation z-score (+3.03) with an inverted curve creates a stagflationary tail risk. Gold (real asset, no duration, no earnings risk) is a direct beneficiary of persistent above-trend inflation, while tech equity carries maximum sensitivity to both rate-driven multiple compression and a potential growth slowdown. The long gold / short tech trade captures this regime asymmetry. Tight HY spreads suggest the market is not yet hedged, improving the entry."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "World equity broadly faces headwinds from a deeply inverted curve (historically a leading recession indicator) and unresolved inflation pressure. Gold's trailing volatility is comparable to world equity but its return driver (real rate and inflation expectations) is orthogonal to the equity risk premium, making it a superior risk-adjusted hold in this regime. This is a lower-conviction complement to the primary view."
+      }
+    ],
+    "2022-05-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "Extreme inflation z-score (+2.63) with an inverted curve strongly favors real assets over long-duration growth equities. Gold (Asset_C) historically outperforms in high-inflation, late-cycle regimes, while tech (Asset_B) carries elevated duration risk and compressed real earnings multiples. Asset_B's low trailing return and high vol confirm deteriorating risk-adjusted momentum."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "World equity (Asset_A) faces headwinds from the inverted curve signaling growth deceleration and from inflation eroding real returns. Gold provides a cleaner inflation hedge with comparable trailing vol but superior macro alignment. The view is held with lower confidence given credit spreads remain contained, limiting near-term equity downside."
+      }
+    ],
+    "2022-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Inflation running ~2.6 standard deviations above its rolling norm is the dominant regime signal. Gold (Asset_C) is a classical real-asset hedge against persistent inflation and has underperformed over the trailing year despite this tailwind, suggesting a lagged repricing opportunity. Tech/growth equities (Asset_B) carry the highest duration-equivalent sensitivity among the available assets \u2014 their valuations are compressed by elevated real rates implied by the inflation regime \u2014 and their trailing volatility (25%) is nearly double gold's (14%), making the long/short pair attractive on a risk-adjusted basis."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": null,
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.45,
+        "rationale": "Short-duration Treasuries/cash (Asset_D) benefit directly from the elevated rate environment induced by above-norm inflation, offering positive nominal carry with near-zero volatility. With credit spreads not yet alarming, this is not a flight-to-quality trade but a carry-harvesting position that acts as a portfolio stabilizer while the inflation regime persists. The modest expected excess return reflects the low-risk, low-upside nature of the asset."
+      }
+    ],
+    "2022-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.55,
+        "rationale": "Gold (real asset, inflation hedge) is well-positioned in a stagflationary regime with CPI z-score at +2.57\u03c3 and widening credit spreads. Tech/growth equities carry the highest duration risk and earnings sensitivity to tightening conditions; Asset_B's elevated trailing vol and negative 12m return confirm ongoing repricing. Long gold vs. short tech captures the inflation-hedge vs. rate-sensitive growth divergence."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.45,
+        "rationale": "Short-duration cash/treasury instruments benefit from elevated short-end yields in an inverted curve environment and carry negligible credit or duration risk. World equity faces headwinds from slowing global growth (curve inversion signal) and tightening credit conditions (HY OAS +1.59\u03c3). This defensive rotation captures the risk-off premium with high Sharpe efficiency given Asset_D's near-zero volatility."
+      }
+    ],
+    "2022-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "Deep curve inversion combined with above-trend inflation and widening credit spreads creates a hostile environment for high-volatility growth equities (tech). Short-duration cash equivalents benefit from elevated front-end rates and provide capital preservation as recession risk rises. The tech sector's negative trailing return and high vol confirm momentum deterioration consistent with this regime."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "Gold has historically outperformed broad equities in stagflationary regimes where real rates peak and then roll over. With CPI z-score at +2.2 and growth expectations deteriorating (inverted curve), gold's negative trailing return likely reflects a lagged repricing opportunity relative to world equity, which remains vulnerable to earnings compression and multiple contraction as the cycle turns."
+      }
+    ],
+    "2022-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "Short-duration cash/treasury benefits directly from the inverted curve's elevated front-end yields and is insulated from credit and equity risk. Tech/growth equity (high duration, high multiple) is doubly penalized by sticky inflation compressing real multiples and tightening financial conditions widening HY spreads \u2014 a regime historically brutal for long-duration growth assets. The -14.9% trailing return on Asset_B suggests momentum confirmation of this pressure."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.4,
+        "rationale": "Gold (real asset, zero duration) historically outperforms in stagflation regimes where real rates peak and growth deteriorates \u2014 the deeply inverted curve signals the latter is approaching. World equity faces earnings compression from slowing growth and margin pressure from persistent inflation. Gold's negative trailing return (-6%) relative to its macro tailwinds suggests mean-reversion potential as the stagflation narrative becomes consensus. Confidence is moderate given gold's near-term sensitivity to real rate direction."
+      }
+    ],
+    "2022-10-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.58,
+        "rationale": "Deeply inverted curve + elevated HY spreads + high inflation creates a hostile environment for high-multiple, long-duration tech equities. Asset_B has already drawn down -20.5% but elevated vol (29%) and macro headwinds suggest further pressure. Short-duration cash captures the elevated front-end yield with near-zero vol, making this a high-conviction relative value pair in a stagflation-risk regime."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "Gold historically outperforms broad equities in stagflation regimes where real growth deteriorates alongside sticky inflation. World equity (Asset_A) faces dual headwinds from tightening financial conditions (inverted curve) and credit stress (HY spreads +1.11z). Gold's lower vol (13.9% vs 17.2%) and inflation-hedge properties support a modest long/short tilt, though real rate headwinds temper conviction."
+      }
+    ],
+    "2022-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "Stagflation-risk regime (high CPI z-score + deeply inverted curve) historically favors real assets like gold over long-duration growth equities. Tech carries the highest duration sensitivity and has already underperformed, but the macro headwinds (real rate uncertainty, growth deceleration) remain structurally adverse. Gold provides inflation optionality and safe-haven demand as credit stress builds."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.48,
+        "rationale": "With the curve deeply inverted, short-duration cash/treasury instruments capture elevated front-end yields with near-zero volatility, while world equity faces a deteriorating earnings outlook as the lagged effects of tight monetary policy and slowing growth materialize. The modest HY spread widening (+0.37\u03c3) suggests credit stress is building but not yet acute, reinforcing a defensive tilt away from broad equity risk."
+      }
+    ],
+    "2022-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "Stagflation-risk regime (elevated inflation + deeply inverted curve) historically favors gold as a real-asset hedge while punishing long-duration tech equities. Asset_B has already drawn down ~19% with high realized vol, and its earnings-duration sensitivity makes it vulnerable to sustained high rates and a growth slowdown implied by the curve inversion. Asset_C has held near flat despite the macro headwinds, suggesting latent demand for inflation protection."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.45,
+        "rationale": "The severely inverted curve signals elevated recession probability, which should weigh on global equities (Asset_A). Short-duration cash/treasury (Asset_D) offers positive carry with near-zero vol in a high-rate environment, providing a defensive tilt. The modest HY spread widening corroborates early credit deterioration, reinforcing a de-risking posture away from broad equity exposure."
+      }
+    ],
+    "2023-01-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "Stagflation-risk regime (above-trend inflation + deeply inverted curve + widening credit spreads) historically favors real assets like gold over long-duration growth equities. Tech carries extreme duration sensitivity and earnings risk in a high-rate, slowing-growth environment. Gold provides inflation hedge and safe-haven demand as recession probability rises. The spread in trailing returns already reflects this dynamic but the macro regime suggests persistence."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.48,
+        "rationale": "With the curve deeply inverted, short-duration cash/treasuries offer competitive risk-adjusted returns with near-zero volatility, while world equity faces a deteriorating earnings outlook as credit conditions tighten and recession risk mounts. The modest HY spread widening suggests credit stress is building but not yet at peak \u2014 further equity downside is likely as the cycle turns. Parking in short-duration instruments defensively dominates broad equity exposure in this regime."
+      }
+    ],
+    "2023-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "Gold (real asset, low beta) is well-positioned in a stagflationary regime where inflation remains elevated and recession risk is rising. Tech/growth equities face a severe double headwind: deeply inverted curve compresses valuations via higher discount rates, and a potential hard landing threatens earnings. The long gold / short tech pair exploits the divergence between inflation resilience and growth vulnerability, and is supported by gold's strong trailing momentum versus tech's negative trailing return."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "Short-duration cash/treasury instruments offer near-riskless carry in a high-rate environment and provide capital preservation if credit spreads widen from their currently complacent levels. World equity faces asymmetric downside: the deeply inverted curve historically leads equity drawdowns with a lag, and credit spread normalization would reprice risk premia broadly. This defensive pair reduces overall portfolio beta while the macro contradiction between curve inversion and tight credit resolves."
+      }
+    ],
+    "2023-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "Deep curve inversion signals front-end rates are elevated and the market expects future rate cuts driven by economic deterioration, not benign disinflation. Short-duration cash (Asset_D) offers positive carry with near-zero volatility, while high-beta tech (Asset_B) \u2014 already down significantly on a trailing basis with very high realized vol \u2014 remains exposed to further multiple compression if the recessionary signal in the curve materializes. This pair captures the risk-off rotation from speculative growth to capital preservation."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "Above-trend inflation (+0.82\u03c3) combined with recession risk creates a stagflationary tail where gold (Asset_C) historically outperforms as a real store of value, while world equity (Asset_A) faces dual headwinds from margin compression and potential multiple de-rating. Gold's trailing underperformance (-3.7%) relative to its macro tailwinds suggests mean-reversion potential. Confidence is moderate because credit spreads not yet widening limits conviction on the full risk-off scenario."
+      }
+    ],
+    "2023-04-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Deep curve inversion signals late-cycle stress. Gold historically outperforms high-beta tech in pre-recessionary regimes as real rates peak and growth expectations deteriorate. Tech carries elevated vol (0.319) with negative trailing returns, suggesting momentum and fundamental headwinds compound the macro risk. Gold's positive trailing return and lower vol confirm relative resilience."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.44,
+        "rationale": "Short-duration cash/treasuries offer near-riskless carry in a restrictive rate environment while world equity faces earnings and multiple compression from the inverted curve signal. With credit spreads beginning to widen and global growth at risk, the risk-reward for holding short-duration instruments over broad equity is favorable. The extremely low vol of Asset_D (0.008) makes this a high Sharpe tilt even at modest expected excess return."
+      }
+    ],
+    "2023-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deep curve inversion with above-trend inflation favors real assets over high-duration growth equities. Gold (Asset_C) historically outperforms in late-cycle stagflationary regimes where real rates are uncertain and growth is decelerating. Tech/growth (Asset_B) carries high valuation sensitivity to rate expectations and faces headwinds from both slowing growth and sticky inflation compressing multiples. Asset_C's trailing vol is comparable to Asset_B's but with far lower beta to the deteriorating growth narrative."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "World equity (Asset_A) has delivered near-flat trailing returns with moderate volatility, consistent with a market already pricing some slowdown risk. However, the curve inversion at -1.69z is a strong leading indicator of further equity weakness globally. Gold offers a defensive tilt with comparable volatility but positive real-asset characteristics in an inflationary, late-cycle environment. Confidence is moderate as credit spreads have not yet confirmed a full risk-off regime."
+      }
+    ],
+    "2023-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "A deeply inverted curve signals late-cycle/recessionary conditions with likely future rate cuts. Gold (Asset_C) benefits from falling real rates and safe-haven demand, while high-beta tech (Asset_B) faces multiple compression and earnings risk as growth decelerates. The spread between their trailing Sharpe profiles (tech: 0.52, gold: 0.37) is likely to compress as the cycle turns."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "World equity (Asset_A) carries meaningful recession risk given the extreme curve inversion; historically, global equities underperform gold in the 12-18 months following such deep inversions. HY spread widening, though modest, confirms early credit deterioration that typically precedes equity drawdowns. Gold provides a cleaner expression of the rate-cut and uncertainty premium."
+      }
+    ],
+    "2023-07-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Extreme curve inversion signals imminent growth deceleration or rate-cut cycle. Short-duration treasuries/cash benefit from front-end rate normalization and capital preservation, while high-multiple tech is most vulnerable to a growth-scare repricing after a large trailing run. The long/short captures the rotation from risk-on momentum into defensive duration."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Gold provides tail-risk hedge against the scenario where the curve inversion resolves via a hard landing rather than a soft one. Near-neutral inflation and complacent credit spreads leave room for a surprise risk-off shock; gold's low correlation to equities and modest trailing return suggest limited crowding. Confidence is moderate given gold's mixed performance in deflationary recessions."
+      }
+    ],
+    "2023-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Deep curve inversion with benign inflation is a classic growth-scare setup. Gold (safe-haven, real-asset) historically outperforms high-multiple tech in late-cycle slowdowns as rate-cut expectations compress real yields and risk appetite deteriorates. Tech has outsized trailing momentum (25.6% TTM) that is vulnerable to mean-reversion when growth expectations reset."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "Diversified world equity carries lower concentration risk and lower volatility than tech sector. If the curve inversion resolves via a soft landing rather than hard recession, broad equity holds up better than a high-vol, high-multiple sector that has already priced in significant growth. This view hedges the tail where credit spreads remain tight and equities broadly hold."
+      }
+    ],
+    "2023-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "Deep curve inversion signals falling real rate expectations ahead, which is historically supportive of gold. Short-duration cash (short treasury) offers minimal upside beyond carry and will underperform if the curve bull-steepens as growth slows. Gold also provides tail-risk hedge against the hard-landing scenario that compressed HY spreads are currently ignoring."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Tech sector (Asset_B) has already delivered outsized trailing returns (+28.6%) with elevated volatility, and is most vulnerable to multiple compression if the inverted curve materializes into a growth slowdown. Broad world equity (Asset_A) offers more defensive sector diversification at lower volatility and more modest valuations, making the relative trade attractive as late-cycle dynamics unfold."
+      }
+    ],
+    "2023-10-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Deeply inverted curve signals late-cycle or recessionary transition. Gold (safe-haven, rate-cut beneficiary) is positioned to outperform high-beta tech, which carries extreme trailing momentum and elevated vol \u2014 making it most vulnerable to a growth disappointment or multiple compression as the curve's recessionary signal materializes."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "Within equities, diversified world equity offers lower concentration risk than tech at a fraction of the volatility. With credit spreads tight and the curve inverted, sector rotation away from high-multiple growth toward broader market exposure is a prudent tilt; the trailing return gap between Asset_B and Asset_A is historically mean-reverting under late-cycle conditions."
+      }
+    ],
+    "2023-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.45,
+        "rationale": "Near-neutral credit spreads and below-average inflation suggest the soft-landing narrative remains intact, supporting continued momentum in high-growth tech equities. Short-duration cash (Asset_D) offers minimal real return in a declining-rate environment implied by the inverted curve, making it the natural funding leg."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "The inverted yield curve signals growth deceleration risk that has not yet been priced into credit spreads \u2014 a classic late-cycle setup. Gold benefits from real-rate compression as the curve uninverts and from residual macro uncertainty, while broad world equity (Asset_A) faces headwinds from slowing global growth with limited upside given its modest trailing return."
+      }
+    ],
+    "2023-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Inverted curve with disinflation points to late-cycle growth deceleration. Gold (defensive, real-asset) is well-positioned relative to high-beta tech, which has already priced in an optimistic soft-landing scenario with a 43% trailing return. If growth disappoints, tech multiple compression should benefit the long-gold/short-tech pair."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "Within equities, diversified world equity offers lower concentration risk than tech at roughly one-fifth the trailing vol premium. Tight credit spreads masking underlying growth risk favor broader diversification over momentum-driven sector concentration as the cycle matures."
+      }
+    ],
+    "2024-01-02 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "Compressed HY spreads and a steepening curve with below-norm inflation is a classic soft-landing signal that favors broad equity over cash-like instruments. World equity should outperform short-duration treasuries as risk premia compress further and growth expectations are repriced upward."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "Tech has already captured an outsized share of the risk-on rally (+58.5% trailing), leaving it vulnerable to valuation mean-reversion even if macro conditions remain supportive. Rotating within equity from concentrated tech exposure to diversified world equity reduces idiosyncratic drawdown risk while maintaining beta to the favorable macro regime."
+      }
+    ],
+    "2024-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Disinflationary backdrop with compressed credit spreads and a steepening curve impulse favors broad world equity over cash/short-duration treasuries. The macro regime is risk-on with no near-term recession signal from credit markets, making the opportunity cost of holding short-duration cash elevated."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Tech sector has delivered 47% trailing returns against 18.9% annualized vol \u2014 a Sharpe-stretched position. In a soft-landing regime, mean reversion risk within equities favors rotating toward diversified world equity over concentrated tech exposure. Compressed spreads reduce the systemic risk premium that typically justifies tech's growth premium at these valuations."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.35,
+        "rationale": "Gold underperforms in disinflationary, risk-on regimes where real yields are stable or rising and inflation expectations are anchored below trend. Short-duration treasuries offer a more stable carry with lower drawdown risk than gold in this macro configuration."
+      }
+    ],
+    "2024-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "Compressed HY spreads and a normalizing yield curve signal strong risk appetite and receding recession fears. Tech-sector equities with high trailing momentum are the primary beneficiary of a soft-landing, low-spread regime. Short-treasury/cash is the natural funding leg given near-zero real returns and a steepening curve reducing the appeal of short-duration safety."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.45,
+        "rationale": "World equity broadly benefits from the same benign macro backdrop \u2014 below-norm inflation, tightening credit spreads, and curve normalization all reduce the equity risk premium. Lower vol than tech makes this a higher-quality, more diversified expression of the same risk-on tilt, funded from cash."
+      }
+    ],
+    "2024-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Steepening yield curve and compressed HY spreads signal a risk-on, expansion-phase regime. World equity should outperform short-duration cash/treasuries as the opportunity cost of holding cash rises and growth expectations are priced positively. Asset_A's strong trailing return with moderate vol supports this tilt."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Tech (Asset_B) has delivered outsized trailing returns (+44.5%) at elevated vol, and with HY spreads at multi-year lows, the asymmetric risk of a spread-widening or sentiment reversal is highest for high-multiple, momentum-driven sectors. Gold (Asset_C) provides a modest hedge against this tail risk and curve-steepening volatility, while its trailing return suggests it has not yet been crowded out by the risk-on move."
+      }
+    ],
+    "2024-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "Below-trend inflation and compressed credit spreads support a risk-on tilt toward diversified world equity over cash/short-treasury. The soft-landing signal from tight HY OAS favors equity carry over near-zero real cash returns, though the inverted curve caps conviction."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Tech sector (Asset_B) has already delivered outsized trailing returns with elevated volatility, and compressed spreads leave little cushion if sentiment shifts. Gold (Asset_C) offers a modest hedge against curve re-steepening or a credit spread mean-reversion shock, providing convexity at a lower trailing valuation stretch. This is a tail-risk offset rather than a high-conviction directional bet."
+      }
+    ],
+    "2024-06-03 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Compressed HY spreads, below-trend inflation, and a steepening yield curve collectively support broad equity risk premia over cash. World equity has strong trailing momentum with moderate vol, and the macro regime provides no near-term headwind. Short-duration cash earns near zero real return in this environment."
+      },
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "In a soft-landing, low-inflation regime with tight credit spreads, growth-oriented tech sector assets tend to outperform inflation hedges like gold. Below-trend CPI reduces the monetary policy risk premium that has historically weighed on high-duration tech, while gold's inflation-hedge premium is less warranted when CPI is running below its recent norm. Confidence is moderate given tech's elevated trailing vol and the risk of mean-reversion in spread compression."
+      }
+    ],
+    "2024-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "Disinflationary backdrop with tight credit spreads and a relatively steeper curve supports broad world equity over cash. The risk-on regime penalizes short-duration cash holdings, and Asset_A's lower volatility relative to trailing return suggests a favorable Sharpe profile for continued outperformance versus the near-zero-return cash proxy."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Asset_B (tech sector) has dramatically outperformed on a trailing basis with nearly double the volatility of Asset_A. In a complacency regime where spreads are already compressed, the risk-reward for the highest-momentum, highest-beta segment deteriorates. A modest tilt toward diversified world equity over concentrated tech captures the regime while hedging against a momentum reversal or valuation mean-reversion in the growth-heavy sector."
+      }
+    ],
+    "2024-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.5,
+        "rationale": "Compressed HY spreads and below-trend inflation support a risk-on tilt toward diversified world equity over cash. The macro regime is not recessionary yet, and tight credit conditions historically precede continued equity outperformance over short-duration cash. World equity's lower volatility relative to tech makes it the preferred risk vehicle."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "Gold offers a hedge against the latent tail risk embedded in this setup: an inverted curve with complacent credit spreads is a classic late-cycle signal where a sudden spread-widening could disproportionately punish high-multiple tech assets. Gold's strong trailing momentum and lower beta to credit risk make it a superior store of value if the curve inversion eventually transmits into a growth shock, while tech's elevated volatility and valuation sensitivity to rate repricing create asymmetric downside."
+      }
+    ],
+    "2024-09-02 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "Compressed HY spreads and below-trend inflation support a risk-on tilt. World equity offers a diversified risk premium over cash/short treasuries in this environment, with lower idiosyncratic concentration risk than tech. The benign credit backdrop reduces near-term drawdown probability for broad equities."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Tech has already delivered outsized trailing returns with elevated volatility, and compressed spreads leave little cushion if sentiment shifts. Gold, despite its own strong trailing return, offers a hedge against the tail scenario where the mildly inverted curve signals a growth inflection \u2014 gold tends to hold value in late-cycle slowdowns. This pair trade reduces beta while capturing a potential mean-reversion in the tech/gold relative performance."
+      }
+    ],
+    "2024-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.52,
+        "rationale": "Compressed HY spreads and below-trend inflation create a favorable liquidity backdrop for high-beta growth equities. Tech sector benefits disproportionately from low discount rates and risk-on sentiment. Short cash/short-treasury as the opportunity cost of holding dry powder is high in this regime."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.45,
+        "rationale": "World equity should outperform gold in a low-inflation, tight-spread environment where real growth expectations are intact. Gold's trailing outperformance relative to the macro backdrop (low CPI z-score) is anomalous and likely to mean-revert as inflation fears remain subdued and risk appetite stays elevated."
+      }
+    ],
+    "2024-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.5,
+        "rationale": "Below-trend inflation and tight credit spreads support a risk-on tilt toward diversified world equity over cash/short-duration treasuries. The macro backdrop reduces the urgency of defensive positioning, and world equity's moderate volatility profile offers a better risk-adjusted carry than cash in this regime."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "Tech sector (Asset_B) has dramatically outperformed world equity on a trailing basis with more than double the volatility. In a late-cycle Goldilocks regime with HY spreads at extreme tights, mean-reversion risk is elevated for the highest-beta, highest-momentum segment. Rotating toward broader world equity captures continued risk-on exposure while reducing concentration in the most stretched segment."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.35,
+        "rationale": "Gold has delivered outsized trailing returns inconsistent with a low-inflation, tight-spread environment. With inflation running below its 5-year norm, the fundamental driver for gold as an inflation hedge is absent. A modest short gold / long cash position hedges against gold mean-reversion if the risk-on regime persists and inflation expectations remain subdued."
+      }
+    ],
+    "2024-12-02 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.48,
+        "rationale": "Compressed HY spreads and below-average inflation support continued equity risk premium over cash. World equity benefits from the risk-on regime; short-duration cash earns near zero real return in this environment. Momentum in Asset_A is strong and macro tailwinds remain intact, though late-cycle spread compression caps confidence."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Gold's outperformance despite subdued inflation suggests it is pricing a tail risk (e.g., monetary regime shift or geopolitical stress) not yet reflected in spreads or CPI. Tech sector (Asset_B) carries elevated volatility and is most exposed to a sudden repricing of risk appetite when HY spreads mean-revert from historically tight levels. This pair hedges against a latent regime shift while maintaining some risk exposure."
+      }
+    ]
+  },
+  "reasoning": {
+    "2019-01-02 00:00:00": "The macro state presents a moderately elevated inflation environment (CPI z-score +0.55) combined with a deeply inverted yield curve (t10y2y z-score -1.59), which historically signals recession risk and monetary tightening overshoot. High-yield spreads are also modestly elevated (+0.65 z-score), indicating early-stage credit stress rather than full panic. This combination \u2014 sticky inflation, curve inversion, and widening credit spreads \u2014 is consistent with a late-cycle stagflationary regime where growth assets face headwinds from both tighter financial conditions and deteriorating earnings expectations. The causal contradiction here is that inflation prevents the Fed from pivoting dovishly even as the curve signals economic contraction, creating a \"no good exit\" environment that is particularly punishing for duration-sensitive and high-beta risk assets.",
+    "2019-02-01 00:00:00": "The macro state presents a notable divergence: inflation is essentially neutral (CPI z \u2248 0), yet the yield curve is deeply inverted (t10y2y z = -1.6, well below its 5-year norm), while high-yield spreads are actually compressed (hy_oas z = -0.18). This combination \u2014 steep inversion without credit stress \u2014 is consistent with a late-cycle environment where markets expect a significant policy pivot/rate cuts ahead, but credit markets have not yet priced in recessionary risk. The compressed HY spreads relative to the inverted curve creates a causal tension: if the curve inversion is signaling an economic slowdown, credit spreads are likely mispriced and vulnerable to widening. Duration-sensitive assets and rate-cut beneficiaries (long-duration, growth/tech) may outperform cash and short-duration instruments as the curve steepens, but the credit complacency warrants caution on risk assets broadly.",
+    "2019-03-01 00:00:00": "The macro state presents a notable divergence: inflation is essentially neutral (CPI z-score \u2248 0), yet the yield curve is deeply inverted (t10y2y z-score = -1.52, well below its 5-year norm), while high-yield spreads are meaningfully compressed (hy_oas_z = -0.58). A deeply inverted curve historically signals growth deceleration or recession risk ahead, yet tight credit spreads suggest markets are not yet pricing in significant credit stress \u2014 a classic late-cycle contradiction. This combination implies that either credit markets are complacent relative to the recessionary signal embedded in the curve, or the curve inversion reflects technical/policy distortions. The dominant tail risk is a credit spread normalization (widening) coinciding with an equity drawdown, particularly in high-beta, high-duration segments like tech, while short-duration safe assets and gold may offer relative protection as the cycle turns.",
+    "2019-04-01 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.41) combined with a deeply inverted yield curve (t10y2y z = -1.61), while high-yield spreads remain compressed (HY OAS z = -0.47). The curve inversion at this magnitude historically signals aggressive prior monetary tightening and elevated recession risk, yet credit markets have not yet repriced that risk \u2014 a classic late-cycle contradiction where credit complacency lags rate-market pessimism. The combination of sticky inflation and an inverted curve creates a stagflationary tail risk: growth may decelerate while inflation remains above target, compressing equity multiples particularly in high-duration assets like tech. Gold, despite being a traditional inflation hedge, has underperformed, suggesting real rates remain elevated \u2014 but if the curve inversion resolves via a growth shock, gold could benefit as a safe-haven while risk assets reprice.",
+    "2019-05-01 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.54) combined with a deeply inverted yield curve (t10y2y z = -1.4), which historically signals recession risk and monetary tightening overshoot. Notably, high-yield spreads are compressed (hy_oas z = -0.75), meaning credit markets are pricing near-complacency despite the recessionary curve signal \u2014 a classic late-cycle contradiction where credit has not yet repriced the growth deterioration implied by the curve inversion. This divergence creates a tail risk: if the curve inversion's recessionary signal proves correct, credit spreads will widen and risk assets (especially high-beta tech) will reprice sharply lower, while gold \u2014 currently underperforming \u2014 may benefit from a flight-to-safety and real-rate uncertainty dynamic. The short end of the treasury curve (Asset_D) offers a defensive anchor given its near-zero vol and positive carry in a high-rate environment.",
+    "2019-06-03 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.32) combined with a deeply inverted yield curve (t10y2y z = -1.46), while high-yield spreads are essentially at their historical median (HY OAS z = -0.01). The deeply inverted curve is the dominant signal here: it historically precedes growth slowdowns or recessions, suggesting that risk assets priced for continued expansion face meaningful headwinds. The absence of credit spread widening creates a contradiction \u2014 credit markets are not yet pricing the recessionary risk implied by the curve inversion, which is a classic late-cycle divergence. This combination (curve deeply inverted, inflation still above trend, credit complacent) points toward a stagflation-adjacent tail risk where growth disappoints but inflation remains sticky, penalizing duration-sensitive growth assets while favoring real stores of value and cash.",
+    "2019-07-01 00:00:00": "The macro state presents a nuanced but coherent picture: inflation is near its historical norm (CPI z-score +0.18), so price pressure is not the dominant risk. However, the yield curve is deeply inverted (t10y2y z-score -1.32), signaling that markets are pricing in significant near-term economic stress or recession risk \u2014 this is the dominant signal. High-yield spreads are actually tight (hy_oas z-score -0.48), meaning credit markets have not yet repriced for the recessionary signal embedded in the curve, creating a contradiction: the curve warns of growth deterioration while credit remains complacent. This divergence historically resolves via credit spread widening and equity multiple compression, particularly in high-beta, long-duration assets like tech, while safe-haven and real assets (gold) tend to outperform as the cycle turns.",
+    "2019-08-01 00:00:00": "The macro state presents a nuanced but coherent picture: inflation is modestly above its 5-year norm (+0.36\u03c3), the yield curve is deeply inverted (-1.52\u03c3 on 10y2y), and high-yield spreads are tight (-0.6\u03c3). The deeply inverted curve signals that markets are pricing significant future growth deterioration or rate cuts, while tight credit spreads suggest complacency about default risk \u2014 a classic late-cycle contradiction. Elevated-but-not-extreme inflation combined with curve inversion points toward a stagflationary tail risk where central banks remain constrained even as growth slows. In this regime, real assets like gold tend to outperform risk assets (especially high-beta tech), while short-duration cash provides optionality but limited real return given residual inflation.",
+    "2019-09-03 00:00:00": "The macro state presents a sharply inverted yield curve (t10y2y_z = -1.72), which is a historically strong recessionary signal, while inflation remains modestly above its rolling norm (cpi_yoy_z = +0.26) and high-yield spreads are actually compressed (hy_oas_z = -0.43). This is a contradictory regime: the curve is screaming recession risk, yet credit markets are complacent and inflation hasn't fully normalized \u2014 a late-cycle setup where credit is mispricing the recessionary signal embedded in rates. Gold's exceptional trailing return (+25.8%) with low volatility suggests it has already been absorbing safe-haven and inflation-hedge demand, and this dynamic is likely to persist given the curve inversion. The compressed HY spreads relative to the recessionary curve signal create a meaningful asymmetric risk: credit is vulnerable to a spread-widening shock that equities (especially high-vol tech) have not priced.",
+    "2019-10-01 00:00:00": "The macro state presents a notable contradiction: inflation is near its historical norm (CPI z-score +0.2), yet the yield curve is deeply inverted (t10y2y z-score -1.59), signaling that markets are pricing in significant future economic slowdown or rate cuts. Credit spreads are actually tight (HY OAS z-score -0.52), suggesting credit markets have not yet priced in the recessionary signal embedded in the curve inversion \u2014 this divergence is a classic late-cycle tension. The combination of a deeply inverted curve with compressed credit spreads historically precedes a credit spread widening event, as the curve's recessionary signal eventually forces credit repricing. Gold's strong trailing return (+24.1%) is consistent with a regime where real rates are expected to fall as the curve eventually normalizes, reinforcing a defensive/monetary-hedge tilt over risk assets that are priced for perfection.",
+    "2019-11-01 00:00:00": "The macro state presents a moderately inverted yield curve (t10y2y_z = -1.32), which is a strong historical signal of growth deceleration or recession risk, while inflation remains slightly above its rolling norm (cpi_yoy_z = +0.25) \u2014 a mild stagflationary tilt. Credit spreads are modestly tight (hy_oas_z = -0.40), suggesting credit markets have not yet priced in the recessionary signal embedded in the curve, creating a latent vulnerability in risk assets. The combination of curve inversion with still-tight spreads and above-trend inflation historically precedes a regime where real assets (gold) outperform, duration-sensitive risk assets face headwinds, and high-beta equities are most exposed when the credit repricing eventually occurs.",
+    "2019-12-02 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.65) combined with a significantly inverted yield curve (t10y2y z = -1.29), while high-yield spreads remain compressed (HY OAS z = -0.51). This configuration is internally contradictory: the inverted curve signals recession risk and tightening financial conditions, yet credit markets are pricing near-complacency with tight spreads. The combination of above-trend inflation and deep curve inversion points toward a late-cycle stagflationary regime where growth is decelerating but price pressures persist \u2014 historically unfavorable for duration-sensitive growth assets and favorable for real assets like gold. The compressed HY spreads represent a tail risk: if the curve inversion's recessionary signal materializes, credit spreads will widen sharply, punishing risk assets that have already run hard (particularly tech).",
+    "2020-01-02 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.88) alongside a meaningfully inverted yield curve (t10y2y z = -0.91), yet high-yield spreads are notably tight (hy_oas z = -0.85). This combination suggests markets are pricing in a soft-landing or risk-on narrative \u2014 credit is complacent while inflation remains above trend and the curve signals recessionary pressure ahead. The contradiction between tight spreads and an inverted curve is a classic late-cycle setup: credit risk is underpriced relative to the macro headwinds implied by curve inversion and sticky inflation. Tech sector (Asset_B) has run +47.9% on elevated vol and is most exposed to a repricing of risk premia, while gold (Asset_C) offers inflation hedge properties with lower vol and is underappreciated given the inflation signal.",
+    "2020-02-03 00:00:00": "The macro state presents a moderately elevated inflation environment (CPI z-score +1.17) combined with a significantly inverted yield curve (t10y2y z-score -1.20), while high-yield credit spreads remain compressed (HY OAS z-score -0.46). This configuration is internally contradictory and historically precarious: the inverted curve signals that markets expect a growth slowdown or recession ahead, yet credit markets are still pricing in benign conditions \u2014 a classic late-cycle divergence where credit complacency tends to resolve violently. Elevated inflation limits the central bank's ability to ease aggressively in response to any growth shock, compressing the policy put. The combination argues for a stagflation-risk / late-cycle regime where duration-sensitive and high-multiple growth assets face headwinds, while real assets with inflation-hedging properties (gold) offer relative protection; the tech sector's extreme trailing return (+43.8%) and elevated valuation implied by momentum make it particularly vulnerable to a repricing if the curve inversion materializes into a growth shock.",
+    "2020-03-02 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.85) combined with a meaningfully inverted yield curve (t10y2y z = -0.98) and modestly wider high-yield spreads (HY OAS z = +0.43). This configuration is consistent with a late-cycle / early-stagflation regime: inflation remains above historical norms, the curve inversion signals market expectations of future growth deterioration or rate cuts, and credit stress is beginning to build. The causal tension here is that elevated inflation argues against aggressive rate cuts while the inverted curve and widening spreads signal rising recession risk \u2014 a classic stagflation-adjacent trap that historically punishes growth-sensitive risk assets (especially high-multiple tech) and rewards real assets like gold and short-duration cash. Tech sector's outsized trailing return (+24.7%) relative to its macro backdrop makes it particularly vulnerable to a mean-reversion if the growth outlook deteriorates.",
+    "2020-04-01 00:00:00": "The macro state presents a striking contradiction: inflation is near-normal (CPI z = -0.22) and the yield curve is modestly inverted (t10y2y z = -0.53), yet high-yield credit spreads are extremely elevated at +3.26 standard deviations above their 5-year mean. This combination signals a severe credit stress or liquidity crunch regime \u2014 markets are pricing significant default/distress risk in risky assets despite inflation not being the primary driver. The extreme HY spread widening dominates the signal, pointing to a risk-off, flight-to-quality environment where credit-sensitive equities face headwinds while safe-haven assets (gold, short-duration cash) are favored. The mildly inverted curve reinforces growth concerns, consistent with a late-cycle credit deterioration narrative rather than an inflation shock.",
+    "2020-05-01 00:00:00": "The macro state presents a distinctive and somewhat contradictory configuration: inflation is sharply below its 5-year norm (CPI z = -1.74), suggesting disinflationary or deflationary pressure, while the yield curve remains modestly inverted (t10y2y z = -0.57), consistent with lingering recession risk. The dominant signal, however, is the severely elevated high-yield credit spread (hy_oas z = +2.22), which indicates significant credit stress and risk-off sentiment \u2014 a classic late-cycle or early-distress regime where investors flee risky assets despite falling inflation. This combination \u2014 disinflation + credit stress + mild curve inversion \u2014 points toward a \"credit crunch / growth scare\" regime rather than stagflation, where safe-haven assets (gold, short-duration treasuries) outperform while credit-sensitive and high-beta equities face headwinds. Asset_C (gold) has already demonstrated strong momentum consistent with this flight-to-safety narrative, while Asset_B (tech) carries high vol and credit-sensitive growth exposure that is vulnerable to tightening financial conditions.",
+    "2020-06-01 00:00:00": "The macro state presents a notable contradiction: CPI is deeply below its 5-year norm (z = -1.9), suggesting significant disinflation or deflationary pressure, while the yield curve remains modestly inverted (t10y2y_z = -0.44) and high-yield spreads are meaningfully elevated (hy_oas_z = 1.35). This combination points to a late-cycle credit stress regime \u2014 disinflation driven not by demand normalization but by weakening growth, with credit markets pricing in rising default risk. The elevated HY spreads alongside falling inflation is consistent with a growth scare or recessionary onset, where risk assets face headwinds from deteriorating fundamentals rather than monetary tightening alone. Gold's strong trailing return and low volatility relative to its gain suggests it is already functioning as a safe-haven, while tech's high trailing return and elevated vol makes it vulnerable to a risk-off repricing if credit stress deepens.",
+    "2020-07-01 00:00:00": "The macro state presents a notable contradiction: CPI is well below its 5-year norm (z = -1.27), suggesting disinflationary or deflationary pressure, yet high-yield credit spreads are significantly elevated (z = +1.25), signaling credit stress and risk-off sentiment in corporate debt markets. The yield curve is modestly inverted relative to its rolling window (t10y2y z = -0.39), consistent with lingering recessionary concern but not extreme. This combination \u2014 falling inflation with widening credit spreads \u2014 points toward a credit-stress/growth-scare regime rather than stagflation: the economy may be slowing faster than inflation is falling, compressing corporate earnings and elevating default risk, which historically favors safe-haven assets (gold, short-duration treasuries) over high-beta risk assets. Tech sector's outsized trailing return (+31.8%) relative to its volatility looks stretched in this environment, making it a candidate for mean reversion.",
+    "2020-08-03 00:00:00": "The macro state shows below-average inflation (CPI z = -0.94), a mildly inverted yield curve (t10y2y z = -0.50), and slightly elevated high-yield spreads (HY OAS z = +0.31). This combination suggests a disinflationary environment with residual credit stress and a curve that has not yet normalized \u2014 consistent with a late-cycle deceleration where growth concerns dominate inflation fears. The modest HY spread widening signals some risk-off pressure, but the low inflation backdrop reduces the likelihood of aggressive monetary tightening, which is broadly supportive of duration and real assets like gold. Tech's strong trailing return amid elevated volatility warrants caution as a crowded momentum trade vulnerable to any credit or growth shock.",
+    "2020-09-01 00:00:00": "The macro state shows below-average inflation (CPI z = -0.6), a yield curve that is only marginally inverted (t10y2y z = -0.14, near neutral), and slightly elevated high-yield spreads (HY OAS z = +0.22). This combination suggests a disinflationary or soft-landing environment where inflation pressures are receding but credit stress is modestly above normal \u2014 not a full risk-off regime, but not a clean \"risk-on\" either. The mildly elevated credit spreads relative to a near-flat curve implies some residual growth uncertainty, which historically favors quality assets and dampens the most speculative risk premia. Gold's strong trailing return alongside elevated (but not extreme) credit spreads suggests the market is hedging tail risk, but the disinflationary signal reduces gold's fundamental tailwind going forward.",
+    "2020-10-01 00:00:00": "The macro state presents a mildly disinflationary backdrop (CPI z-score of -0.51), a yield curve that is slightly inverted but near neutral (-0.15), and credit spreads that are modestly elevated (HY OAS z-score of +0.53). The combination of below-trend inflation with widening credit spreads suggests a late-cycle deceleration: growth is softening enough to pressure credit risk premia, but inflation is not the dominant threat. This environment historically favors defensive real assets (gold) over high-beta risk assets, and creates headwinds for momentum-driven tech equities whose valuations are sensitive to credit conditions tightening at the margin. The near-flat curve limits the penalty on short-duration cash but also signals limited upside from duration extension.",
+    "2020-11-02 00:00:00": "The macro state shows below-average inflation (CPI z = -0.8), a mildly steepening yield curve (t10y2y z = +0.35), and modestly elevated high-yield spreads (HY OAS z = +0.47). This combination suggests a disinflationary environment where rate pressure is easing but credit stress is beginning to build \u2014 a late-cycle deceleration rather than outright recession. The steepening curve with below-trend inflation is consistent with a soft-landing narrative, but the elevated credit spreads introduce a tail risk that risk assets may be pricing in too optimistically, particularly high-beta equities. Gold's strong trailing return relative to its volatility suggests the market is already hedging some macro uncertainty, reinforcing a cautious tilt away from high-volatility risk assets toward defensive stores of value.",
+    "2020-12-01 00:00:00": "The macro state shows inflation running meaningfully below its 5-year norm (cpi_yoy_z = -0.93), a yield curve that is roughly neutral to slightly steepening (t10y2y_z = +0.22), and credit spreads that are modestly tight (hy_oas_z = -0.25). This combination is consistent with a disinflationary or soft-landing regime: price pressures are abating, the curve is not deeply inverted (reducing near-term recession signal), and credit markets are not pricing stress. In such an environment, risk assets tend to be supported by the prospect of easier monetary policy, but the high trailing return and extreme volatility of tech (Asset_B, +40% / 40% vol) suggests significant mean-reversion risk and crowding. Gold (Asset_C) has also run hard (+21%) but its disinflationary tailwind is ambiguous \u2014 gold benefits from real-rate declines but loses its inflation-hedge premium when CPI is falling sharply. The dominant risk is a crowded, high-multiple tech trade unwinding as disinflation removes the \"Fed pivot\" narrative that drove the rally, while world equity (Asset_A) offers a more diversified, less stretched exposure to the same soft-landing thesis.",
+    "2021-01-04 00:00:00": "The macro state presents a moderately benign configuration: inflation is running below its 5-year norm (cpi_yoy_z = -0.74), the yield curve is modestly steepening relative to history (t10y2y_z = +0.58), and high-yield credit spreads are tighter than average (hy_oas_z = -0.58). This combination \u2014 disinflation, curve normalization, and compressed credit risk premia \u2014 is classically \"risk-on with a soft-landing narrative,\" where growth assets are rewarded but valuations are already stretched (tight spreads leave little cushion). The steepening curve, however, introduces a subtle headwind for long-duration and rate-sensitive assets if it continues, while favoring cyclical and credit-sensitive exposures in the near term. The primary tail risk is a reversal: if disinflation overshoots into deflation fears or growth disappoints, tight spreads and elevated equity multiples leave little margin of safety.",
+    "2021-02-01 00:00:00": "The macro state presents a moderately constructive but nuanced picture: inflation is running below its 5-year norm (cpi_yoy_z = -0.66), suggesting disinflationary pressure that reduces the headwind for duration and risk assets. The yield curve is notably steeper than its historical average (t10y2y_z = 1.16), which typically signals improving growth expectations or a normalization from prior inversion \u2014 a tailwind for cyclical and risk assets. Credit spreads are tighter than average (hy_oas_z = -0.57), confirming that credit markets are not pricing stress, reinforcing a risk-on regime. The combination of falling inflation, steepening curve, and tight spreads is a classic \"soft landing / Goldilocks\" configuration, favoring equities and real assets over cash, though the elevated volatility in tech relative to its return warrants some caution on concentration.",
+    "2021-03-01 00:00:00": "The macro state presents a notable divergence: the yield curve is steeply steepening (t10y2y_z = +1.95, well above its 5-year norm), while inflation is near-neutral (-0.21) and high-yield spreads are historically tight (-0.78). A sharply steepening curve with compressed credit spreads and benign inflation typically signals a \"risk-on, late-cycle growth re-acceleration\" regime \u2014 markets are pricing in stronger nominal growth without credit stress. However, the extreme curve steepening is a causal tension: it can also reflect a supply-driven term premium shock (bond market demanding more compensation for duration), which would be a headwind for long-duration and high-multiple assets. The tight HY spreads validate current risk appetite but leave little cushion if the term premium narrative dominates, particularly punishing high-multiple growth assets (tech) whose valuations are most sensitive to rising long-end rates.",
+    "2021-04-01 00:00:00": "The macro state presents a notable internal tension: CPI is meaningfully above its 5-year norm (+1.38\u03c3), suggesting persistent inflationary pressure, while the yield curve is sharply steeper than normal (+2.58\u03c3 on 10y2y), indicating either a reflationary growth impulse or a market pricing in sustained higher short rates with long-end relief. Critically, high-yield spreads are *compressed* (-0.95\u03c3), meaning credit markets are complacent and not pricing tail risk \u2014 this is a classic late-cycle setup where risk assets are priced for perfection while inflation and curve dynamics signal underlying stress. The combination of above-trend inflation, steep curve, and tight credit spreads historically precedes a repricing event: either inflation forces rates higher (hurting duration and compressing multiples) or growth disappoints (blowing out spreads). Tech/growth equities, which have already delivered outsized trailing returns (+65%) at elevated volatility, are most exposed to a multiple-compression or rate-shock scenario, while gold \u2014 a real-asset inflation hedge with modest trailing performance \u2014 is underappreciated given the inflationary backdrop.",
+    "2021-05-03 00:00:00": "The macro state presents a deeply contradictory configuration: CPI is running at an extreme +3.36\u03c3 above its 5-year norm (severe inflationary pressure), the yield curve is steeply steepened at +2.24\u03c3 (unusually positive slope, suggesting either aggressive rate-cut expectations or a growth-reflation narrative), yet HY credit spreads are compressed at -0.99\u03c3 (tight, implying complacency about credit risk). This combination \u2014 hot inflation, a steep curve, and tight spreads \u2014 suggests markets are pricing a \"soft landing\" or reflation scenario while ignoring the tail risk that persistent inflation forces policy tightening, which would reprice both duration and credit simultaneously. The steepened curve alongside high inflation is particularly dangerous: if inflation remains elevated, the front end must rise to meet it, compressing or inverting the curve and punishing risk assets that have priced in a benign outcome. Tech equities (high-duration growth assets) are especially vulnerable given their extreme trailing returns (+52.8%) and the inflation/rate repricing risk, while gold \u2014 historically a real-asset hedge against inflationary regimes \u2014 appears underpriced relative to the macro signal at only +4.6% trailing return.",
+    "2021-06-01 00:00:00": "The macro state presents a deeply contradictory and dangerous configuration: CPI is running nearly 4 standard deviations above its 5-year norm (extreme inflationary pressure), the yield curve is steeply steepening (2.04z on 10y2y suggests either a dramatic bear steepener or a recovery from prior inversion \u2014 either way, long-end rates are rising relative to short), yet HY credit spreads are compressed (-0.9z), meaning credit markets are complacent and pricing near-perfection. This is a classic late-cycle stagflation-risk setup: inflation is unanchored, the curve is signaling rate stress, but risk assets and credit have not yet repriced the danger. The contradiction between extreme inflation and tight spreads creates a mean-reversion opportunity \u2014 credit complacency is likely to unwind, punishing high-duration and high-beta risk assets (particularly tech, which is doubly exposed to rate rises via duration and multiple compression), while real assets like gold should benefit from inflation persistence and eventual safe-haven demand as credit stress materializes.",
+    "2021-07-01 00:00:00": "The macro state presents a striking contradiction: CPI is running at an extreme +3.75\u03c3 above its 5-year norm (severe inflationary pressure), yet the yield curve is positively sloped at +1.41\u03c3 (steepening, not inverted), while high-yield spreads are deeply compressed at -1.15\u03c3 (credit markets are complacent and risk-on). This combination suggests a late-cycle inflationary boom where credit markets have not yet priced the inflation risk \u2014 a classic setup for a regime shift. The danger is that persistently high inflation forces monetary tightening that eventually reprices credit and compresses equity multiples, particularly in long-duration, high-multiple assets like tech. Gold, historically an inflation hedge, has underperformed despite extreme CPI readings, suggesting it may be coiled for a catch-up move if real rates peak or credit stress emerges.",
+    "2021-08-02 00:00:00": "The macro state presents a striking contradiction: CPI is running at an extreme +3.3\u03c3 above its 5-year norm (severe inflationary pressure), yet the yield curve is positively sloped at +1.02\u03c3 (steepening, not inverted), while high-yield spreads are compressed at -0.86\u03c3 (credit markets are complacent, pricing near-perfection). This combination suggests a late-cycle inflationary regime where risk assets have been bid up on momentum while the bond market has not yet fully priced the inflation risk premium \u2014 a classic setup for a mean-reversion shock. The steepening curve with high inflation historically precedes either a policy error (rates forced higher, crushing duration and growth multiples) or a stagflationary break where credit spreads snap wider. Tech/growth assets with elevated trailing returns and high volatility are most exposed to a re-rating of the real discount rate, while gold \u2014 historically a real-rate and inflation hedge \u2014 has underperformed despite the inflationary signal, suggesting it is mispriced relative to the macro regime.",
+    "2021-09-01 00:00:00": "The macro state presents a notable contradiction: CPI is running extremely hot (z = +2.92, well above the 5-year norm), yet the yield curve is steepening (t10y2y_z = +1.12, meaning the curve is less inverted or positively sloped relative to recent history), and high-yield spreads are actually compressed (hy_oas_z = -0.93, tighter than normal). This combination suggests markets are in a \"risk-on, inflation-surprise\" regime \u2014 credit markets are complacent about inflation risk while real rates are likely being suppressed or the curve is pricing in nominal growth. The danger is that persistently elevated inflation with tight spreads and a steepening curve historically precedes a repricing event where real assets and inflation hedges outperform nominal risk assets, particularly long-duration growth equities. Tech sector (high-duration, high-multiple) is most exposed to an inflation-driven discount rate shock, while gold \u2014 currently beaten down \u2014 has historically served as a tail hedge in stagflationary or persistent-inflation regimes.",
+    "2021-10-01 00:00:00": "The macro state presents a striking contradiction: CPI is running nearly 3 standard deviations above its 5-year norm (severe inflationary pressure), the yield curve is meaningfully steepening (+1.42z on 10y2y, suggesting either growth optimism or inflation-driven term premium repricing), yet high-yield spreads are historically tight (-0.96z), indicating credit markets are complacent about the inflation risk. This combination \u2014 hot inflation, steepening curve, and compressed credit risk premia \u2014 suggests markets are pricing a \"soft landing\" or growth scenario while ignoring the tail risk that persistent inflation forces tighter financial conditions, which would reprice both credit and long-duration risk assets. The most dangerous asymmetry is in high-beta, long-duration assets (tech) which have already run hard (+28% trailing) and are priced for perfection, while gold has underperformed despite the inflationary backdrop, creating a potential mean-reversion setup if inflation persistence reasserts itself. The steepening curve also reduces the relative attractiveness of short-duration cash as a hedge, but it does provide a carry anchor.",
+    "2021-11-01 00:00:00": "The macro state presents a striking contradiction: CPI is running at an extreme +3.24\u03c3 above its 5-year norm (severe inflationary shock), yet the yield curve is positively sloped (+1.01\u03c3, steepening), and high-yield credit spreads are deeply compressed at -0.93\u03c3 (risk-on, tight). This combination suggests markets are pricing in a \"soft landing\" or growth-optimism narrative while inflation remains dangerously elevated \u2014 a classic late-cycle complacency regime. The steepening curve with high inflation historically signals either fiscal dominance or a central bank falling behind the curve, both of which are toxic for long-duration risk assets and favorable for real stores of value. The tight credit spreads and strong trailing returns in equities (especially tech) suggest crowded positioning that is vulnerable to an inflation-driven repricing shock.",
+    "2021-12-01 00:00:00": "CPI is running at an extreme +3.35 standard deviations above its 5-year rolling mean \u2014 a severe inflationary shock. The yield curve (t10y2y) is modestly positive at +0.66z, suggesting the curve has steepened somewhat (or at least is not deeply inverted), which is consistent with markets pricing in a prolonged inflation regime rather than an imminent recession. High-yield spreads are actually tight at -0.42z, meaning credit markets are complacent and not yet pricing in the inflation-driven earnings compression or rate-shock risk that typically follows extreme CPI readings. This combination \u2014 extreme inflation, non-inverted curve, tight credit \u2014 is a classic late-cycle inflationary overheat: equities (especially high-multiple tech) are vulnerable to multiple compression as real rates rise, while gold, historically a real-asset inflation hedge, is anomalously flat and may be mispriced relative to the inflation signal. The dominant tail risk is a repricing of risk assets as inflation forces tighter financial conditions.",
+    "2022-01-03 00:00:00": "CPI is running at an extreme +3.17\u03c3 above its 5-year norm \u2014 a severe inflationary shock \u2014 while the yield curve (t10y2y at +0.39\u03c3) is near neutral/slightly steepening, suggesting the market has not yet fully priced a recession. High-yield spreads are deeply compressed at -0.93\u03c3, meaning credit markets are complacent and pricing near-perfection despite the inflationary overhang. This combination \u2014 extreme inflation, complacent credit, non-inverted curve \u2014 is consistent with a late-cycle overheating regime where real assets should outperform nominal risk assets, and where the current euphoria in high-momentum equities (especially tech) is particularly vulnerable to a repricing of the risk-free rate. Gold, despite recent underperformance, is a natural beneficiary of a negative-real-rate / inflation-shock environment and is historically cheap relative to the inflation signal.",
+    "2022-02-01 00:00:00": "CPI is running at an extreme +3.08 standard deviations above its 5-year rolling mean, signaling a severe inflationary regime. The yield curve is essentially flat (t10y2y_z \u2248 0), suggesting the market has priced in rate hikes but not yet a recessionary inversion, while high-yield spreads are actually tight (hy_oas_z = -0.43), indicating credit markets remain complacent about default risk. This combination \u2014 extreme inflation with tight credit and a flat curve \u2014 points to a late-cycle inflationary expansion where real assets should outperform nominal bonds and rate-sensitive growth equities face headwinds from real yield compression. The key causal tension is that persistently high inflation will eventually force real rates higher, which is most damaging to long-duration, high-multiple assets (tech) and most beneficial to inflation hedges (gold), while the credit complacency creates asymmetric downside risk if inflation persistence forces a policy overshoot.",
+    "2022-03-01 00:00:00": "The macro state presents a sharply elevated inflation signal (CPI z-score of +3.0, an extreme reading well above the 5-year norm) combined with a modestly inverted yield curve (t10y2y z-score of -0.54) and surprisingly tight high-yield spreads (hy_oas z-score of -0.3). This is a contradictory regime: credit markets are pricing complacency while inflation is running hot and the curve signals growth concern \u2014 a classic late-cycle stagflation-risk setup. The tight HY spreads suggest the market has not yet repriced credit risk, creating a vulnerability. Real assets like gold historically outperform in high-inflation regimes, while rate-sensitive, high-multiple assets (tech) face dual headwinds from elevated discount rates and potential growth deceleration. Short-duration cash equivalents offer little real return but serve as a hedge anchor.",
+    "2022-04-01 00:00:00": "The macro state presents a sharply elevated inflation signal (CPI z-score +3.03), a meaningfully inverted yield curve (t10y2y z-score -1.38), and surprisingly tight high-yield spreads (HY OAS z-score -0.61). This combination is internally contradictory and historically dangerous: extreme inflation pressure alongside curve inversion signals a late-cycle or stagflationary regime, yet credit markets remain complacent (spreads tight), suggesting the market has not yet priced the full risk. The dominant tail risk is a credit/equity repricing event where inflation forces rates higher for longer, the curve eventually bear-steepens, and compressed credit spreads snap wider \u2014 punishing duration-sensitive and high-beta risk assets. Gold, as a real-asset inflation hedge with no credit risk, is the natural beneficiary of this regime, while high-beta tech equity is the most exposed to a simultaneous inflation shock and multiple compression.",
+    "2022-05-02 00:00:00": "The macro state presents a sharply elevated inflation signal (CPI z-score of +2.63), a moderately inverted yield curve (t10y2y z-score of -0.97), and near-neutral high-yield credit spreads (HY OAS z-score of -0.11). The combination of extreme inflation pressure with curve inversion is a classic late-cycle stress signal: real rates are being compressed or turned negative, which historically punishes long-duration growth assets (tech) while benefiting real assets like gold. The benign credit spread reading suggests systemic stress has not yet fully propagated into credit markets, creating a window where the equity-credit divergence may be unstable \u2014 equity vol (especially in high-multiple tech) is likely underpriced relative to the inflation regime. Gold, as a real asset with low correlation to the curve dynamic, is the natural beneficiary of persistent above-trend inflation combined with curve inversion uncertainty.",
+    "2022-06-01 00:00:00": "The macro state presents a sharply elevated CPI (z = +2.57), indicating inflation running well above its recent historical norm \u2014 a dominant regime signal. The yield curve is modestly inverted (t10y2y_z = -0.61), consistent with monetary tightening in response to that inflation, but not yet at extreme inversion levels that would scream imminent recession. Credit spreads are nearly neutral (hy_oas_z = +0.12), meaning the credit market is not yet pricing significant default risk or economic deterioration \u2014 this is a \"hot inflation with contained credit stress\" regime rather than full stagflation. The causal tension is that persistently high inflation erodes real returns on long-duration and growth assets, while real stores of value (gold) and short-duration instruments become relatively more attractive; however, gold's recent underperformance suggests it may be lagging its fundamental tailwind, creating a mean-reversion opportunity.",
+    "2022-07-01 00:00:00": "The macro state presents a classic stagflation-risk configuration: CPI is running sharply above its 5-year norm (+2.57\u03c3), the yield curve is meaningfully inverted (-1.23\u03c3 on 10y2y), and high-yield credit spreads are significantly elevated (+1.59\u03c3). This combination signals that monetary tightening is biting into growth expectations while inflation remains sticky \u2014 a toxic mix for risk assets, particularly duration-sensitive and high-multiple equities. The inverted curve historically precedes economic slowdown, and widening HY spreads confirm deteriorating credit conditions and rising default risk premia. In this regime, real assets like gold tend to preserve value as inflation hedges while risk assets face dual headwinds from tightening financial conditions and slowing earnings growth.",
+    "2022-08-01 00:00:00": "The macro state presents a classic stagflation-risk configuration: CPI is running sharply above its 5-year norm (+2.2\u03c3), the yield curve is deeply inverted (-1.84\u03c3 on 10y2y), and high-yield spreads are modestly elevated (+0.62\u03c3). The inverted curve signals that markets expect a significant growth slowdown or recession ahead, while persistent above-trend inflation constrains the central bank's ability to ease aggressively. Elevated HY spreads, though not yet at crisis levels, confirm that credit stress is building \u2014 consistent with a late-cycle, tightening-induced slowdown. This combination is particularly hostile to long-duration growth assets (tech) and broadly negative for risk assets, while favoring cash-like instruments and real stores of value once inflation expectations reprice.",
+    "2022-09-01 00:00:00": "The macro state presents a classic stagflation-risk configuration: CPI is running nearly +2 standard deviations above its 5-year norm (persistent inflation), the yield curve is deeply inverted at -1.94z (markets pricing recession or aggressive monetary tightening), and HY credit spreads are moderately elevated at +0.78z (credit stress building but not yet at crisis levels). This combination \u2014 hot inflation + inverted curve + widening credit \u2014 is causally coherent with a late-cycle tightening regime where real growth is deteriorating while price pressures remain sticky. In this environment, duration-sensitive and high-multiple growth assets face the sharpest headwinds, while real assets and cash-like instruments with short duration benefit from both the inflation premium and the inverted curve's front-end yield advantage.",
+    "2022-10-03 00:00:00": "The macro state presents a classic stagflation-risk configuration: CPI is running nearly 2 standard deviations above its 5-year norm (persistent inflation), the yield curve is deeply inverted at -2.04z (markets pricing recession or aggressive monetary tightening), and high-yield spreads are elevated at +1.11z (credit stress, risk-off sentiment). This combination \u2014 hot inflation, inverted curve, and widening credit spreads \u2014 historically pressures growth-sensitive and long-duration assets hardest, as the central bank is constrained from easing even as recession risk rises. Gold, while a traditional inflation hedge, has underperformed (trailing -5.6%), possibly reflecting real rate headwinds from the tightening cycle, but its relative resilience versus equities improves in stagflation tail regimes. Short-duration cash/treasuries benefit directly from the elevated front-end rates implied by the inverted curve and provide a safe harbor against both credit and equity drawdown risk.",
+    "2022-11-01 00:00:00": "The macro state presents a classic stagflation-risk configuration: CPI is running well above its 5-year norm (+1.64\u03c3), the yield curve is deeply inverted (-1.98\u03c3 on 10y2y), and high-yield spreads are modestly elevated (+0.37\u03c3). The deep inversion signals that markets expect a significant growth slowdown or recession ahead, while persistent above-trend inflation constrains the central bank's ability to ease aggressively. This combination is particularly toxic for long-duration growth assets (tech) and broadly negative for world equity, while real assets like gold historically benefit from stagflationary regimes. Short-duration cash/treasuries offer a defensive carry advantage in an inverted curve environment where front-end yields are elevated.",
+    "2022-12-01 00:00:00": "The macro state presents a classic stagflation-risk configuration: inflation is meaningfully above its 5-year norm (CPI z = +1.35), the yield curve is severely inverted (10y2y z = -2.45, indicating aggressive monetary tightening or recession fears), and high-yield spreads are modestly elevated (HY OAS z = +0.28), suggesting early-stage credit stress rather than full panic. The deeply inverted curve is the dominant signal \u2014 it historically precedes growth slowdowns and earnings compression, which is particularly punishing for high-multiple, long-duration assets like tech. Gold, as a real-asset hedge, benefits from persistent inflation and rising recession risk, while short-duration cash equivalents are insulated from duration risk and offer positive carry in a high-rate environment. The combination of above-trend inflation and curve inversion creates a hostile environment for risk assets, especially those with high earnings duration, while rewarding inflation hedges and capital preservation instruments.",
+    "2023-01-03 00:00:00": "The macro state presents a classic late-cycle stagflation-risk configuration: inflation is running meaningfully above its 5-year norm (+1.04\u03c3), the yield curve is sharply inverted (-1.98\u03c3 on 10y2y), and high-yield spreads are modestly elevated (+0.5\u03c3). The deeply inverted curve signals that markets are pricing significant recession risk or that policy has been tightened aggressively to combat the above-trend inflation, while widening credit spreads confirm deteriorating risk appetite. This combination \u2014 sticky inflation + curve inversion + credit stress \u2014 is particularly hostile to long-duration growth assets (tech) and broadly negative for risk equities, while favoring real stores of value (gold) and capital-preservation instruments (short-duration cash/treasuries). The trailing returns confirm this regime: tech has been severely punished (-28.8%), equities broadly negative, while gold and short-duration assets have been relatively stable.",
+    "2023-02-01 00:00:00": "The macro state presents a classic late-cycle stagflationary stress configuration: inflation is running nearly 1 standard deviation above its rolling norm (cpi_yoy_z = 0.98), while the yield curve is deeply inverted at -2.17 standard deviations \u2014 a historically extreme signal of recession risk and monetary overtightening. Credit spreads (hy_oas_z = 0.03) are nearly neutral, suggesting credit markets have not yet fully priced the recessionary signal embedded in the curve, creating a latent vulnerability. The causal contradiction here is that tight monetary policy (inverted curve) is fighting elevated inflation while credit remains complacent \u2014 this regime historically precedes either a hard landing (credit spread blowout, equity drawdown) or a stagflationary grind where real assets outperform duration-sensitive and growth-sensitive risk assets. Gold benefits from both inflation persistence and flight-to-quality demand, while high-volatility growth equities (tech) face a double headwind of discount-rate pressure and earnings deceleration.",
+    "2023-03-01 00:00:00": "The macro state presents a classic late-cycle stress configuration: inflation is meaningfully above its 5-year norm (+0.82\u03c3), the yield curve is severely inverted (-2.39\u03c3 on 10y2y), yet high-yield credit spreads are near their historical average (-0.06\u03c3). This combination signals that the bond market is pricing significant recession/slowdown risk while credit markets have not yet repriced \u2014 a dangerous divergence suggesting credit is complacent relative to the recessionary signal embedded in the curve. Elevated inflation alongside deep inversion historically precedes either a hard landing (where credit spreads eventually widen sharply and risk assets sell off) or a stagflationary squeeze. The near-zero HY OAS z-score means credit is offering little compensation for the tail risk the curve is telegraphing, making duration-sensitive and high-beta risk assets vulnerable while real assets and cash-like instruments offer relative safety.",
+    "2023-04-03 00:00:00": "The macro state presents a deeply inverted yield curve (t10y2y_z = -1.73), which is the dominant signal here \u2014 historically the strongest leading indicator of economic slowdown or recession. Inflation is modestly above its rolling norm (cpi_yoy_z = 0.41), suggesting residual price pressure without full-blown inflationary crisis, while credit spreads are only slightly elevated (hy_oas_z = 0.26), meaning credit stress has not yet fully materialized. The combination of severe curve inversion with mild-but-positive inflation and early credit spread widening points toward a late-cycle / pre-recessionary regime: growth is decelerating, monetary policy remains restrictive, and risk assets face headwinds from both tightening financial conditions and weakening earnings expectations. In this environment, high-beta risk assets (particularly tech) are most vulnerable, while real stores of value (gold) and capital-preservation instruments (short-duration cash) should outperform on a risk-adjusted basis.",
+    "2023-05-01 00:00:00": "The macro state presents a moderately elevated inflation signal (CPI z = +0.41) combined with a deeply inverted yield curve (t10y2y z = -1.69), while credit spreads remain only slightly above average (HY OAS z = +0.20). This configuration is consistent with a late-cycle regime: the curve inversion signals that markets are pricing in future rate cuts or recession risk, yet credit stress has not yet materialized meaningfully. The combination of above-trend inflation and severe curve inversion creates a stagflationary undertone \u2014 growth is likely decelerating while price pressures persist, which is historically hostile to rate-sensitive growth equities but supportive of real assets like gold. The muted HY spread widening suggests credit hasn't cracked yet, but the curve signal dominates as a leading indicator of deteriorating growth conditions.",
+    "2023-06-01 00:00:00": "The macro state presents a sharply inverted yield curve (t10y2y_z = -1.88), which is a historically strong recessionary signal, while inflation is near its rolling average (cpi_yoy_z = 0.1) and high-yield spreads are modestly elevated (hy_oas_z = 0.33). This configuration \u2014 deep inversion without runaway inflation or severe credit stress yet \u2014 suggests the economy is in a late-cycle transition where the curve inversion is pricing in future rate cuts and growth deterioration, but credit markets have not fully repriced the risk. The modest HY spread widening relative to the extreme curve inversion implies credit is lagging, creating asymmetric downside risk for risk assets, particularly high-beta equities. Gold, as a non-yielding safe haven that benefits from rate-cut expectations and uncertainty, is well-positioned relative to high-volatility growth equities in this regime.",
+    "2023-07-03 00:00:00": "The macro state presents a striking combination: a deeply inverted yield curve (t10y2y_z = -2.26, an extreme historical reading) alongside near-neutral inflation (cpi_yoy_z = -0.3) and tight credit spreads (hy_oas_z = -0.27). This configuration signals that markets are pricing in significant near-term rate cuts or recession risk, yet credit markets remain complacent \u2014 a classic late-cycle divergence. The extreme curve inversion historically precedes growth slowdowns with a lag, and the absence of credit stress suggests the risk repricing has not yet fully propagated. Tech-sector assets, which carry the highest valuation sensitivity to rate expectations and have already run hard (+34.9% trailing), are most exposed to a growth-scare unwind, while short-duration cash/treasuries offer asymmetric protection given the curve's implied rate-cut path.",
+    "2023-08-01 00:00:00": "The macro state presents a sharply inverted yield curve (t10y2y_z = -1.91, deeply below its 5-year norm), near-neutral inflation (cpi_yoy_z = -0.22), and tight credit spreads (hy_oas_z = -0.52). This combination signals a late-cycle or early-recession regime: the curve inversion reflects market pricing of future rate cuts (growth slowdown anticipated), while compressed HY spreads suggest credit markets have not yet priced in the deterioration \u2014 a classic divergence that historically resolves via spread widening and risk-asset de-rating. The absence of inflationary pressure removes the stagflation tail but reinforces a deflationary-slowdown narrative where duration and safe-haven assets outperform cyclical risk. Tech/growth equities, which carry elevated multiples and high trailing momentum, are particularly vulnerable to a growth-scare repricing when the curve signal materializes.",
+    "2023-09-01 00:00:00": "The macro state presents a nuanced picture: inflation is essentially neutral (CPI z-score near zero), but the yield curve is deeply inverted (t10y2y z-score of -1.61, well below its 5-year norm), while high-yield spreads are compressed (hy_oas_z of -0.47, tighter than average). This combination \u2014 steep inversion with tight credit spreads \u2014 suggests markets are pricing in a soft-landing or late-cycle environment where credit risk is being underpriced relative to the recessionary signal embedded in the curve. The deep inversion historically precedes growth deceleration, which would eventually pressure risk assets and widen spreads, creating a contradiction with current HY complacency. Gold, as a non-yielding real asset, benefits from curve inversion (falling real rate expectations) and acts as a hedge against the latent tail risk of a hard landing that credit markets are currently ignoring.",
+    "2023-10-02 00:00:00": "The macro state shows near-neutral inflation (CPI z \u2248 -0.09), a deeply inverted yield curve (t10y2y z \u2248 -1.08), and tight credit spreads (HY OAS z \u2248 -0.31). A deeply inverted curve signals that markets are pricing in significant future rate cuts or recessionary pressure, while compressed credit spreads suggest complacency about default risk \u2014 a classic late-cycle contradiction. The combination implies that risk assets are priced for a soft landing, yet the curve inversion historically precedes growth deterioration; this creates asymmetric downside for high-beta risk assets and supports duration-sensitive or defensive assets. Gold benefits from anticipated rate cuts and potential safe-haven demand if the soft-landing narrative cracks, while high-momentum tech is most exposed to a repricing of growth expectations.",
+    "2023-11-01 00:00:00": "The macro state shows mildly below-average inflation (CPI z = -0.26), a moderately inverted yield curve (t10y2y z = -0.68), and near-neutral high-yield spreads (HY OAS z = +0.04). The inverted curve signals residual monetary tightness and growth deceleration risk, yet credit markets are not yet pricing stress \u2014 a fragile \"soft landing\" regime where growth concerns dominate but systemic risk hasn't materialized. In this environment, duration-sensitive and defensive assets tend to outperform cyclicals, while the lack of credit stress and still-contained inflation supports continued momentum in quality growth equities over cash. Gold's strong trailing return reflects latent macro uncertainty and real-rate sensitivity, which remains relevant given curve inversion.",
+    "2023-12-01 00:00:00": "The macro state presents a moderately inverted yield curve (t10y2y_z = -0.92), slightly below-average inflation (cpi_yoy_z = -0.31), and compressed high-yield spreads (hy_oas_z = -0.49). The curve inversion signals growth deceleration risk, yet tight credit spreads suggest markets remain complacent about credit stress \u2014 a classic late-cycle tension where risk assets are priced for a soft landing. The combination of disinflation and curve inversion historically precedes a growth slowdown, which would favor duration-sensitive and defensive assets over high-beta risk. Gold's strong trailing return alongside disinflation suggests it may be pricing in a flight-to-safety or currency debasement narrative, while tech's outsized trailing return (43%) at elevated vol looks stretched relative to the growth-deceleration signal embedded in the curve.",
+    "2024-01-02 00:00:00": "The macro state presents a coherent \"risk-on, soft-landing\" configuration: inflation is slightly below its 5-year norm (cpi_yoy_z = -0.25), the yield curve is meaningfully less inverted than its recent average (t10y2y_z = -0.88, i.e., steepening or less inverted), and high-yield spreads are well below their 5-year average (hy_oas_z = -0.89), signaling compressed credit risk premia and strong risk appetite. There are no stagflation or recession signals here \u2014 the dominant regime is one of easing financial conditions with benign inflation, which historically favors growth assets over defensive ones. The primary causal tension is that tech (Asset_B) has already delivered an extraordinary trailing return (+58.5%) at elevated volatility, creating meaningful mean-reversion risk even in a favorable macro backdrop, while world equity (Asset_A) offers a more balanced risk/reward. Gold (Asset_C) loses its safe-haven premium in this environment, and short treasuries (Asset_D) offer near-zero real return with no upside catalyst.",
+    "2024-02-01 00:00:00": "The macro state presents a coherent \"soft landing / risk-on\" configuration: inflation is modestly below its 5-year norm (cpi_yoy_z = -0.35), the yield curve inversion is moderately less severe than its recent average (t10y2y_z = -0.76, meaning the curve is less inverted or steepening relative to the window), and high-yield spreads are well compressed (hy_oas_z = -0.68), signaling benign credit conditions. There are no stagflation or stress signals here \u2014 the combination of easing inflation, a steepening curve impulse, and tight credit spreads is classically supportive of risk assets, particularly growth-oriented equities. The primary tail risk is that compressed spreads and elevated trailing returns in tech (47% TTM) leave little margin of safety if any macro deterioration emerges, creating asymmetric downside in the highest-momentum, highest-multiple segment. Gold, as a low-inflation-hedge asset, is relatively unattractive in a disinflationary, risk-on regime.",
+    "2024-03-01 00:00:00": "The macro state presents a coherent \"risk-on, soft-landing\" regime: inflation is slightly below its 5-year norm (cpi_yoy_z = -0.34), the yield curve is meaningfully less inverted than its recent average (t10y2y_z = -0.91, i.e., curve is steepening/normalizing), and high-yield spreads are well below their 5-year average (hy_oas_z = -0.95), signaling compressed credit risk premia and strong risk appetite. There are no stagflation or stress signals here \u2014 the dominant regime is benign disinflation with credit markets pricing near-perfection. The key tail risk is that compressed spreads and elevated equity momentum (especially in tech) leave little margin of safety if any macro deterioration emerges, but the current signal favors duration-sensitive and risk assets over cash. Gold's moderate return with moderate vol suggests it is neither a crowded safe-haven nor a momentum leader in this environment.",
+    "2024-04-01 00:00:00": "The macro state presents a coherent \"risk-on, late-cycle easing\" regime: inflation is near its historical norm (CPI z = -0.22), the yield curve is significantly less inverted than its recent average (t10y2y_z = -0.89, meaning the curve is steepening or already steep relative to the 5-year window), and high-yield spreads are deeply compressed (hy_oas_z = -1.06), signaling strong credit appetite and low perceived default risk. This combination \u2014 normalizing inflation, steepening curve, and tight credit spreads \u2014 is classically associated with a growth/expansion phase where risk assets are rewarded and safe-haven/cash instruments underperform on a real basis. The primary tail risk here is a mean-reversion in credit spreads (spread widening shock) that could disproportionately punish high-momentum, high-multiple assets like tech, while the steepening curve and benign inflation backdrop still broadly support diversified equities over cash.",
+    "2024-05-01 00:00:00": "The macro state presents a moderately benign but nuanced picture: inflation is slightly below its 5-year norm (cpi_yoy_z = -0.28), the yield curve remains inverted but less severely than its recent extremes (t10y2y_z = -0.81), and high-yield spreads are meaningfully compressed (hy_oas_z = -1.01), signaling strong risk appetite and tight credit conditions. The combination of below-trend inflation and tight spreads is consistent with a \"soft landing\" or late-cycle risk-on regime, where growth assets are rewarded and safe havens are relatively penalized. However, the still-inverted curve warns that rate normalization is incomplete, creating asymmetric risk for duration-sensitive and high-multiple assets if credit spreads mean-revert. The compressed HY spreads in particular suggest limited further upside in credit-sensitive risk assets and elevated vulnerability to any macro deterioration.",
+    "2024-06-03 00:00:00": "The macro state presents a coherent \"risk-on, soft-landing\" regime: inflation is slightly below its 5-year norm (cpi_yoy_z = -0.34), the yield curve is meaningfully less inverted than its recent average (t10y2y_z = -0.83, i.e., curve is steepening or less inverted relative to history), and high-yield spreads are well below their 5-year average (hy_oas_z = -0.97), signaling compressed credit risk premia and strong risk appetite. There are no stagflation or recession signals here \u2014 the dominant regime is benign disinflation with credit markets pricing near-perfection. The key tail risk is that compressed HY spreads and elevated equity momentum leave little margin of safety if any shock materializes, but in the near term the macro backdrop favors risk assets over defensive cash. Gold's appeal as an inflation hedge is diminished by below-trend CPI, though it retains some value as a curve-steepening beneficiary.",
+    "2024-07-01 00:00:00": "The macro state presents a coherent \"risk-on, disinflationary\" regime: CPI is modestly below its 5-year norm (\u22120.45\u03c3), the yield curve is less inverted than usual (\u22120.77\u03c3, meaning it is relatively steeper or less stressed), and high-yield spreads are meaningfully tighter than historical norms (\u22120.94\u03c3). Tight credit spreads signal that markets are pricing in low default risk and abundant liquidity, which historically supports risk assets \u2014 particularly equities and growth-sensitive sectors. The combination of softening inflation and a steepening curve (relative to recent history) removes two of the primary headwinds for duration-sensitive and growth assets, while simultaneously reducing the safe-haven appeal of gold and cash. The dominant tail risk here is a complacency regime: if spreads are this compressed and momentum is strong, the asymmetry favors mean-reversion in credit and a potential rotation away from the highest-beta, highest-momentum assets if any macro surprise materializes.",
+    "2024-08-01 00:00:00": "The macro state presents a moderately benign, risk-on configuration: inflation is slightly below its 5-year norm (cpi_yoy_z = -0.48), the yield curve is modestly inverted but not severely so (t10y2y_z = -0.54), and high-yield credit spreads are meaningfully compressed (hy_oas_z = -0.89). Tight credit spreads signal that markets are pricing in low default risk and strong risk appetite, which historically supports equities and risk assets over defensive cash. However, the combination of a still-inverted curve with below-trend inflation hints at a late-cycle deceleration rather than a clean expansion \u2014 growth may be softening even as credit remains complacent. The key contradiction is that compressed HY spreads leave little cushion if the curve inversion materializes into a growth slowdown, making credit-sensitive and high-multiple assets (tech) vulnerable to a spread-widening repricing, while gold \u2014 already strong \u2014 may benefit from any policy pivot or safe-haven demand if the late-cycle thesis plays out.",
+    "2024-09-02 00:00:00": "The macro state presents a broadly benign, risk-on configuration: inflation is moderately below its 5-year norm (cpi_yoy_z = -0.62), the yield curve is only slightly inverted relative to history (t10y2y_z = -0.25), and high-yield spreads are meaningfully compressed (hy_oas_z = -0.94). Tight credit spreads signal that markets are pricing in low default risk and strong risk appetite, which is supportive of equities and risk assets. However, the combination of below-trend inflation and still-inverted curve (even if mildly so) suggests growth may be softening, creating a latent vulnerability: if the curve steepens from here via a growth scare, duration-sensitive and defensive assets could outperform. The dominant regime is \"late-cycle risk-on with compressed risk premia,\" where the asymmetric tail risk is a sudden spread widening or growth disappointment that punishes crowded risk positions.",
+    "2024-10-01 00:00:00": "The macro state presents a benign, risk-on configuration: inflation is running below its 5-year norm (cpi_yoy_z = -0.7), the yield curve is essentially flat relative to history (t10y2y_z \u2248 0), and high-yield credit spreads are significantly compressed (hy_oas_z = -1.04), signaling strong risk appetite and tight financial conditions. There is no stagflation signal here \u2014 rather, this resembles a late-cycle or soft-landing environment where growth assets are rewarded and safe-haven demand is muted. The primary tail risk is a mean-reversion in credit spreads (spread widening) if any shock materializes, which would disproportionately hurt high-beta assets, but the current momentum strongly favors risk. Gold's outsized trailing return despite low inflation is a mild contradiction \u2014 it may reflect residual safe-haven demand or dollar weakness \u2014 making it a candidate to underperform if the risk-on regime deepens.",
+    "2024-11-01 00:00:00": "The macro state presents a broadly benign, risk-on configuration: inflation is modestly below its 5-year norm (cpi_yoy_z = -0.64), the yield curve is nearly flat relative to history (t10y2y_z = -0.07), and high-yield spreads are significantly compressed (hy_oas_z = -1.14), signaling strong credit appetite and low perceived default risk. The combination of below-trend inflation and tight credit spreads is consistent with a late-cycle \"Goldilocks\" or soft-landing regime where growth is still positive but price pressures are easing. However, the extreme tightness in HY spreads (>1 std dev below norm) represents a meaningful asymmetric risk \u2014 spreads have limited room to compress further but substantial room to widen, creating a tail risk for credit-sensitive and high-beta assets. Gold's strong trailing return alongside compressed spreads may reflect residual safe-haven demand or currency dynamics rather than inflation hedging, making its continuation less certain in a pure risk-on environment.",
+    "2024-12-02 00:00:00": "The macro state presents a broadly benign, risk-on configuration: inflation is modestly below its 5-year norm (cpi_yoy_z = -0.59), the yield curve is nearly flat relative to history (t10y2y_z = -0.17, suggesting neither meaningful inversion nor steep steepening), and high-yield spreads are significantly compressed (hy_oas_z = -1.22), indicating strong credit appetite and low perceived default risk. The dominant regime is a late-cycle \"Goldilocks\" environment \u2014 growth is being rewarded, credit risk is being underpriced, and inflation is not a near-term headwind. The key causal tension is that compressed HY spreads at this magnitude historically signal mean-reversion risk in credit and risk assets, while the trailing returns across equities and gold suggest momentum is already well-priced in. Gold's strong trailing return alongside low inflation z-score is somewhat contradictory, suggesting gold may be pricing in tail risks (geopolitical or monetary) not visible in current CPI data, making it a reasonable hedge against a regime shift."
+  },
+  "weights": {
+    "2019-01-02 00:00:00": {
+      "SWDA.L": 0.14458481948012442,
+      "XLK": 0.15011461334587975,
+      "IAU": 0.5303005564335139,
+      "BIL": 0.17500001074048183
+    },
+    "2019-02-01 00:00:00": {
+      "SWDA.L": 0.2897388375486638,
+      "XLK": 0.13661085890171482,
+      "IAU": 0.39865029758583737,
+      "BIL": 0.17500000596378398
+    },
+    "2019-03-01 00:00:00": {
+      "SWDA.L": 0.22489220226121046,
+      "XLK": 0.09643623244473425,
+      "IAU": 0.5036715530819597,
+      "BIL": 0.17500001221209557
+    },
+    "2019-04-01 00:00:00": {
+      "SWDA.L": 0.14408309767838792,
+      "XLK": 0.14430082091500826,
+      "IAU": 0.5366160616881516,
+      "BIL": 0.17500001971845242
+    },
+    "2019-05-01 00:00:00": {
+      "SWDA.L": 0.14376498932686094,
+      "XLK": 0.14239146515164913,
+      "IAU": 0.5388435247923723,
+      "BIL": 0.17500002072911755
+    },
+    "2019-06-03 00:00:00": {
+      "SWDA.L": 0.140924719286556,
+      "XLK": 0.13539050349089343,
+      "IAU": 0.5486847311920852,
+      "BIL": 0.17500004603046548
+    },
+    "2019-07-01 00:00:00": {
+      "SWDA.L": 0.16128120391015274,
+      "XLK": 0.1565891704476943,
+      "IAU": 0.5071296235671308,
+      "BIL": 0.17500000207502223
+    },
+    "2019-08-01 00:00:00": {
+      "SWDA.L": 0.1638065505435848,
+      "XLK": 0.15499662568771078,
+      "IAU": 0.5061967647088523,
+      "BIL": 0.17500005905985203
+    },
+    "2019-09-03 00:00:00": {
+      "SWDA.L": 0.14178049108849264,
+      "XLK": 0.14893895945554284,
+      "IAU": 0.5342805426055987,
+      "BIL": 0.17500000685036582
+    },
+    "2019-10-01 00:00:00": {
+      "SWDA.L": 0.13766690772338244,
+      "XLK": 0.14083554076683166,
+      "IAU": 0.5464975379271488,
+      "BIL": 0.175000013582637
+    },
+    "2019-11-01 00:00:00": {
+      "SWDA.L": 0.1422473150951798,
+      "XLK": 0.1531081417367358,
+      "IAU": 0.5296445348335596,
+      "BIL": 0.17500000833452495
+    },
+    "2019-12-02 00:00:00": {
+      "SWDA.L": 0.1303484401486949,
+      "XLK": 0.16108429478008163,
+      "IAU": 0.533567259702607,
+      "BIL": 0.17500000536861643
+    },
+    "2020-01-02 00:00:00": {
+      "SWDA.L": 0.1282977934630936,
+      "XLK": 0.1590736679354191,
+      "IAU": 0.5376285335358697,
+      "BIL": 0.17500000506561764
+    },
+    "2020-02-03 00:00:00": {
+      "SWDA.L": 0.1275919585381094,
+      "XLK": 0.1518189097794006,
+      "IAU": 0.5455891249912375,
+      "BIL": 0.17500000669125249
+    },
+    "2020-03-02 00:00:00": {
+      "SWDA.L": 0.1261776458439829,
+      "XLK": 0.12073635228534309,
+      "IAU": 0.5780859615081583,
+      "BIL": 0.17500004036251582
+    },
+    "2020-04-01 00:00:00": {
+      "SWDA.L": 0.16407405635854647,
+      "XLK": 0.0823145059424962,
+      "IAU": 0.5786114191158916,
+      "BIL": 0.17500001858306574
+    },
+    "2020-05-01 00:00:00": {
+      "SWDA.L": 0.11977337358709364,
+      "XLK": 0.1104283143974562,
+      "IAU": 0.5947982979368689,
+      "BIL": 0.17500001407858132
+    },
+    "2020-06-01 00:00:00": {
+      "SWDA.L": 0.15048100958341676,
+      "XLK": 0.121906554311922,
+      "IAU": 0.5526124213871443,
+      "BIL": 0.17500001471751703
+    },
+    "2020-07-01 00:00:00": {
+      "SWDA.L": 0.14441900112271078,
+      "XLK": 0.12858819402759622,
+      "IAU": 0.5519927849561346,
+      "BIL": 0.17500001989355835
+    },
+    "2020-08-03 00:00:00": {
+      "SWDA.L": 0.13295434652409546,
+      "XLK": 0.14210076461241303,
+      "IAU": 0.5499448634712905,
+      "BIL": 0.1750000253922012
+    },
+    "2020-09-01 00:00:00": {
+      "SWDA.L": 0.3016998808267073,
+      "XLK": 0.13805378838169033,
+      "IAU": 0.3852463215455894,
+      "BIL": 0.17500000924601292
+    },
+    "2020-10-01 00:00:00": {
+      "SWDA.L": 0.1577770384578102,
+      "XLK": 0.14249607589329782,
+      "IAU": 0.5247268691043179,
+      "BIL": 0.17500001654457403
+    },
+    "2020-11-02 00:00:00": {
+      "SWDA.L": 0.16451134079311167,
+      "XLK": 0.13545073520353415,
+      "IAU": 0.5250379111908002,
+      "BIL": 0.17500001281255406
+    },
+    "2020-12-01 00:00:00": {
+      "SWDA.L": 0.22547614671178304,
+      "XLK": 0.10364335042716045,
+      "IAU": 0.4958804966950851,
+      "BIL": 0.17500000616597147
+    },
+    "2021-01-04 00:00:00": {
+      "SWDA.L": 0.1815119255221468,
+      "XLK": 0.11360902034772624,
+      "IAU": 0.5298790311465068,
+      "BIL": 0.17500002298362025
+    },
+    "2021-02-01 00:00:00": {
+      "SWDA.L": 0.2495950383865982,
+      "XLK": 0.12398962690704304,
+      "IAU": 0.4514153215325551,
+      "BIL": 0.1750000131738036
+    },
+    "2021-03-01 00:00:00": {
+      "SWDA.L": 0.2985246295453072,
+      "XLK": 0.11552124602222852,
+      "IAU": 0.41095411940344545,
+      "BIL": 0.17500000502901894
+    },
+    "2021-04-01 00:00:00": {
+      "SWDA.L": 0.2057672617870969,
+      "XLK": 0.08856014575806846,
+      "IAU": 0.5306725898015251,
+      "BIL": 0.17500000265330964
+    },
+    "2021-05-03 00:00:00": {
+      "SWDA.L": 0.19810127669120037,
+      "XLK": 0.08658128609725707,
+      "IAU": 0.5403174359945784,
+      "BIL": 0.1750000012169643
+    },
+    "2021-06-01 00:00:00": {
+      "SWDA.L": 0.13858272383630973,
+      "XLK": 0.1303458610116484,
+      "IAU": 0.5560713994959323,
+      "BIL": 0.1750000156561095
+    },
+    "2021-07-01 00:00:00": {
+      "SWDA.L": 0.14042939599556856,
+      "XLK": 0.15959922457663306,
+      "IAU": 0.5249713670622654,
+      "BIL": 0.175000012365533
+    },
+    "2021-08-02 00:00:00": {
+      "SWDA.L": 0.15966424999492454,
+      "XLK": 0.15116680868206958,
+      "IAU": 0.5141689391274122,
+      "BIL": 0.17500000219559364
+    },
+    "2021-09-01 00:00:00": {
+      "SWDA.L": 0.20713268733306478,
+      "XLK": 0.11924864240483936,
+      "IAU": 0.49861866424825263,
+      "BIL": 0.17500000601384325
+    },
+    "2021-10-01 00:00:00": {
+      "SWDA.L": 0.2167282086827004,
+      "XLK": 0.1135106626939257,
+      "IAU": 0.49476109657989126,
+      "BIL": 0.17500003204348274
+    },
+    "2021-11-01 00:00:00": {
+      "SWDA.L": 0.20967513441445085,
+      "XLK": 0.11637177696781052,
+      "IAU": 0.4989530788403078,
+      "BIL": 0.1750000097774308
+    },
+    "2021-12-01 00:00:00": {
+      "SWDA.L": 0.15754984696560712,
+      "XLK": 0.17153350756030217,
+      "IAU": 0.4959166444079248,
+      "BIL": 0.17500000106616587
+    },
+    "2022-01-03 00:00:00": {
+      "SWDA.L": 0.1476340729034359,
+      "XLK": 0.1839628707585615,
+      "IAU": 0.4934030512072596,
+      "BIL": 0.17500000513074299
+    },
+    "2022-02-01 00:00:00": {
+      "SWDA.L": 0.24093996828898553,
+      "XLK": 0.14968621233800403,
+      "IAU": 0.434373790663234,
+      "BIL": 0.17500002870977655
+    },
+    "2022-03-01 00:00:00": {
+      "SWDA.L": 0.16559397548686863,
+      "XLK": 0.17163850048840518,
+      "IAU": 0.487767523241853,
+      "BIL": 0.1750000007828732
+    },
+    "2022-04-01 00:00:00": {
+      "SWDA.L": 0.1650473833114448,
+      "XLK": 0.17367110219373966,
+      "IAU": 0.4862814793133592,
+      "BIL": 0.1750000351814563
+    },
+    "2022-05-02 00:00:00": {
+      "SWDA.L": 0.17854462553517841,
+      "XLK": 0.16121020040466869,
+      "IAU": 0.48524514992401196,
+      "BIL": 0.17500002413614094
+    },
+    "2022-06-01 00:00:00": {
+      "SWDA.L": 0.14707926272390848,
+      "XLK": 0.17591252540127159,
+      "IAU": 0.5020081497077742,
+      "BIL": 0.17500006216704575
+    },
+    "2022-07-01 00:00:00": {
+      "SWDA.L": 0.1432837445510179,
+      "XLK": 0.1342108466385881,
+      "IAU": 0.5475053144936309,
+      "BIL": 0.17500009431676317
+    },
+    "2022-08-01 00:00:00": {
+      "SWDA.L": 0.2383587310757213,
+      "XLK": 0.08935853653157826,
+      "IAU": 0.49728272839930626,
+      "BIL": 0.17500000399339427
+    },
+    "2022-09-01 00:00:00": {
+      "SWDA.L": 0.2360559891259285,
+      "XLK": 0.08867704079863813,
+      "IAU": 0.500266890197707,
+      "BIL": 0.17500007987772642
+    },
+    "2022-10-03 00:00:00": {
+      "SWDA.L": 0.2402582564850464,
+      "XLK": 0.08770825525302016,
+      "IAU": 0.4970291900881951,
+      "BIL": 0.1750042981737383
+    },
+    "2022-11-01 00:00:00": {
+      "SWDA.L": 0.1477065168194731,
+      "XLK": 0.12210597238732439,
+      "IAU": 0.5445232694083993,
+      "BIL": 0.18566424138480322
+    },
+    "2022-12-01 00:00:00": {
+      "SWDA.L": 0.14358641241577777,
+      "XLK": 0.12773619745231,
+      "IAU": 0.553677118981331,
+      "BIL": 0.17500027115058123
+    },
+    "2023-01-03 00:00:00": {
+      "SWDA.L": 0.14745618315375575,
+      "XLK": 0.12050588351367848,
+      "IAU": 0.5282071946729713,
+      "BIL": 0.20383073865959458
+    },
+    "2023-02-01 00:00:00": {
+      "SWDA.L": 0.14784762936026732,
+      "XLK": 0.12340166451161111,
+      "IAU": 0.5537499601009098,
+      "BIL": 0.1750007460272118
+    },
+    "2023-03-01 00:00:00": {
+      "SWDA.L": 0.25279544204494453,
+      "XLK": 0.08815060352946423,
+      "IAU": 0.4840538777555732,
+      "BIL": 0.175000076670018
+    },
+    "2023-04-03 00:00:00": {
+      "SWDA.L": 0.162943071196141,
+      "XLK": 0.16011354186573526,
+      "IAU": 0.5019433362333027,
+      "BIL": 0.17500005070482116
+    },
+    "2023-05-01 00:00:00": {
+      "SWDA.L": 0.20131063451998202,
+      "XLK": 0.1779495850768249,
+      "IAU": 0.44573977702604334,
+      "BIL": 0.17500000337714966
+    },
+    "2023-06-01 00:00:00": {
+      "SWDA.L": 0.2074058250112457,
+      "XLK": 0.1708070974187842,
+      "IAU": 0.4467870577153067,
+      "BIL": 0.1750000198546634
+    },
+    "2023-07-03 00:00:00": {
+      "SWDA.L": 0.32029020060075036,
+      "XLK": 0.10436867951733853,
+      "IAU": 0.4003411052092463,
+      "BIL": 0.17500001467266482
+    },
+    "2023-08-01 00:00:00": {
+      "SWDA.L": 0.2555430143109916,
+      "XLK": 0.11158035510655989,
+      "IAU": 0.4578766288507283,
+      "BIL": 0.1750000017317202
+    },
+    "2023-09-01 00:00:00": {
+      "SWDA.L": 0.31411024338238885,
+      "XLK": 0.13574845584669065,
+      "IAU": 0.3751412153421882,
+      "BIL": 0.17500008542873238
+    },
+    "2023-10-02 00:00:00": {
+      "SWDA.L": 0.2691952800594113,
+      "XLK": 0.10304362759084744,
+      "IAU": 0.4527610758255032,
+      "BIL": 0.1750000165242381
+    },
+    "2023-11-01 00:00:00": {
+      "SWDA.L": 0.2420094758370991,
+      "XLK": 0.13724631845517368,
+      "IAU": 0.4457441823561924,
+      "BIL": 0.17500002335153486
+    },
+    "2023-12-01 00:00:00": {
+      "SWDA.L": 0.24129154732788585,
+      "XLK": 0.11850517598400265,
+      "IAU": 0.46520326415041763,
+      "BIL": 0.17500001253769393
+    },
+    "2024-01-02 00:00:00": {
+      "SWDA.L": 0.20786525402723863,
+      "XLK": 0.14049242863607672,
+      "IAU": 0.47664231383407635,
+      "BIL": 0.17500000350260841
+    },
+    "2024-02-01 00:00:00": {
+      "SWDA.L": 0.29490025861357716,
+      "XLK": 0.14911892181004419,
+      "IAU": 0.3809806484901582,
+      "BIL": 0.17500017108622049
+    },
+    "2024-03-01 00:00:00": {
+      "SWDA.L": 0.15683182811399243,
+      "XLK": 0.15378899871447946,
+      "IAU": 0.5143791577229091,
+      "BIL": 0.17500001544861912
+    },
+    "2024-04-01 00:00:00": {
+      "SWDA.L": 0.15649321621827175,
+      "XLK": 0.1828529431405148,
+      "IAU": 0.4856538280055222,
+      "BIL": 0.17500001263569126
+    },
+    "2024-05-01 00:00:00": {
+      "SWDA.L": 0.158877190833637,
+      "XLK": 0.18178334092110562,
+      "IAU": 0.48433946024015134,
+      "BIL": 0.1750000080051061
+    },
+    "2024-06-03 00:00:00": {
+      "SWDA.L": 0.15706458459797054,
+      "XLK": 0.1980642975697381,
+      "IAU": 0.46987111056061515,
+      "BIL": 0.1750000072716762
+    },
+    "2024-07-01 00:00:00": {
+      "SWDA.L": 0.16594355823075976,
+      "XLK": 0.15537317213868518,
+      "IAU": 0.5036832625169119,
+      "BIL": 0.17500000711364333
+    },
+    "2024-08-01 00:00:00": {
+      "SWDA.L": 0.15812132222529074,
+      "XLK": 0.17548160721682482,
+      "IAU": 0.49139705881070206,
+      "BIL": 0.1750000117471824
+    },
+    "2024-09-02 00:00:00": {
+      "SWDA.L": 0.15333392674668586,
+      "XLK": 0.17200583124826885,
+      "IAU": 0.4996602285580263,
+      "BIL": 0.175000013447019
+    },
+    "2024-10-01 00:00:00": {
+      "SWDA.L": 0.218467665330992,
+      "XLK": 0.14928104936180783,
+      "IAU": 0.4572512703640821,
+      "BIL": 0.17500001494311807
+    },
+    "2024-11-01 00:00:00": {
+      "SWDA.L": 0.2548300144107872,
+      "XLK": 0.15646433613950625,
+      "IAU": 0.41370555485864746,
+      "BIL": 0.1750000945910591
+    },
+    "2024-12-02 00:00:00": {
+      "SWDA.L": 0.15927640880572805,
+      "XLK": 0.1766324979211942,
+      "IAU": 0.4890910921318308,
+      "BIL": 0.17500000114124697
+    }
+  }
+}
