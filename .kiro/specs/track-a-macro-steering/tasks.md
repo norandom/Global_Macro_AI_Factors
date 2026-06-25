@@ -10,7 +10,7 @@
 
 - [ ] 2. Core: steering module
   > All sub-tasks below live in the single new steering module file, so they are sequential (shared file) rather than parallel; the first sub-task creates the module. Scope is obvious from the descriptions, so per-task boundary annotations are omitted.
-- [ ] 2.1 Directional point-in-time prompt rendering
+- [x] 2.1 Directional point-in-time prompt rendering
   - Render the same anonymized, z-scored macro state and asset snapshot the agent saw into a directional-forecast prompt that elicits a parseable direction and confidence
   - Use the same prompt template that the calibration corpus uses so the scored features are comparable
   - Keep it deterministic and free of any calendar date or real ticker
