@@ -19,6 +19,17 @@ are comparable.
 
 from __future__ import annotations
 
+import json
+from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from recall_guard import MemoryGuardedScorer
+from recall_guard.dataset.fmp_corpora import build_calibration
+
+if TYPE_CHECKING:
+    from datetime import date
+
 # Rounding mirrors macro_framework.llm_agent.LlmMacroAgent.views_for_state:
 # macro z-scores to 2dp, asset numeric fields to 3dp. The scorer must see the
 # exact same content the agent did, so we round identically here.
@@ -136,3 +147,188 @@ def render_directional(
         asset_block=asset_block,
         lead_asset=lead_asset,
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 2.2 — ScoringAdapter: calibration half.
+#
+# The adapter owns the two-corpus calibration of the released
+# ``recall_guard`` scorer (design "ScoringAdapter" + "Two-corpus calibration"
+# key decision). The 72-state Track A agent log is *not* a labelled
+# directional IS/OOS corpus, so the NIM model is calibrated on a dated FMP
+# corpus instead: ``fmp_corpora.build_calibration`` writes two JSONL files
+# (IS = pre-cutoff, label 1; OOS = post-cutoff, label 0) and returns their
+# paths; the adapter reads them back via ``_read_corpus_jsonl``, projects each
+# record's ``prompt`` field to a ``list[str]`` (order preserved), and passes the
+# IS list as ``is_memorized`` and the OOS list as ``oos_control`` to
+# ``MemoryGuardedScorer.calibrate`` (Calibration flow diagram).
+#
+# Requirements:
+#   1.2 — the same anonymized, z-scored PIT content is scored; here the
+#         calibration corpora are read back and fed to the calibrator verbatim.
+#   1.5 — an empty/rejected NIM credential surfaces ``ConfigurationError``;
+#         ``calibrate`` already raises it on an empty key, so it is left to
+#         propagate (no catch-and-swallow).
+#   1.7 — calibrator quality is surfaced via ``is_weak`` / ``holdout_auc``.
+#
+# The per-prompt scoring path (``score_rebalances``) is intentionally NOT in
+# this task — it ships in task 2.3.
+# ---------------------------------------------------------------------------
+
+
+def _read_corpus_jsonl(path: Path) -> list[str]:
+    """Read a ``build_calibration`` JSONL file into a list of prompt strings.
+
+    Each line is a JSON record shaped ``{"prompt": str, "label": int,
+    "metadata": {...}}`` (the schema ``fmp_corpora.build_calibration`` writes).
+    Only the ``prompt`` field is projected; the order of the records on disk is
+    preserved so the IS/OOS labelling implied by the file stays aligned.
+
+    Parameters
+    ----------
+    path:
+        Path to one of the JSONL corpora returned by ``build_calibration``.
+
+    Returns
+    -------
+    list[str]
+        Each record's ``prompt`` field, in file order.
+    """
+    prompts: list[str] = []
+    with Path(path).open("r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            prompts.append(str(json.loads(line)["prompt"]))
+    return prompts
+
+
+@dataclass(frozen=True)
+class CalibrationResult:
+    """Outcome of a one-time two-corpus calibration of the NIM scorer.
+
+    Carries the calibrated ``recall_guard`` scorer alongside the calibrator's
+    held-out separation (``holdout_auc``) and the weak flag (``is_weak``) so the
+    quality can be persisted in the score-log header and used to gate steering
+    (Requirement 1.7).
+    """
+
+    scorer: MemoryGuardedScorer
+    holdout_auc: float
+    is_weak: bool
+
+
+class ScoringAdapter:
+    """Wrap a calibrated ``recall_guard`` scorer for the Track A scoring path.
+
+    This task ships the calibration half only. ``calibrate_from_fmp`` builds the
+    dated FMP corpus, reads both JSONL files back, calibrates the chosen NIM
+    model, and wraps the resulting scorer; ``is_weak`` / ``holdout_auc`` delegate
+    to the scorer so callers can surface calibrator quality (Requirement 1.7).
+    The per-rebalance ``score_rebalances`` path is added in task 2.3.
+    """
+
+    def __init__(self, calibration: CalibrationResult) -> None:
+        self._calibration = calibration
+
+    @property
+    def calibration(self) -> CalibrationResult:
+        """The calibration result wrapping the scorer and its quality flags."""
+        return self._calibration
+
+    @property
+    def scorer(self) -> MemoryGuardedScorer:
+        """The underlying calibrated ``recall_guard`` scorer."""
+        return self._calibration.scorer
+
+    @property
+    def is_weak(self) -> bool:
+        """``True`` when the calibrator is weak (delegates to the scorer; R1.7)."""
+        return self._calibration.scorer.is_weak
+
+    @property
+    def holdout_auc(self) -> float:
+        """Held-out IS/OOS separation of the calibrator (delegates; R1.7)."""
+        return self._calibration.scorer.holdout_auc
+
+    @classmethod
+    def calibrate_from_fmp(
+        cls,
+        *,
+        nim_model: str,
+        cutoff_date: date,
+        out_dir: Path,
+        api_key: str,
+        fmp_api_key: str | None = None,
+        reference_model: str | None = None,
+        min_auc: float = 0.6,
+        target_per_corpus: int = 100,
+    ) -> ScoringAdapter:
+        """Build the FMP corpus, calibrate the NIM model, and wrap the scorer.
+
+        Steps (design "Calibration flow"):
+
+        1. ``build_calibration(out_dir, cutoffs={nim_model: cutoff_date},
+           target_per_corpus=target_per_corpus, api_key=fmp_api_key)`` writes the
+           IS (pre-cutoff, label 1) and OOS (post-cutoff, label 0) JSONL corpora
+           and returns ``(is_path, oos_path)``.
+        2. Both files are read back via ``_read_corpus_jsonl`` into prompt lists,
+           order preserved (Requirement 1.2).
+        3. ``MemoryGuardedScorer.calibrate(...)`` trains the calibrator on the IS
+           list (``is_memorized``) and the OOS list (``oos_control``).
+
+        The calibrated scorer is wrapped in a :class:`CalibrationResult` whose
+        ``holdout_auc`` / ``is_weak`` are surfaced by the adapter (Requirement
+        1.7). An empty/rejected NIM ``api_key`` raises ``ConfigurationError`` from
+        ``calibrate``; it is left to propagate unchanged (Requirement 1.5).
+
+        Parameters
+        ----------
+        nim_model:
+            NIM model id; also the cutoff-dict key (defines the IS/OOS split).
+        cutoff_date:
+            The ``nim_model``'s training cutoff.
+        out_dir:
+            Writable directory for the two JSONL corpora.
+        api_key:
+            NVIDIA NIM credential (non-empty; an empty value raises
+            ``ConfigurationError`` from ``calibrate``).
+        fmp_api_key:
+            FMP credential for the corpus build (falls back to the env inside
+            ``build_calibration`` when ``None``).
+        reference_model:
+            Optional NIM reference model for the control baseline.
+        min_auc:
+            Calibration gate passed through to ``calibrate``.
+        target_per_corpus:
+            Target row count per corpus passed through to ``build_calibration``.
+
+        Returns
+        -------
+        ScoringAdapter
+            Wrapping the calibrated scorer.
+        """
+        is_path, oos_path = build_calibration(
+            out_dir,
+            cutoffs={nim_model: cutoff_date},
+            target_per_corpus=target_per_corpus,
+            api_key=fmp_api_key,
+        )
+        is_memorized = _read_corpus_jsonl(is_path)
+        oos_control = _read_corpus_jsonl(oos_path)
+
+        scorer = MemoryGuardedScorer.calibrate(
+            api_key=api_key,
+            model=nim_model,
+            is_memorized=is_memorized,
+            oos_control=oos_control,
+            reference_model=reference_model,
+            min_auc=min_auc,
+        )
+        calibration = CalibrationResult(
+            scorer=scorer,
+            holdout_auc=scorer.holdout_auc,
+            is_weak=scorer.is_weak,
+        )
+        return cls(calibration)

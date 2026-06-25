@@ -125,3 +125,195 @@ def test_render_directional_always_parseable_format(state: dict[str, float]) -> 
     """Across macro states the requested answer format stays parser-ready (1.2)."""
     out = render_directional(state, ASSET_SNAPSHOT)
     assert "Direction:" in out and "Confidence:" in out
+
+
+# ---------------------------------------------------------------------------
+# Task 2.2 — Calibration adapter over the released scorer
+#
+# The ScoringAdapter owns the CALIBRATION half: it builds a dated FMP corpus
+# (writing two JSONL files), reads them back via _read_corpus_jsonl into
+# in-memory prompt lists, and calibrates the chosen NIM model from them. It
+# surfaces calibrator quality (holdout_auc / is_weak) and lets recall_guard's
+# ConfigurationError propagate when the NIM credential is empty/rejected.
+#
+# Both external calls are MOCKED here (no FMP, no NIM):
+#   * build_calibration  — patched where the steering module binds it, so it
+#     writes two tiny temp JSONL files into tmp_path and returns their paths.
+#   * MemoryGuardedScorer.calibrate — patched to return a fake scorer exposing
+#     holdout_auc / is_weak (or, for the error path, to raise the real
+#     ConfigurationError on an empty key).
+#
+# Requirements: 1.2 (same-content prompts read back & fed to calibrate),
+# 1.5 (clear ConfigurationError on bad credential), 1.7 (surface weak/AUC).
+# ---------------------------------------------------------------------------
+
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+from recall_guard import ConfigurationError
+
+from macro_framework.steering import (
+    CalibrationResult,
+    ScoringAdapter,
+    _read_corpus_jsonl,
+)
+
+
+@dataclass
+class _FakeScorer:
+    """Stand-in for recall_guard.MemoryGuardedScorer exposing the quality props."""
+
+    holdout_auc: float = 0.83
+    is_weak: bool = False
+
+
+def _write_corpus_jsonl(path: Path, prompts: list[str], label: int) -> None:
+    """Write a build_calibration-shaped JSONL file (prompt/label/metadata)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        for i, prompt in enumerate(prompts):
+            rec = {
+                "prompt": prompt,
+                "label": label,
+                "metadata": {
+                    "published_at": "2020-01-01",
+                    "source": "test",
+                    "url": f"https://example.test/{label}/{i}",
+                },
+            }
+            fh.write(json.dumps(rec) + "\n")
+
+
+def _patch_build_calibration(mocker, tmp_path, is_prompts, oos_prompts):
+    """Patch build_calibration as bound in steering: writes 2 JSONL, returns paths."""
+    is_path = tmp_path / "is_memorized.jsonl"
+    oos_path = tmp_path / "oos_control.jsonl"
+
+    def _fake_build(out_dir, cutoffs, target_per_corpus=100, api_key=None, **kwargs):
+        _write_corpus_jsonl(is_path, is_prompts, label=1)
+        _write_corpus_jsonl(oos_path, oos_prompts, label=0)
+        return is_path, oos_path
+
+    return mocker.patch(
+        "macro_framework.steering.build_calibration",
+        side_effect=_fake_build,
+    )
+
+
+def test_read_corpus_jsonl_returns_prompts_in_file_order(tmp_path: Path) -> None:
+    """_read_corpus_jsonl projects each record's prompt field, order preserved (1.2)."""
+    prompts = ["first prompt", "second prompt", "third prompt"]
+    path = tmp_path / "corpus.jsonl"
+    _write_corpus_jsonl(path, prompts, label=1)
+    out = _read_corpus_jsonl(path)
+    assert out == prompts
+    assert all(isinstance(p, str) for p in out)
+
+
+def test_calibrate_from_fmp_reads_back_and_passes_correct_lists(
+    mocker, tmp_path: Path
+) -> None:
+    """Adapter reads both JSONL files back and feeds the right IS/OOS lists (1.2)."""
+    is_prompts = ["is-A", "is-B", "is-C"]
+    oos_prompts = ["oos-1", "oos-2"]
+    build_mock = _patch_build_calibration(mocker, tmp_path, is_prompts, oos_prompts)
+    cal_mock = mocker.patch(
+        "macro_framework.steering.MemoryGuardedScorer.calibrate",
+        return_value=_FakeScorer(holdout_auc=0.77, is_weak=False),
+    )
+
+    import datetime as _dt
+
+    adapter = ScoringAdapter.calibrate_from_fmp(
+        nim_model="meta/llama-3.1-8b-instruct",
+        cutoff_date=_dt.date(2023, 1, 1),
+        out_dir=tmp_path,
+        api_key="nim-key",
+        fmp_api_key="fmp-key",
+        reference_model=None,
+        min_auc=0.6,
+        target_per_corpus=50,
+    )
+
+    # build_calibration called with the cutoff dict keyed by the NIM model.
+    assert build_mock.call_count == 1
+    _, bkwargs = build_mock.call_args
+    assert bkwargs["cutoffs"] == {"meta/llama-3.1-8b-instruct": _dt.date(2023, 1, 1)}
+    assert bkwargs["target_per_corpus"] == 50
+    assert bkwargs["api_key"] == "fmp-key"
+
+    # calibrate received the prompt lists read back off disk, in file order.
+    assert cal_mock.call_count == 1
+    _, ckwargs = cal_mock.call_args
+    assert ckwargs["model"] == "meta/llama-3.1-8b-instruct"
+    assert ckwargs["api_key"] == "nim-key"
+    assert list(ckwargs["is_memorized"]) == is_prompts
+    assert list(ckwargs["oos_control"]) == oos_prompts
+    assert ckwargs["min_auc"] == 0.6
+
+    assert isinstance(adapter, ScoringAdapter)
+
+
+def test_calibrate_from_fmp_surfaces_holdout_auc_and_is_weak(
+    mocker, tmp_path: Path
+) -> None:
+    """is_weak / holdout_auc reflect the calibrated scorer (1.7)."""
+    _patch_build_calibration(mocker, tmp_path, ["is-A", "is-B"], ["oos-1", "oos-2"])
+    mocker.patch(
+        "macro_framework.steering.MemoryGuardedScorer.calibrate",
+        return_value=_FakeScorer(holdout_auc=0.55, is_weak=True),
+    )
+
+    import datetime as _dt
+
+    adapter = ScoringAdapter.calibrate_from_fmp(
+        nim_model="meta/llama-3.1-8b-instruct",
+        cutoff_date=_dt.date(2023, 1, 1),
+        out_dir=tmp_path,
+        api_key="nim-key",
+    )
+    assert adapter.is_weak is True
+    assert adapter.holdout_auc == 0.55
+
+
+def test_calibration_result_is_returned_with_quality(mocker, tmp_path: Path) -> None:
+    """The adapter exposes a CalibrationResult carrying scorer + quality (1.7)."""
+    fake = _FakeScorer(holdout_auc=0.91, is_weak=False)
+    _patch_build_calibration(mocker, tmp_path, ["is-A", "is-B"], ["oos-1", "oos-2"])
+    mocker.patch(
+        "macro_framework.steering.MemoryGuardedScorer.calibrate",
+        return_value=fake,
+    )
+
+    import datetime as _dt
+
+    adapter = ScoringAdapter.calibrate_from_fmp(
+        nim_model="meta/llama-3.1-8b-instruct",
+        cutoff_date=_dt.date(2023, 1, 1),
+        out_dir=tmp_path,
+        api_key="nim-key",
+    )
+    assert isinstance(adapter.calibration, CalibrationResult)
+    assert adapter.calibration.scorer is fake
+    assert adapter.calibration.holdout_auc == 0.91
+    assert adapter.calibration.is_weak is False
+
+
+def test_calibrate_from_fmp_propagates_configuration_error_on_empty_key(
+    mocker, tmp_path: Path
+) -> None:
+    """An empty NIM api_key surfaces ConfigurationError (let recall_guard raise) (1.5)."""
+    _patch_build_calibration(mocker, tmp_path, ["is-A", "is-B"], ["oos-1", "oos-2"])
+    # Do NOT mock calibrate — exercise the real empty-key guard in recall_guard,
+    # which raises ConfigurationError. The adapter must not catch/swallow it.
+
+    import datetime as _dt
+
+    with pytest.raises(ConfigurationError):
+        ScoringAdapter.calibrate_from_fmp(
+            nim_model="meta/llama-3.1-8b-instruct",
+            cutoff_date=_dt.date(2023, 1, 1),
+            out_dir=tmp_path,
+            api_key="",
+        )

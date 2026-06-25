@@ -17,7 +17,7 @@
   - Observable: equal inputs produce an identical prompt string containing no date/ticker, and a unit test pins the template and determinism
   - _Requirements: 1.2, 1.4_
 
-- [ ] 2.2 Calibration adapter over the released scorer
+- [x] 2.2 Calibration adapter over the released scorer
   - Build the dated FMP calibration corpus, read the resulting on-disk corpora back into in-memory prompt lists, and calibrate the chosen NIM model from them
   - Surface calibrator quality (held-out separation and the weak flag) and propagate the library's configuration error unchanged when the credential is missing or rejected at calibrate time
   - Observable: with the library and FMP builder mocked, calibration yields a scorer plus quality flags from corpora read back off disk, and an empty/rejected credential raises the configuration error; unit tests cover each path
