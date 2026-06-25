@@ -49,7 +49,7 @@
   - Observable: a unit test confirms distinct versions resolve to distinct cache directories, the base cache is untouched, and the variant's instructions drive the prompt
   - _Requirements: 4.1, 4.4_
 
-- [ ] 2.7 Score distribution reporting
+- [x] 2.7 Score distribution reporting
   - Summarize the memorization-probability distribution and parse-failure rate across a set of scores for evaluation use
   - Observable: a unit test over mixed pass/fail scores returns correct distribution aggregates and failure rate without any network calls
   - _Requirements: 4.2, 5.2_

@@ -1110,3 +1110,183 @@ def test_variant_base_agent_unaffected_by_variant(tmp_path: Path) -> None:
     )
     # The base agent still points at the base CACHE_DIR, untouched by the variant.
     assert base.cache_dir == Path(CACHE_DIR)
+
+
+# ---------------------------------------------------------------------------
+# Task 2.7 — Score distribution reporting (score_distribution_report)
+#
+# score_distribution_report(scores) is a PURE summary over a list of REAL
+# recall_guard.GuardedScore objects. It computes the p_memorized distribution
+# (mean / median / p90) over the parse-OK scores ONLY, the parse_fail_rate
+# (fraction with parse_ok False / p_memorized None), and n_scored (total count).
+# It MAY also include a report-only memguard_confidence mean (report-only per the
+# design Data Models note — never a steering input). It must NOT read the
+# directional `signal` or `raw_confidence` (non-predictive boundary).
+#
+# holdout_auc is NOT a GuardedScore field (it is a scorer property); it is
+# accepted ONLY as an optional keyword arg and surfaced in the dict when given.
+#
+# The empty-list and all-failed cases are handled gracefully (no ZeroDivision /
+# no NaN): well-defined values with a documented sentinel for the undefined mean.
+#
+# Requirements: 4.2 (report the p_memorized distribution per prompt version),
+# 5.2 (additionally report the p_memorized distribution for the variant).
+# ---------------------------------------------------------------------------
+
+from recall_guard import GuardedScore
+
+from macro_framework.steering import score_distribution_report
+
+# Documented sentinel returned for distribution stats when there is no parse-OK
+# score to summarize (empty list / all-failed). Mirrors steering's contract.
+_UNDEFINED_STAT = 0.0
+
+
+def _ok_score(prompt: str, p_memorized: float, *, raw_confidence: float = 0.5) -> GuardedScore:
+    """A REAL parse-OK GuardedScore with a known p_memorized and memguard_confidence."""
+    from hashlib import sha256
+
+    return GuardedScore(
+        prompt_hash=sha256(prompt.encode("utf-8")).hexdigest()[:16],
+        parse_ok=True,
+        signal=1,
+        raw_confidence=raw_confidence,
+        p_memorized=p_memorized,
+        memguard_confidence=raw_confidence * (1.0 - p_memorized),
+        features=None,
+        fail_reason=None,
+    )
+
+
+def _fail_score(prompt: str, *, fail_reason: str = "parse_failure") -> GuardedScore:
+    """A REAL parse-failure GuardedScore (parse_ok False, p_memorized None)."""
+    from hashlib import sha256
+
+    return GuardedScore(
+        prompt_hash=sha256(prompt.encode("utf-8")).hexdigest()[:16],
+        parse_ok=False,
+        signal=None,
+        raw_confidence=None,
+        p_memorized=None,
+        memguard_confidence=None,
+        features=None,
+        fail_reason=fail_reason,
+    )
+
+
+def test_score_distribution_report_mix_aggregates_over_ok_only() -> None:
+    """mean/median/p90 over parse-OK scores only; fail rate + n_scored correct (4.2, 5.2)."""
+    # 4 OK scores with known p_memorized + 1 failure record.
+    ok_p = [0.1, 0.2, 0.3, 0.4]
+    scores = [_ok_score(f"ok-{i}", p) for i, p in enumerate(ok_p)] + [_fail_score("bad")]
+    rep = score_distribution_report(scores)
+
+    assert rep["n_scored"] == 5  # total count, OK + failed
+    # parse_fail_rate = 1 failed / 5 total.
+    assert rep["parse_fail_rate"] == pytest.approx(1 / 5)
+    # Distribution computed over the OK p_memorized values ONLY.
+    assert rep["p_mem_mean"] == pytest.approx(sum(ok_p) / len(ok_p))
+    assert rep["p_mem_median"] == pytest.approx(0.25)  # median of [.1,.2,.3,.4]
+    # p90 of the OK values (lies in [max-1 step, max]).
+    assert 0.3 <= rep["p_mem_p90"] <= 0.4
+
+
+def test_score_distribution_report_ignores_failed_in_distribution() -> None:
+    """A failure record (p_memorized None) must not pull the mean toward 0 (4.2)."""
+    scores = [_ok_score("a", 0.5), _ok_score("b", 0.5), _fail_score("c")]
+    rep = score_distribution_report(scores)
+    # Mean over OK only = 0.5 (NOT (0.5+0.5+0)/3).
+    assert rep["p_mem_mean"] == pytest.approx(0.5)
+    assert rep["n_scored"] == 3
+    assert rep["parse_fail_rate"] == pytest.approx(1 / 3)
+
+
+def test_score_distribution_report_all_ok_zero_fail_rate() -> None:
+    """All parse-OK ⇒ parse_fail_rate 0.0; n_scored = count (5.2)."""
+    scores = [_ok_score(f"p{i}", p) for i, p in enumerate([0.0, 0.5, 1.0])]
+    rep = score_distribution_report(scores)
+    assert rep["parse_fail_rate"] == 0.0
+    assert rep["n_scored"] == 3
+    assert rep["p_mem_mean"] == pytest.approx(0.5)
+    assert rep["p_mem_median"] == pytest.approx(0.5)
+
+
+def test_score_distribution_report_empty_list_is_graceful() -> None:
+    """Empty input ⇒ well-defined output, no ZeroDivision / NaN (graceful)."""
+    rep = score_distribution_report([])
+    assert rep["n_scored"] == 0
+    assert rep["parse_fail_rate"] == 0.0  # 0 failed / 0 total -> documented 0.0
+    # Distribution stats are the documented sentinel (no OK scores to summarize).
+    for key in ("p_mem_mean", "p_mem_median", "p_mem_p90"):
+        assert rep[key] == _UNDEFINED_STAT
+    # No NaN anywhere.
+    import math
+
+    assert all(not math.isnan(v) for v in rep.values())
+
+
+def test_score_distribution_report_all_failed_is_graceful() -> None:
+    """All-failed ⇒ parse_fail_rate 1.0; distribution stats are the sentinel."""
+    scores = [_fail_score("x"), _fail_score("y"), _fail_score("z")]
+    rep = score_distribution_report(scores)
+    assert rep["n_scored"] == 3
+    assert rep["parse_fail_rate"] == pytest.approx(1.0)
+    for key in ("p_mem_mean", "p_mem_median", "p_mem_p90"):
+        assert rep[key] == _UNDEFINED_STAT
+    import math
+
+    assert all(not math.isnan(v) for v in rep.values())
+
+
+def test_score_distribution_report_makes_no_network_calls(monkeypatch) -> None:
+    """The function only reads dataclass fields — zero external/network calls."""
+    import urllib.request
+
+    def _boom(*args, **kwargs):  # pragma: no cover - must never be reached
+        raise AssertionError("score_distribution_report made a network call")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _boom, raising=False)
+    # recall_guard's scorer would call out; ensure the reporter never touches it.
+    scores = [_ok_score("a", 0.2), _fail_score("b")]
+    rep = score_distribution_report(scores)
+    assert rep["n_scored"] == 2
+
+
+def test_score_distribution_report_reports_memguard_confidence_mean() -> None:
+    """Report-only memguard_confidence mean over OK scores (never a steering input)."""
+    # memguard_confidence = raw_confidence * (1 - p_memorized).
+    s1 = _ok_score("a", 0.0, raw_confidence=0.6)   # mgc = 0.6
+    s2 = _ok_score("b", 0.5, raw_confidence=0.6)   # mgc = 0.3
+    rep = score_distribution_report([s1, s2, _fail_score("c")])
+    assert rep["memguard_confidence_mean"] == pytest.approx((0.6 + 0.3) / 2)
+
+
+def test_score_distribution_report_holdout_auc_optional_kwarg() -> None:
+    """holdout_auc appears only when passed (it is a scorer property, not a field)."""
+    scores = [_ok_score("a", 0.2)]
+    # Absent by default — the function must NOT invent it from the scores.
+    rep_default = score_distribution_report(scores)
+    assert "holdout_auc" not in rep_default
+    # Present and equal to the value when supplied as a keyword arg.
+    rep_with = score_distribution_report(scores, holdout_auc=0.83)
+    assert rep_with["holdout_auc"] == pytest.approx(0.83)
+
+
+def test_score_distribution_report_does_not_read_directional_signal() -> None:
+    """The non-predictive boundary: report keys never expose signal/raw_confidence."""
+    scores = [_ok_score("a", 0.3, raw_confidence=0.9), _ok_score("b", 0.4)]
+    rep = score_distribution_report(scores)
+    # No raw_confidence / signal mean leaks into the report dict.
+    assert "raw_confidence_mean" not in rep
+    assert "signal_mean" not in rep
+    assert "signal" not in rep
+
+
+def test_score_distribution_report_returns_plain_float_dict() -> None:
+    """Values are plain floats (dict[str, float]); JSON/serialization-friendly."""
+    scores = [_ok_score("a", 0.1), _ok_score("b", 0.9), _fail_score("c")]
+    rep = score_distribution_report(scores, holdout_auc=0.7)
+    assert isinstance(rep, dict)
+    for key, value in rep.items():
+        assert isinstance(key, str)
+        assert isinstance(value, float), f"{key} -> {type(value)} not float"

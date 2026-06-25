@@ -871,3 +871,157 @@ class VariantMacroAgent(LlmMacroAgent):
 
         self._predict = dspy.Predict(MacroViewSignature)
         self._cache = diskcache.Cache(str(self.cache_dir))
+
+
+# ---------------------------------------------------------------------------
+# Task 2.7 — Score distribution reporting (score_distribution_report).
+#
+# A PURE summary over a list of recall_guard ``GuardedScore`` objects, used by
+# nb12 (per prompt version) and nb11/eval (per variant) to report the measured
+# contamination distribution alongside the head-to-head metrics (Requirements
+# 4.2, 5.2). It makes NO NIM/network calls and NO I/O — it only reads dataclass
+# fields off the already-computed scores.
+#
+# What it computes:
+#   * The ``p_memorized`` distribution (mean / median / p90) over the parse-OK
+#     scores ONLY — failure records (``parse_ok`` False / ``p_memorized`` None)
+#     are excluded from the distribution so a failed score never drags the mean
+#     toward 0.
+#   * ``parse_fail_rate`` = fraction of scores with ``parse_ok`` False (i.e.
+#     ``p_memorized`` None) over the total.
+#   * ``n_scored`` = total number of scores (OK + failed).
+#   * ``memguard_confidence_mean`` over the OK scores — REPORT-ONLY (design Data
+#     Models note): it is surfaced for diagnostics but is NEVER a steering input,
+#     because it carries the scorer's ``raw_confidence`` and using it as a factor
+#     would break the non-predictive guarantee.
+#
+# What it deliberately does NOT do:
+#   * Read the directional ``signal`` or ``raw_confidence`` (non-predictive
+#     boundary — design Non-Goals); no ``signal_mean`` / ``raw_confidence_mean``.
+#   * Invent ``holdout_auc`` from the scores: ``holdout_auc`` is a *scorer*
+#     property, not a ``GuardedScore`` field, so it is accepted only as an
+#     optional keyword arg and echoed into the dict when provided (omitted
+#     otherwise).
+#
+# Graceful edges: an empty list or an all-failed list yields well-defined values
+# (no ZeroDivision, no NaN). Distribution stats fall back to a documented sentinel
+# (``_UNDEFINED_DISTRIBUTION_STAT`` = 0.0) when there is no parse-OK score to
+# summarize; ``n_scored`` / ``parse_fail_rate`` make that case interpretable.
+# ---------------------------------------------------------------------------
+
+# Documented sentinel for a distribution statistic that is undefined because no
+# parse-OK score is available to summarize (empty / all-failed input). Chosen as
+# a finite 0.0 so the report stays a plain ``dict[str, float]`` (JSON-friendly)
+# and never emits NaN; ``n_scored`` and ``parse_fail_rate`` disambiguate it.
+_UNDEFINED_DISTRIBUTION_STAT = 0.0
+
+
+def _percentile(sorted_values: list[float], pct: float) -> float:
+    """Linear-interpolated percentile of an already-sorted, non-empty list.
+
+    ``pct`` is in ``[0, 1]`` (e.g. ``0.9`` for p90). Uses the standard
+    "linear interpolation between closest ranks" rule, matching ``numpy``'s
+    default; a single-element list returns that element. Pure, no I/O.
+    """
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    rank = pct * (len(sorted_values) - 1)
+    lo = int(rank)
+    hi = min(lo + 1, len(sorted_values) - 1)
+    frac = rank - lo
+    return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * frac
+
+
+def score_distribution_report(
+    scores: Sequence[GuardedScore],
+    *,
+    holdout_auc: float | None = None,
+) -> dict[str, float]:
+    """Summarize the measured ``p_memorized`` distribution over a score log.
+
+    Pure aggregation over a sequence of ``recall_guard.GuardedScore`` objects for
+    evaluation reporting (Requirements 4.2, 5.2). Makes NO NIM/network calls and
+    NO I/O — it only reads dataclass fields off the already-computed scores.
+
+    The distribution statistics (``p_mem_mean``, ``p_mem_median``, ``p_mem_p90``)
+    are computed over the **parse-OK** scores only (``parse_ok`` True with a
+    non-``None`` ``p_memorized``); failure records are excluded so a failed score
+    never pulls the distribution toward 0. ``parse_fail_rate`` is the fraction of
+    scores that failed to parse (``parse_ok`` False / ``p_memorized`` None) over
+    the total, and ``n_scored`` is the total count (OK + failed).
+
+    ``memguard_confidence_mean`` is reported over the OK scores for diagnostics
+    only — it is **never** a steering input (design Data Models note), because it
+    carries the scorer's ``raw_confidence`` and using it as a factor would break
+    the non-predictive guarantee. The directional ``signal`` / ``raw_confidence``
+    are deliberately never read (non-predictive boundary).
+
+    ``holdout_auc`` is a *scorer* property, not a ``GuardedScore`` field, so it is
+    not invented from the scores: pass it explicitly to surface it in the report;
+    when omitted it is absent from the returned dict.
+
+    Empty-list and all-failed inputs are handled gracefully (no ZeroDivision, no
+    NaN): the distribution statistics fall back to the documented sentinel
+    ``0.0`` (``_UNDEFINED_DISTRIBUTION_STAT``) while ``n_scored`` /
+    ``parse_fail_rate`` keep the result interpretable.
+
+    Parameters
+    ----------
+    scores:
+        The per-rebalance / per-prompt-version ``GuardedScore`` log (typically
+        from ``ScoringAdapter.score_rebalances``).
+    holdout_auc:
+        Optional calibrator held-out AUC (a scorer property). Included in the
+        report only when provided.
+
+    Returns
+    -------
+    dict[str, float]
+        ``{p_mem_mean, p_mem_median, p_mem_p90, memguard_confidence_mean,
+        parse_fail_rate, n_scored}`` (plus ``holdout_auc`` when supplied). All
+        values are plain ``float``.
+    """
+    n_scored = len(scores)
+
+    ok_p_memorized: list[float] = []
+    ok_memguard: list[float] = []
+    n_failed = 0
+    for score in scores:
+        # A score is usable for the distribution only when it parsed AND carries
+        # a p_memorized; otherwise it counts as a parse failure.
+        if score.parse_ok and score.p_memorized is not None:
+            ok_p_memorized.append(float(score.p_memorized))
+            if score.memguard_confidence is not None:
+                ok_memguard.append(float(score.memguard_confidence))
+        else:
+            n_failed += 1
+
+    parse_fail_rate = (n_failed / n_scored) if n_scored else 0.0
+
+    if ok_p_memorized:
+        ordered = sorted(ok_p_memorized)
+        p_mem_mean = sum(ordered) / len(ordered)
+        p_mem_median = _percentile(ordered, 0.5)
+        p_mem_p90 = _percentile(ordered, 0.9)
+    else:
+        p_mem_mean = _UNDEFINED_DISTRIBUTION_STAT
+        p_mem_median = _UNDEFINED_DISTRIBUTION_STAT
+        p_mem_p90 = _UNDEFINED_DISTRIBUTION_STAT
+
+    memguard_confidence_mean = (
+        sum(ok_memguard) / len(ok_memguard)
+        if ok_memguard
+        else _UNDEFINED_DISTRIBUTION_STAT
+    )
+
+    report: dict[str, float] = {
+        "p_mem_mean": float(p_mem_mean),
+        "p_mem_median": float(p_mem_median),
+        "p_mem_p90": float(p_mem_p90),
+        "memguard_confidence_mean": float(memguard_confidence_mean),
+        "parse_fail_rate": float(parse_fail_rate),
+        "n_scored": float(n_scored),
+    }
+    if holdout_auc is not None:
+        report["holdout_auc"] = float(holdout_auc)
+    return report
