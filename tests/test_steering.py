@@ -888,3 +888,225 @@ def test_steer_views_empty_views_returns_empty() -> None:
     views: list[MacroView] = []
     out = steer_views(views, 0.3, sig)
     assert out == []
+
+
+# ---------------------------------------------------------------------------
+# Task 2.6 — Prompt-version variant agent (VariantMacroAgent)
+#
+# VariantMacroAgent subclasses the COMMITTED LlmMacroAgent (read-only import) to
+# run alternative prompt versions WITHOUT editing llm_agent.py. It stores custom
+# `instructions` + `prompt_version` and overrides the PRIVATE `_ensure_ready` to
+# rebuild the DSPy signature's docstring from `self.instructions` instead of the
+# module-level AGENT_INSTRUCTIONS, while keeping the LM config, dspy.Predict, and
+# the diskcache wiring equivalent to the base. Each variant must use a DISTINCT
+# cache_dir so versions never alias each other (the base _cache_key keys on the
+# module-level PROMPT_VERSION="v1" only), and must never write the base
+# .llm_cache/ (the module-level CACHE_DIR). Prior versions are preserved by
+# distinct cache dirs (R4.4).
+#
+# _ensure_ready is OFFLINE-SAFE to run: dspy.LM(...) construction and
+# dspy.Predict(...) do NOT call the network — only views_for_state -> _predict
+# would. We monkeypatch the api-key env var so the base key check passes; no
+# network occurs. Requirements: 4.1 (variant instructions drive the prompt),
+# 4.4 (distinct caches / prior versions preserved).
+# ---------------------------------------------------------------------------
+
+import macro_framework.llm_agent as _llm_agent_mod
+from macro_framework.llm_agent import (
+    AGENT_INSTRUCTIONS,
+    CACHE_DIR,
+    LlmMacroAgent,
+)
+from macro_framework.steering import VariantMacroAgent
+
+_VARIANT_INSTRUCTIONS_V2 = (
+    "You are a disciplined macro strategist (variant v2). Reason only from the "
+    "numeric state in front of you and emit Black-Litterman view triples. Never "
+    "reference calendar dates, years, or real tickers."
+)
+_VARIANT_INSTRUCTIONS_V3 = (
+    "You are a cautious macro risk officer (variant v3). Prefer fewer, higher "
+    "confidence views and avoid any forecast objective. Never reference dates."
+)
+
+
+def test_variant_is_subclass_of_base() -> None:
+    """VariantMacroAgent subclasses LlmMacroAgent (additive, no base edit) (R4.1)."""
+    assert issubclass(VariantMacroAgent, LlmMacroAgent)
+
+
+def test_variant_stores_instructions_and_prompt_version(tmp_path: Path) -> None:
+    """instructions + prompt_version are stored/retrievable for artifact naming (R4.4)."""
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    assert agent.instructions == _VARIANT_INSTRUCTIONS_V2
+    assert agent.prompt_version == "v2"
+
+
+def test_variant_reuses_base_wiring_via_super(tmp_path: Path) -> None:
+    """super().__init__ wires model/api_base/api_key_env/cache_dir from the base (R4.1)."""
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+        model="openrouter/test/model",
+        api_base="https://example.test/v1",
+        api_key_env="MY_KEY",
+        temperature=0.0,
+        max_tokens=512,
+    )
+    # Base attributes set by LlmMacroAgent.__init__ are present and forwarded.
+    assert agent.model == "openrouter/test/model"
+    assert agent.api_base == "https://example.test/v1"
+    assert agent.api_key_env == "MY_KEY"
+    assert agent.max_tokens == 512
+    assert agent.cache_dir == Path(tmp_path / ".llm_cache_v2")
+    # Lazy wiring not built yet (mirrors the base contract).
+    assert agent._predict is None
+
+
+def test_variant_distinct_versions_use_distinct_cache_dirs(tmp_path: Path) -> None:
+    """Two variants with different prompt_version resolve to different cache_dirs (R4.4)."""
+    a = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    b = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V3,
+        prompt_version="v3",
+        cache_dir=tmp_path / ".llm_cache_v3",
+    )
+    assert a.cache_dir != b.cache_dir
+
+
+def test_variant_cache_dir_is_not_base_cache_dir(tmp_path: Path) -> None:
+    """A variant's cache_dir never equals the base module-level CACHE_DIR (R4.4)."""
+    a = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    b = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V3,
+        prompt_version="v3",
+        cache_dir=tmp_path / ".llm_cache_v3",
+    )
+    assert a.cache_dir != Path(CACHE_DIR)
+    assert b.cache_dir != Path(CACHE_DIR)
+
+
+def test_variant_ensure_ready_uses_variant_instructions(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """After _ensure_ready, the built signature carries self.instructions, NOT the
+    module AGENT_INSTRUCTIONS (R4.1)."""
+    # Offline-safe: dspy.LM/dspy.Predict do not hit the network; satisfy the base
+    # api-key guard so _ensure_ready reaches signature construction.
+    monkeypatch.setenv("OPENROUTER_KEY", "test")
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    agent._ensure_ready()
+
+    # The predict's signature docstring carries the variant instructions.
+    sig = agent._predict.signature
+    docstring = sig.__doc__
+    assert _VARIANT_INSTRUCTIONS_V2 in docstring
+    # The base instructions must NOT drive the variant prompt.
+    assert docstring != AGENT_INSTRUCTIONS
+    assert AGENT_INSTRUCTIONS not in docstring
+
+
+def test_variant_ensure_ready_builds_predict_and_cache(
+    monkeypatch, tmp_path: Path
+) -> None:
+    """_ensure_ready wires _predict + a diskcache at self.cache_dir (mirrors base)."""
+    import diskcache
+
+    monkeypatch.setenv("OPENROUTER_KEY", "test")
+    cache_dir = tmp_path / ".llm_cache_v2"
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=cache_dir,
+    )
+    agent._ensure_ready()
+    assert agent._predict is not None
+    assert isinstance(agent._cache, diskcache.Cache)
+    # The diskcache lives at the variant's cache_dir, not the base CACHE_DIR.
+    assert Path(agent._cache.directory) == cache_dir
+    assert Path(agent._cache.directory) != Path(CACHE_DIR)
+
+
+def test_variant_ensure_ready_is_idempotent(monkeypatch, tmp_path: Path) -> None:
+    """Calling _ensure_ready twice keeps the same _predict (lazy-init guard, like base)."""
+    monkeypatch.setenv("OPENROUTER_KEY", "test")
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    agent._ensure_ready()
+    first = agent._predict
+    agent._ensure_ready()
+    assert agent._predict is first
+
+
+def test_variant_missing_api_key_raises(monkeypatch, tmp_path: Path) -> None:
+    """The base credential guard is preserved: missing key ⇒ RuntimeError."""
+    monkeypatch.delenv("OPENROUTER_KEY", raising=False)
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+        api_key_env="DEFINITELY_UNSET_KEY_FOR_TEST",
+    )
+    monkeypatch.delenv("DEFINITELY_UNSET_KEY_FOR_TEST", raising=False)
+    with pytest.raises(RuntimeError):
+        agent._ensure_ready()
+
+
+def test_variant_does_not_write_base_cache(monkeypatch, tmp_path: Path) -> None:
+    """Constructing/preparing a variant never creates/writes the base .llm_cache/ (R4.4)."""
+    monkeypatch.setenv("OPENROUTER_KEY", "test")
+    base_cache = Path(CACHE_DIR)
+    base_existed = base_cache.exists()
+
+    agent = VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    agent._ensure_ready()
+    # Variant wired its own cache; the base cache dir must not be created here.
+    if not base_existed:
+        assert not base_cache.exists(), "variant must not create the base .llm_cache/"
+
+
+def test_variant_does_not_alter_base_module_instructions(tmp_path: Path) -> None:
+    """Constructing a variant never mutates the base module AGENT_INSTRUCTIONS (R6.1)."""
+    snapshot = _llm_agent_mod.AGENT_INSTRUCTIONS
+    VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    assert _llm_agent_mod.AGENT_INSTRUCTIONS == snapshot
+
+
+def test_variant_base_agent_unaffected_by_variant(tmp_path: Path) -> None:
+    """A base LlmMacroAgent built alongside a variant keeps the base cache_dir (R4.4/R6.1)."""
+    base = LlmMacroAgent()
+    VariantMacroAgent(
+        instructions=_VARIANT_INSTRUCTIONS_V2,
+        prompt_version="v2",
+        cache_dir=tmp_path / ".llm_cache_v2",
+    )
+    # The base agent still points at the base CACHE_DIR, untouched by the variant.
+    assert base.cache_dir == Path(CACHE_DIR)

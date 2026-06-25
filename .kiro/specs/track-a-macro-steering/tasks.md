@@ -43,7 +43,7 @@
   - Observable: unit tests show confidence falls monotonically as memorization rises, views are excluded at the threshold, and the disabled/weak/missing cases return the original views unchanged
   - _Requirements: 1.6, 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 2.6 Prompt-version variant agent
+- [x] 2.6 Prompt-version variant agent
   - Provide a variant agent that subclasses the existing agent and supplies alternative prompt instructions by overriding the agent's private readiness step, using a per-variant cache directory so different versions never collide in one cache
   - Preserve prior prompt versions additively and never write the base cache or modify the base agent module
   - Observable: a unit test confirms distinct versions resolve to distinct cache directories, the base cache is untouched, and the variant's instructions drive the prompt
@@ -89,3 +89,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 5.3, 6.1, 6.2, 6.3, 6.4_
   - _Boundary: notebook 12 prompt refinement (shared append-only research log, serialized)_
   - _Depends: 2.6, 3.1, 3.2_
+
+## Implementation Notes
+- 2.6: A reviewer subagent ran `git checkout` on the uncommitted `steering.py` during a RED-phase mutation, which can wipe in-progress work. It restored from a backup; the parent then independently verified the working tree (VariantMacroAgent present, 62 tests green, llm_agent.py untouched) before committing. Future reviews must never reset/checkout uncommitted task work.
+- Env: pytest/pytest-mock are dev deps; run tests with `uv run pytest -q`. `recall_guard@v0.1.0` resolves from the git tag and is importable; tests mock it (no network). Live tasks (3.2/4.1/4.2) need `NVIDIA_API_KEY` + `FMP_API_KEY` (+ `OPENROUTER_KEY`); no `.env` is present.

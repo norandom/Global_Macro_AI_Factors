@@ -20,6 +20,7 @@ are comparable.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -30,6 +31,7 @@ from recall_guard import MemoryGuardedScorer
 from recall_guard.dataset.fmp_corpora import build_calibration
 
 from .anonymize import AssetMap
+from .llm_agent import LlmMacroAgent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -736,3 +738,136 @@ def steer_views(
             )
         )
     return steered
+
+
+# ---------------------------------------------------------------------------
+# Task 2.6 — Prompt-version variant agent (VariantMacroAgent).
+#
+# ``VariantMacroAgent`` runs ALTERNATIVE prompt versions over the same PIT prompt
+# stream WITHOUT modifying the committed ``macro_framework.llm_agent`` module
+# (Requirement 6.1). It subclasses the read-only ``LlmMacroAgent`` and supplies a
+# custom ``instructions`` string and a ``prompt_version`` label.
+#
+# Override mechanics (design "VariantMacroAgent" — Override mechanics):
+#   * The base bakes the module-level ``AGENT_INSTRUCTIONS`` into
+#     ``MacroViewSignature.__doc__`` INSIDE the private ``_ensure_ready``; the
+#     base ``__init__`` exposes no instructions hook. So the subclass OVERRIDES
+#     ``_ensure_ready``, mirroring the base's LM / ``dspy.Predict`` / diskcache
+#     wiring line-for-line, but building the signature docstring from
+#     ``self.instructions`` instead. This duplicates the base's private setup —
+#     accepted as the additive cost of not editing ``llm_agent.py``; it depends on
+#     a private internal of a read-only module and is a Revalidation Trigger if
+#     the base ``_ensure_ready`` changes.
+#   * Per-variant cache (Requirement 4.4): the base ``_cache_key`` keys on the
+#     module-level ``PROMPT_VERSION`` constant ("v1") ONLY — not an instance
+#     attribute — so two variants sharing one cache dir would alias each other's
+#     cached responses. Each variant therefore MUST use a DISTINCT ``cache_dir``
+#     and must never write the base ``CACHE_DIR`` (``.llm_cache/``). ``__init__``
+#     requires ``cache_dir`` (no default) to make this explicit; prior versions
+#     are preserved by their distinct cache dirs.
+# ---------------------------------------------------------------------------
+
+
+class VariantMacroAgent(LlmMacroAgent):
+    """A prompt-version variant of ``LlmMacroAgent`` (Requirements 4.1, 4.4).
+
+    Runs an alternative prompt version over the same point-in-time prompt stream
+    without editing the base agent module. Stores a custom ``instructions``
+    string and a ``prompt_version`` label, and overrides the private
+    ``_ensure_ready`` to build the DSPy signature's docstring from
+    ``self.instructions`` instead of the module-level ``AGENT_INSTRUCTIONS``,
+    while keeping the LM config, ``dspy.Predict``, and the diskcache wiring
+    equivalent to the base.
+
+    A distinct ``cache_dir`` per variant is REQUIRED (Requirement 4.4): the base
+    ``_cache_key`` keys only on the module-level ``PROMPT_VERSION``, so variants
+    sharing a cache would alias each other. The variant never writes the base
+    ``CACHE_DIR``; prior versions are preserved by their distinct cache dirs.
+    """
+
+    def __init__(
+        self,
+        *,
+        instructions: str,
+        prompt_version: str,
+        cache_dir: str | Path,
+        **kwargs: object,
+    ) -> None:
+        """Build a variant with custom ``instructions`` and an isolated cache.
+
+        Parameters
+        ----------
+        instructions:
+            The variant's agent instructions; replaces the module-level
+            ``AGENT_INSTRUCTIONS`` as the DSPy signature docstring (Requirement
+            4.1).
+        prompt_version:
+            A safe version label (e.g. ``"v2"``) stored for later artifact naming
+            (e.g. ``prompt_refinement_<version>_scores.json``; Requirement 4.4).
+        cache_dir:
+            A DISTINCT diskcache directory for this variant (Requirement 4.4).
+            Must not be the base ``CACHE_DIR``; distinct versions must use
+            distinct dirs so cached responses never alias across variants.
+        **kwargs:
+            Forwarded to ``LlmMacroAgent.__init__`` (``asset_map``, ``model``,
+            ``api_base``, ``api_key_env``, ``temperature``, ``max_tokens``), so
+            the base wiring is reused unchanged.
+        """
+        self.instructions = instructions
+        self.prompt_version = prompt_version
+        super().__init__(cache_dir=cache_dir, **kwargs)
+
+    def _ensure_ready(self) -> None:
+        """Lazy DSPy/diskcache wiring using the variant's ``instructions`` (R4.1).
+
+        Mirrors ``LlmMacroAgent._ensure_ready`` line-for-line — the same lazy
+        guard, ``dotenv`` load, credential check, ``dspy.LM`` config,
+        ``dspy.Predict`` build, and ``diskcache.Cache(self.cache_dir)`` — but
+        sets ``MacroViewSignature.__doc__`` from ``self.instructions`` instead of
+        the module-level ``AGENT_INSTRUCTIONS``. Constructing ``dspy.LM`` /
+        ``dspy.Predict`` does NOT call the network (only ``views_for_state`` →
+        ``self._predict`` would), so this is offline-safe to run.
+
+        The base ``llm_agent.py`` is NOT imported here for its instructions; only
+        the variant's own ``self.instructions`` drives the prompt. The diskcache
+        is created at ``self.cache_dir`` (the per-variant dir), never the base
+        ``CACHE_DIR`` (Requirement 4.4).
+        """
+        if self._predict is not None:
+            return
+        import diskcache
+        import dspy
+        from dotenv import load_dotenv
+
+        load_dotenv()
+        api_key = os.environ.get(self.api_key_env)
+        if not api_key:
+            raise RuntimeError(f"{self.api_key_env} not set in environment / .env")
+
+        self._lm = dspy.LM(
+            model=self.model,
+            api_key=api_key,
+            api_base=self.api_base,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+        )
+        dspy.settings.configure(lm=self._lm)
+
+        class MacroViewSignature(dspy.Signature):
+            __doc__ = self.instructions  # variant instructions, NOT AGENT_INSTRUCTIONS
+            macro_state: dict = dspy.InputField(
+                desc="z-scored macro state: cpi_yoy_z, t10y2y_z, hy_oas_z (float each)"
+            )
+            assets:      list = dspy.InputField(
+                desc="anonymized assets [{id, category, trailing_12m_return, trailing_vol_ann}]"
+            )
+            reasoning:   str  = dspy.OutputField(
+                desc="2-4 sentence causal analysis of the macro state"
+            )
+            views_json:  str  = dspy.OutputField(
+                desc='JSON array: [{"asset_long":"Asset_X","asset_short":"Asset_Y or null",'
+                     '"expected_excess_annualized":float,"confidence":0..1,"rationale":str}]'
+            )
+
+        self._predict = dspy.Predict(MacroViewSignature)
+        self._cache = diskcache.Cache(str(self.cache_dir))
