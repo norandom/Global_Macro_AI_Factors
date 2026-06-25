@@ -311,3 +311,38 @@ the codebase integration surface was already mapped in the two entries above; th
   persisted-artifact task (3.2); made the steered composition agent-type-agnostic so prompt refinement
   does not hard-depend on the variant; added the append-only research-log serialization caveat to the
   parallel notebooks (4.1/4.2). Re-verified inline: 30/30 IDs, dependencies consistent.
+
+---
+
+## 2026-06-25 — Implementation outcome (offline engine complete; live tasks blocked)
+
+_Autonomous `/kiro-impl` run: fresh implementer + independent adversarial reviewer per task, one at a
+time, parent-side selective commits between. All offline tasks landed on `main`._
+
+### Done (9/12 tasks; 82 tests green)
+- **1.1** foundation — `recall_guard@v0.1.0` git dep (resolves + builds) + pytest/pytest-mock dev tooling + `tests/` (`8c4c7c8`).
+- **2.1** `render_directional` + shared directional template (parses under recall_guard's real evaluator) (`45718d8`).
+- **2.2** `ScoringAdapter.calibrate_from_fmp` (build FMP corpus → read JSONL back → calibrate) + `is_weak`/`holdout_auc` + ConfigurationError (`f4f061a`).
+- **2.3** `score_rebalances` (order-preserving wrapper; ConfigurationError propagation) (`288ad13`).
+- **2.4** `SteeringSignal`/`characterize`/`write_steering_signals` — defensive PIT z-bin regime + real-AssetMap consistency (`1a60cb6`).
+- **2.5** `SteeringConfig`/`steer_views` — linear discount + hard gate + passthrough; single-flooring; non-mutating (`9a4c665`).
+- **2.6** `VariantMacroAgent` — overrides private `_ensure_ready` (one-line behavioral diff vs base) + per-variant cache (`5062577`).
+- **2.7** `score_distribution_report` — pure p_memorized distribution + parse_fail_rate; non-predictive (`63a9c4f`).
+- **3.1** `SteeredDecision`/`steer_rebalance`/`make_steered_weight_fn` — composes the leaf pieces + the unchanged `views_to_bl`; HRP/BL injected (R6.1); all gating fallbacks → base (`27d1f7d`).
+- The whole steering engine lives in the single leaf module `macro_framework/steering.py`; only `pyproject.toml`
+  (the dep) and new test files were touched. Notebooks 01–10, existing modules, and `data/` are unchanged (R6.1).
+- Every task passed an independent adversarial reviewer (mechanical + judgment, verifying claims against the
+  REAL recall_guard/Track A source — directional parse-gate, `score_many` order, AssetMap categories, the
+  `_ensure_ready` byte-diff, single-flooring, injection-not-duplication, non-predictive boundary).
+
+### Blocked (3/12 — live credentials)
+- **3.2** (live calibration build + directional smoke), **4.1** (nb11 steered-variant playbook), **4.2** (nb12
+  prompt-refinement playbook) require live `NVIDIA_API_KEY` + `FMP_API_KEY` (+ `OPENROUTER_KEY`). No `.env` /
+  credentials are provisioned in this environment, and their observables are live-run artifacts that cannot be
+  produced or verified offline. All of their code prerequisites are complete and unit-tested; unblock by
+  providing the keys, then 3.2 runs as-is and the two notebooks can be authored against the finished engine.
+
+### Process note
+- One reviewer subagent ran `git checkout` on uncommitted work (2.6) and restored from backup; the parent
+  independently re-verified the tree before committing. Subsequent reviewers were instructed never to
+  reset/checkout uncommitted task work. (Also recorded in tasks.md Implementation Notes.)
