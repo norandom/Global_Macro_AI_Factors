@@ -1,22 +1,22 @@
 {
   "feature_name": "track-a-macro-steering",
   "created_at": "2026-06-25T16:40:56Z",
-  "updated_at": "2026-06-25T16:50:03Z",
+  "updated_at": "2026-06-25T17:24:09Z",
   "language": "en",
-  "phase": "requirements-generated",
+  "phase": "tasks-generated",
   "approvals": {
     "requirements": {
       "generated": true,
-      "approved": false
+      "approved": true
     },
     "design": {
-      "generated": false,
-      "approved": false
+      "generated": true,
+      "approved": true
     },
     "tasks": {
-      "generated": false,
-      "approved": false
+      "generated": true,
+      "approved": true
     }
   },
-  "ready_for_implementation": false
+  "ready_for_implementation": true
 }
