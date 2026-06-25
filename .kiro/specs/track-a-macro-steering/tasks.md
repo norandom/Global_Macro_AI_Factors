@@ -29,7 +29,7 @@
   - Observable: with the library mocked, scoring returns one result per prompt in input order carrying only the memorization probability/failure reason, and a rejected credential mid-scoring raises the configuration error; unit tests cover success and failure records
   - _Requirements: 1.2, 1.3, 1.5_
 
-- [ ] 2.4 Point-in-time macro characterization and steering signal
+- [x] 2.4 Point-in-time macro characterization and steering signal
   - Produce, for a rebalance date, a deterministic regime label and a per-series as-of z-score summary computed only from observations strictly before that date, reusing the existing macro panel without regenerating it
   - Emit a per-rebalance steering signal that includes a macro-to-view consistency rule (a documented heuristic mapping regime to preferred asset categories), bounded between a configured floor and one
   - Persist the per-rebalance steering signals as a new artifact and define no forecasting target

@@ -20,18 +20,24 @@ are comparable.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 from recall_guard import MemoryGuardedScorer
 from recall_guard.dataset.fmp_corpora import build_calibration
+
+from .anonymize import AssetMap
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import date
 
     from recall_guard import GuardedScore
+
+    from .llm_agent import MacroView
 
 # Rounding mirrors macro_framework.llm_agent.LlmMacroAgent.views_for_state:
 # macro z-scores to 2dp, asset numeric fields to 3dp. The scorer must see the
@@ -376,3 +382,213 @@ class ScoringAdapter:
             their ``fail_reason`` (the scorer does not drop them).
         """
         return self.scorer.score_many(prompts)
+
+
+# ---------------------------------------------------------------------------
+# Task 2.4 — MacroCharacterizer: PIT regime + z-summary + consistency inputs.
+#
+# ``characterize`` consumes the EXISTING macro panel strictly *before* the
+# rebalance date (Requirements 2.2, 2.3 — never regenerates it), reads the
+# latest as-of z-scores per series (Requirement 2.1), and assigns a
+# DETERMINISTIC z-bin regime label (Requirement 2.5 — no fitted/forecasting
+# target). The frozen :class:`SteeringSignal` it returns exposes a pure
+# ``consistency(view)`` heuristic in ``[consistency_floor, 1.0]`` consumed
+# downstream by the ViewSteerer (task 2.5). ``write_steering_signals`` persists
+# the per-rebalance signals to a parquet artifact under a NEW filename
+# (Requirements 2.4, 6.4 — the playbook chooses the actual name).
+#
+# The macro z-series this reads are the panel's z-scored columns
+# (``macro_framework.macro.build_macro_panel`` emits cpi_yoy_z, t10y2y_z,
+# hy_oas_z); the consistency map resolves view long-legs to categories via the
+# FIXED ``AssetMap`` (read-only).
+# ---------------------------------------------------------------------------
+
+# The z-series the regime/summary is built from, in a fixed order so the signal
+# is deterministic regardless of the panel's column order (Requirement 2.1).
+_REGIME_Z_SERIES = ("cpi_yoy_z", "t10y2y_z", "hy_oas_z")
+
+# DETERMINISTIC z-bin thresholds for the regime taxonomy. These are fixed,
+# documented priors — NOT fitted to any forecasting target (Requirement 2.5).
+# A series is "elevated" at/above +_Z_HIGH; the curve is "inverted" at/below
+# _Z_INVERTED. The benign goldilocks bin uses the softer _Z_BENIGN: it asks only
+# that inflation be below-average and credit spreads tight (clearly below
+# average), not a full sigma depressed — matching the design's "low inflation +
+# tight spreads" intent on the coarse ~72-state panel.
+_Z_HIGH = 1.0       # z at/above which a series counts as elevated
+_Z_INVERTED = -0.5  # t10y2y_z at/below which the curve counts as inverted
+_Z_BENIGN = -0.5    # hy_oas_z at/below which spreads count as tight (goldilocks)
+
+# Regime taxonomy (evaluated in priority order; first match wins). The order
+# resolves overlaps deterministically: credit stress (a market-wide risk-off
+# tell) outranks stagflation, which outranks the benign goldilocks bin; anything
+# unclassified is the non-committal ``neutral``.
+#   credit_stress    : hy_oas_z high                       (credit risk-off)
+#   stagflation_risk : cpi_yoy_z high AND curve inverted   (high inflation + slowdown)
+#   goldilocks       : cpi_yoy_z below-average AND spreads tight (cool + tight)
+#   neutral          : none of the above
+
+# Regime → preferred asset CATEGORIES (a deliberate, documented heuristic, NOT a
+# learned/return-fitted mapping; Requirement 2.5). Categories are the FIXED
+# ``AssetMap`` categories (world_equity, tech_sector, gold_commodity,
+# short_treasury_cash). Risk-off regimes prefer defensives (gold + cash);
+# goldilocks prefers risk assets (equities + tech); neutral prefers everything
+# (non-committal). A view whose long-leg category is preferred scores 1.0;
+# otherwise it falls to the ``consistency_floor``.
+_REGIME_PREFERRED_CATEGORIES: dict[str, frozenset[str]] = {
+    "credit_stress": frozenset({"gold_commodity", "short_treasury_cash"}),
+    "stagflation_risk": frozenset({"gold_commodity", "short_treasury_cash"}),
+    "goldilocks": frozenset({"world_equity", "tech_sector"}),
+    "neutral": frozenset(
+        {"world_equity", "tech_sector", "gold_commodity", "short_treasury_cash"}
+    ),
+}
+
+# Default min consistency multiplier (mirrors SteeringConfig.consistency_floor in
+# the later ViewSteerer task); a contradicting view never falls below this.
+_DEFAULT_CONSISTENCY_FLOOR = 0.5
+
+
+def _classify_regime(z: dict[str, float]) -> str:
+    """Map latest as-of z-scores to a deterministic regime label (Requirement 2.5).
+
+    Pure function of the three z-scores using the fixed ``_Z_HIGH`` /
+    ``_Z_INVERTED`` thresholds and the documented priority order
+    (credit_stress > stagflation_risk > goldilocks > neutral). No randomness, no
+    fitting, no forecasting target.
+    """
+    cpi = z.get("cpi_yoy_z", 0.0)
+    curve = z.get("t10y2y_z", 0.0)
+    hy = z.get("hy_oas_z", 0.0)
+
+    if hy >= _Z_HIGH:
+        return "credit_stress"
+    if cpi >= _Z_HIGH and curve <= _Z_INVERTED:
+        return "stagflation_risk"
+    if cpi < 0.0 and hy <= _Z_BENIGN:
+        return "goldilocks"
+    return "neutral"
+
+
+@dataclass(frozen=True)
+class SteeringSignal:
+    """A point-in-time macro characterization for one rebalance date.
+
+    Frozen and deterministic: built only from macro rows strictly before
+    ``rebalance_date`` (Requirement 2.2). ``zscore_summary`` carries the latest
+    as-of z per series (Requirement 2.1); ``regime_label`` is a deterministic
+    z-bin label (Requirement 2.5). ``consistency`` is a pure heuristic mapping a
+    view's long-leg category to ``1.0`` (preferred) or ``consistency_floor``
+    (not preferred), consumed by the ViewSteerer (Requirement 2.4).
+    """
+
+    rebalance_date: pd.Timestamp
+    regime_label: str
+    zscore_summary: dict[str, float]
+    _preferred_categories: frozenset[str] = field(default_factory=frozenset)
+    _consistency_floor: float = _DEFAULT_CONSISTENCY_FLOOR
+    _asset_map: AssetMap = field(default_factory=AssetMap.default)
+
+    def consistency(self, view: MacroView) -> float:
+        """Macro-consistency multiplier for ``view`` in ``[consistency_floor, 1.0]``.
+
+        Resolves the view's long-leg pseudo asset (e.g. ``Asset_A``) to its
+        category via the FIXED ``AssetMap`` and returns ``1.0`` when that
+        category is in this regime's preferred set, else ``consistency_floor``.
+        Pure function of (regime, view category): no randomness, no I/O, no
+        forecasting (Requirement 2.4, 2.5). An unknown long-leg id (no category)
+        is treated as not-preferred ⇒ floor.
+        """
+        category = self._asset_map.categories.get(view.asset_long)
+        if category is not None and category in self._preferred_categories:
+            return 1.0
+        return self._consistency_floor
+
+
+def characterize(
+    macro_hist: pd.DataFrame,
+    rebalance_date: pd.Timestamp,
+    consistency_floor: float = _DEFAULT_CONSISTENCY_FLOOR,
+) -> SteeringSignal:
+    """Characterize the macro panel as-of ``rebalance_date`` into a steering signal.
+
+    DEFENSIVELY slices ``macro_hist`` to rows strictly before ``rebalance_date``
+    so adding any row dated on/after it cannot change the result (Requirement
+    2.2). The panel is consumed read-only — nothing is regenerated (Requirement
+    2.3). The latest as-of row supplies the per-series z summary (Requirement
+    2.1); a deterministic z-bin taxonomy assigns the regime label (Requirement
+    2.5). The returned :class:`SteeringSignal` carries the regime's preferred
+    categories so its ``consistency`` heuristic is self-contained.
+
+    Parameters
+    ----------
+    macro_hist:
+        Date-indexed macro panel carrying the z-scored columns
+        (``cpi_yoy_z``, ``t10y2y_z``, ``hy_oas_z``), e.g. from
+        ``macro_framework.macro.build_macro_panel``. Sliced read-only here.
+    rebalance_date:
+        The decision date. Only rows strictly before it are used.
+    consistency_floor:
+        Minimum consistency multiplier returned for a contradicting view
+        (mirrors the later ``SteeringConfig.consistency_floor``).
+
+    Returns
+    -------
+    SteeringSignal
+        Frozen, deterministic per-rebalance signal.
+    """
+    rebalance_date = pd.Timestamp(rebalance_date)
+    # Defensive PIT slice: strictly before the rebalance date (Requirement 2.2).
+    as_of = macro_hist.loc[macro_hist.index < rebalance_date]
+
+    zscore_summary: dict[str, float] = {}
+    if not as_of.empty:
+        latest = as_of.iloc[-1]
+        for col in _REGIME_Z_SERIES:
+            if col in as_of.columns:
+                value = latest[col]
+                if pd.notna(value):
+                    zscore_summary[col] = float(value)
+
+    regime_label = _classify_regime(zscore_summary)
+    preferred = _REGIME_PREFERRED_CATEGORIES.get(regime_label, frozenset())
+
+    return SteeringSignal(
+        rebalance_date=rebalance_date,
+        regime_label=regime_label,
+        zscore_summary=zscore_summary,
+        _preferred_categories=preferred,
+        _consistency_floor=consistency_floor,
+    )
+
+
+def write_steering_signals(signals: Sequence[SteeringSignal], path: str | Path) -> None:
+    """Persist per-rebalance steering signals to a parquet artifact (Requirement 2.4).
+
+    Serializes a table indexed by ``rebalance_date`` with the ``regime_label``
+    and the latest as-of z-summary columns (``cpi_yoy_z``, ``t10y2y_z``,
+    ``hy_oas_z``). Only writes where told; the playbook chooses the
+    ``data/macro_steering_signals_*.parquet`` name (Requirement 6.4 — new
+    filename, never overwrites an existing artifact). An empty ``signals`` list
+    writes a readable empty table with the same schema.
+
+    Parameters
+    ----------
+    signals:
+        The per-rebalance signals to persist (typically one per rebalance date).
+    path:
+        Destination parquet path (caller-chosen).
+    """
+    columns = ["rebalance_date", "regime_label", *_REGIME_Z_SERIES]
+    records: list[dict[str, object]] = []
+    for sig in signals:
+        record: dict[str, object] = {
+            "rebalance_date": pd.Timestamp(sig.rebalance_date),
+            "regime_label": sig.regime_label,
+        }
+        for col in _REGIME_Z_SERIES:
+            record[col] = sig.zscore_summary.get(col)
+        records.append(record)
+
+    df = pd.DataFrame(records, columns=columns)
+    df = df.set_index("rebalance_date")
+    df.to_parquet(Path(path))

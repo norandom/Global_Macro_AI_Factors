@@ -491,3 +491,210 @@ def test_score_rebalances_handles_empty_prompts() -> None:
 
     assert out == []
     assert scorer.calls == [[]]
+
+
+# ---------------------------------------------------------------------------
+# Task 2.4 — Point-in-time macro characterization and steering signal
+#
+# characterize(macro_hist, rebalance_date) reads the EXISTING macro panel
+# strictly < rebalance_date (R2.2, R2.3), takes the latest as-of z-scores per
+# series (R2.1), and assigns a DETERMINISTIC, non-predictive z-bin regime label
+# (R2.5). The returned frozen SteeringSignal exposes a pure consistency(view)
+# heuristic in [consistency_floor, 1.0] (R2.4 — used downstream by ViewSteerer).
+# write_steering_signals persists the per-rebalance signals to a parquet
+# artifact under a NEW filename (R2.4 / R6.4 — caller chooses the name).
+#
+# Tests use synthetic pandas panels and the REAL MacroView; no I/O beyond
+# tmp_path, no NIM/FMP, no panel regeneration.
+# ---------------------------------------------------------------------------
+
+import pandas as pd
+
+from macro_framework.llm_agent import MacroView
+from macro_framework.steering import (
+    SteeringSignal,
+    characterize,
+    write_steering_signals,
+)
+
+
+def _macro_panel(rows: dict[str, list[float]], dates: list[str]) -> pd.DataFrame:
+    """Build a date-indexed macro panel carrying the *_z columns characterize reads."""
+    idx = pd.DatetimeIndex([pd.Timestamp(d) for d in dates], name="date")
+    return pd.DataFrame(rows, index=idx)
+
+
+def _view(asset_long: str, *, confidence: float = 0.5) -> MacroView:
+    """A real MacroView with the given long-leg pseudo asset id."""
+    return MacroView(
+        asset_long=asset_long,
+        asset_short=None,
+        expected_excess_annualized=0.05,
+        confidence=confidence,
+        rationale="test",
+    )
+
+
+# Crafted z-scores per regime. Thresholds documented in steering.characterize.
+_GOLDILOCKS = {"cpi_yoy_z": [-0.5], "t10y2y_z": [0.5], "hy_oas_z": [-1.2]}
+_CREDIT_STRESS = {"cpi_yoy_z": [0.1], "t10y2y_z": [0.2], "hy_oas_z": [1.6]}
+_STAGFLATION = {"cpi_yoy_z": [1.4], "t10y2y_z": [-1.1], "hy_oas_z": [0.3]}
+_NEUTRAL = {"cpi_yoy_z": [0.1], "t10y2y_z": [0.1], "hy_oas_z": [0.1]}
+
+
+def test_characterize_latest_as_of_zscore_summary() -> None:
+    """zscore_summary is the last row strictly before rebalance_date (R2.1)."""
+    panel = _macro_panel(
+        {
+            "cpi_yoy_z": [0.10, 0.20, 1.40],
+            "t10y2y_z": [0.10, 0.20, -1.10],
+            "hy_oas_z": [0.10, 0.20, 0.30],
+        },
+        ["2020-01-31", "2020-02-29", "2020-03-31"],
+    )
+    sig = characterize(panel, pd.Timestamp("2020-03-31"))
+    # The 2020-03-31 row is NOT before 2020-03-31; latest as-of is 2020-02-29.
+    assert sig.zscore_summary == {
+        "cpi_yoy_z": 0.20,
+        "t10y2y_z": 0.20,
+        "hy_oas_z": 0.20,
+    }
+
+
+def test_characterize_is_point_in_time(monkeypatch=None) -> None:
+    """Appending a row dated >= rebalance_date does NOT change the output (R2.2)."""
+    base = _macro_panel(
+        _STAGFLATION,
+        ["2020-02-29"],
+    )
+    rb = pd.Timestamp("2020-03-31")
+    sig_before = characterize(base, rb)
+
+    # Append a future row (on or after rb) carrying a totally different regime.
+    future = _macro_panel(
+        {"cpi_yoy_z": [-2.0], "t10y2y_z": [2.0], "hy_oas_z": [-2.0]},
+        ["2020-03-31"],  # == rb, must be excluded
+    )
+    later = _macro_panel(
+        {"cpi_yoy_z": [3.0], "t10y2y_z": [-3.0], "hy_oas_z": [3.0]},
+        ["2020-04-30"],  # > rb, must be excluded
+    )
+    contaminated = pd.concat([base, future, later])
+
+    sig_after = characterize(contaminated, rb)
+    assert sig_after.regime_label == sig_before.regime_label
+    assert sig_after.zscore_summary == sig_before.zscore_summary
+
+
+def test_characterize_deterministic_equal_inputs_equal_signal() -> None:
+    """Equal inputs ⇒ equal SteeringSignal (determinism)."""
+    panel = _macro_panel(_GOLDILOCKS, ["2020-02-29"])
+    rb = pd.Timestamp("2020-03-31")
+    a = characterize(panel, rb)
+    b = characterize(panel.copy(), rb)
+    assert a == b
+
+
+@pytest.mark.parametrize(
+    ("rows", "expected"),
+    [
+        (_GOLDILOCKS, "goldilocks"),
+        (_CREDIT_STRESS, "credit_stress"),
+        (_STAGFLATION, "stagflation_risk"),
+        (_NEUTRAL, "neutral"),
+    ],
+)
+def test_characterize_regime_labels(rows: dict, expected: str) -> None:
+    """Crafted z-scores map to specific deterministic labels (R2.1, ≥3 regimes)."""
+    panel = _macro_panel(rows, ["2020-02-29"])
+    sig = characterize(panel, pd.Timestamp("2020-03-31"))
+    assert sig.regime_label == expected
+
+
+def test_consistency_aligned_view_returns_one() -> None:
+    """A view whose long leg is in the regime's preferred set ⇒ 1.0 (R2.4)."""
+    # credit_stress prefers defensive categories (gold + cash); Asset_C = gold.
+    panel = _macro_panel(_CREDIT_STRESS, ["2020-02-29"])
+    sig = characterize(panel, pd.Timestamp("2020-03-31"))
+    assert sig.regime_label == "credit_stress"
+    assert sig.consistency(_view("Asset_C")) == 1.0
+
+
+def test_consistency_contradicting_view_returns_floor() -> None:
+    """A view contradicting the regime ⇒ consistency_floor (R2.4)."""
+    # credit_stress does NOT prefer risk assets; Asset_B = tech_sector.
+    panel = _macro_panel(_CREDIT_STRESS, ["2020-02-29"])
+    sig = characterize(panel, pd.Timestamp("2020-03-31"), consistency_floor=0.5)
+    assert sig.regime_label == "credit_stress"
+    assert sig.consistency(_view("Asset_B")) == 0.5
+
+
+def test_consistency_always_within_floor_and_one() -> None:
+    """consistency is always in [consistency_floor, 1.0] across regimes/views (R2.4)."""
+    floor = 0.3
+    for rows in (_GOLDILOCKS, _CREDIT_STRESS, _STAGFLATION, _NEUTRAL):
+        panel = _macro_panel(rows, ["2020-02-29"])
+        sig = characterize(panel, pd.Timestamp("2020-03-31"), consistency_floor=floor)
+        for asset in ("Asset_A", "Asset_B", "Asset_C", "Asset_D"):
+            c = sig.consistency(_view(asset))
+            assert floor <= c <= 1.0
+
+
+def test_consistency_goldilocks_prefers_risk_assets() -> None:
+    """goldilocks prefers equities/tech; cash is not preferred (documented map)."""
+    panel = _macro_panel(_GOLDILOCKS, ["2020-02-29"])
+    sig = characterize(panel, pd.Timestamp("2020-03-31"))
+    assert sig.regime_label == "goldilocks"
+    assert sig.consistency(_view("Asset_A")) == 1.0  # world_equity preferred
+    assert sig.consistency(_view("Asset_D")) == sig._consistency_floor  # cash not
+
+
+def test_consistency_neutral_prefers_all() -> None:
+    """neutral regime is non-committal: every category is preferred ⇒ 1.0 (R2.4)."""
+    panel = _macro_panel(_NEUTRAL, ["2020-02-29"])
+    sig = characterize(panel, pd.Timestamp("2020-03-31"))
+    assert sig.regime_label == "neutral"
+    for asset in ("Asset_A", "Asset_B", "Asset_C", "Asset_D"):
+        assert sig.consistency(_view(asset)) == 1.0
+
+
+def test_write_steering_signals_round_trip(tmp_path: Path) -> None:
+    """Writer emits a parquet with regime_label + z-summary; round-trips back (R2.4)."""
+    signals = [
+        characterize(_macro_panel(_GOLDILOCKS, ["2020-01-31"]), pd.Timestamp("2020-02-29")),
+        characterize(_macro_panel(_CREDIT_STRESS, ["2020-02-29"]), pd.Timestamp("2020-03-31")),
+        characterize(_macro_panel(_STAGFLATION, ["2020-03-31"]), pd.Timestamp("2020-04-30")),
+    ]
+    out = tmp_path / "macro_steering_signals_test.parquet"
+    write_steering_signals(signals, out)
+    assert out.exists()
+
+    df = pd.read_parquet(out)
+    # One row per rebalance, regime + the three z columns present.
+    assert len(df) == 3
+    assert "regime_label" in df.columns
+    for col in ("cpi_yoy_z", "t10y2y_z", "hy_oas_z"):
+        assert col in df.columns
+    labels = list(df["regime_label"])
+    assert labels == ["goldilocks", "credit_stress", "stagflation_risk"]
+    # rebalance_date is recoverable (index or column).
+    dates = df.index if df.index.name == "rebalance_date" else df["rebalance_date"]
+    assert pd.Timestamp("2020-03-31") in set(pd.to_datetime(dates))
+
+
+def test_write_steering_signals_empty(tmp_path: Path) -> None:
+    """An empty signal list still writes a readable (empty) parquet (R2.4)."""
+    out = tmp_path / "macro_steering_signals_empty.parquet"
+    write_steering_signals([], out)
+    assert out.exists()
+    df = pd.read_parquet(out)
+    assert len(df) == 0
+
+
+def test_steering_signal_is_frozen() -> None:
+    """SteeringSignal is a frozen dataclass (immutable per design)."""
+    panel = _macro_panel(_NEUTRAL, ["2020-02-29"])
+    sig = characterize(panel, pd.Timestamp("2020-03-31"))
+    assert isinstance(sig, SteeringSignal)
+    with pytest.raises(Exception):
+        sig.regime_label = "tampered"  # type: ignore[misc]
