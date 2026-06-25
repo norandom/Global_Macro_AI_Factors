@@ -1290,3 +1290,404 @@ def test_score_distribution_report_returns_plain_float_dict() -> None:
     for key, value in rep.items():
         assert isinstance(key, str)
         assert isinstance(value, float), f"{key} -> {type(value)} not float"
+
+
+# ---------------------------------------------------------------------------
+# Task 3.1 — Steered rebalance composition for walk-forward (integration)
+#
+# steer_rebalance(...) composes the already-built pieces — render_directional
+# (2.1), ScoringAdapter.score_rebalances (2.3), characterize (2.4), steer_views
+# (2.5) — plus the agent's UNCHANGED views_to_bl, into one steered decision step,
+# and make_steered_weight_fn(...) wraps it into a walk_forward weight_fn(ctx) ->
+# pd.Series. nb09's HRP/BL/blend math is INJECTED (build_inputs / combine), never
+# owned here (R6.1).
+#
+# The agent and scorer are MOCKED (no DSPy/OpenRouter, no NIM/FMP, no network):
+#   * A FAKE agent mirrors the real signatures: views_for_state(macro_state,
+#     asset_snapshot) -> (list[MacroView], reasoning); views_to_bl(views,
+#     real_symbols) -> (P, Q) or (None, None) when no view survives.
+#   * A FAKE scorer mirrors ScoringAdapter: is_weak + score_rebalances([...]) ->
+#     [GuardedScore] (REAL recall_guard.GuardedScore).
+#
+# Asserts (design "Steered rebalance" sequence + ViewSteerer notes):
+#   (a) STEERED path (is_weak False, real p_memorized) runs end-to-end through
+#       views_to_bl to a valid target row, steered=True, confidences shaped.
+#   (b) UNSTEERED-FALLBACK (is_weak True OR a failure GuardedScore OR
+#       config.enabled False) ⇒ steered=False with the original (unsteered) views.
+#   (c) All views excluded by the gate ⇒ views_to_bl -> (None, None) and combine
+#       still produces a valid (base) row.
+#   real_symbols sourced from price columns in the weight_fn path.
+#
+# Requirements: 1.6 (additive/passthrough), 3.1 (confidence falls with
+# p_memorized), 3.2 (gate/exclude), 3.3 (composition feeds nb11's own targets),
+# 3.4 (only confidence/inclusion shaping).
+# ---------------------------------------------------------------------------
+
+from macro_framework.anonymize import AssetMap
+from macro_framework.steering import (
+    SteeredDecision,
+    make_steered_weight_fn,
+    steer_rebalance,
+)
+
+
+class _FakeAgent:
+    """Stand-in for LlmMacroAgent: mirrors views_for_state + views_to_bl.
+
+    views_for_state returns a fixed list of REAL MacroView objects (and a
+    reasoning string). views_to_bl emits a deterministic, simple (P, Q) keyed by
+    the real symbols for the surviving views, or (None, None) when no view maps
+    (mirroring the real method's empty-views contract).
+    """
+
+    def __init__(self, views: list[MacroView], asset_map: AssetMap | None = None) -> None:
+        self._views = views
+        self.asset_map = asset_map or AssetMap.default()
+        self.calls_views_for_state: list[tuple] = []
+        self.calls_views_to_bl: list[list[MacroView]] = []
+
+    def views_for_state(self, macro_state, asset_snapshot):
+        self.calls_views_for_state.append((macro_state, asset_snapshot))
+        return list(self._views), "fake reasoning"
+
+    def views_to_bl(self, views, real_symbols):
+        self.calls_views_to_bl.append(list(views))
+        pseudo_to_real = self.asset_map.pseudo_to_real
+        rows_P, rows_Q = [], []
+        for v in views:
+            long_real = pseudo_to_real.get(v.asset_long)
+            if long_real is None or long_real not in real_symbols:
+                continue
+            row = [1.0 if s == long_real else 0.0 for s in real_symbols]
+            rows_P.append(row)
+            rows_Q.append([(v.expected_excess_annualized * v.confidence) / 252.0])
+        if not rows_P:
+            return None, None
+        P = pd.DataFrame(rows_P, columns=list(real_symbols))
+        Q = pd.DataFrame(rows_Q)
+        return P, Q
+
+
+class _FakeScoringAdapter:
+    """Stand-in for ScoringAdapter: is_weak + score_rebalances -> [GuardedScore].
+
+    Returns REAL recall_guard.GuardedScore objects so the composition's reads of
+    p_memorized / parse_ok / fail_reason stay honest. ``fail`` forces a parse
+    failure (p_memorized None) to exercise the unsteered fallback; ``p_memorized``
+    sets the score on the success path.
+    """
+
+    def __init__(self, *, is_weak: bool = False, p_memorized: float = 0.2, fail: bool = False) -> None:
+        self.is_weak = is_weak
+        self._p_memorized = p_memorized
+        self._fail = fail
+        self.calls: list[list[str]] = []
+
+    def score_rebalances(self, prompts):
+        self.calls.append(list(prompts))
+        out = []
+        for p in prompts:
+            if self._fail:
+                out.append(_fail_score(p))
+            else:
+                out.append(_ok_score(p, self._p_memorized))
+        return out
+
+
+# A real, on-cutoff asset map maps Asset_A..D to real tickers; we source the real
+# symbols from those so views_to_bl can place tilts.
+_AMAP = AssetMap.default()
+_REAL_SYMBOLS = list(_AMAP.pseudo_to_real.values())
+
+
+def _credit_stress_hist() -> pd.DataFrame:
+    """A one-row macro panel that characterize labels 'credit_stress'."""
+    return _macro_panel(_CREDIT_STRESS, ["2020-02-29"])
+
+
+def _gold_view(confidence: float = 0.6) -> MacroView:
+    """A view long the gold pseudo asset (preferred under credit_stress)."""
+    return MacroView(
+        asset_long="Asset_C",
+        asset_short=None,
+        expected_excess_annualized=0.08,
+        confidence=confidence,
+        rationale="defensive tilt",
+    )
+
+
+def test_steer_rebalance_steered_path_runs_end_to_end() -> None:
+    """is_weak False + real p_memorized ⇒ steered=True, shaped views, valid (P, Q) (3.1)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, p_memorized=0.2)
+    rb = pd.Timestamp("2020-03-31")
+
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=scorer,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=rb,
+        real_symbols=_REAL_SYMBOLS,
+    )
+
+    assert isinstance(dec, SteeredDecision)
+    assert dec.steered is True
+    assert dec.p_memorized == pytest.approx(0.2)
+    assert dec.regime_label == "credit_stress"
+    # Confidence actually shaped down: base 0.6 * (1-0.2) * consistency(1.0) = 0.48.
+    assert len(dec.steered_views) == 1
+    assert dec.steered_views[0].confidence == pytest.approx(0.6 * 0.8 * 1.0)
+    # Ran through views_to_bl to a valid (P, Q).
+    assert dec.P is not None and dec.Q is not None
+    assert list(dec.P.columns) == _REAL_SYMBOLS
+    assert len(dec.P) == 1
+    # The scorer saw the directional prompt for the macro content.
+    assert len(scorer.calls) == 1 and len(scorer.calls[0]) == 1
+
+
+def test_steer_rebalance_weak_calibrator_falls_back_unsteered() -> None:
+    """is_weak ⇒ p_memorized None ⇒ steered=False, original (unsteered) views (1.6/1.7)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=True)
+    rb = pd.Timestamp("2020-03-31")
+
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=scorer,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=rb,
+        real_symbols=_REAL_SYMBOLS,
+    )
+
+    assert dec.steered is False
+    assert dec.p_memorized is None
+    # Weak calibrator never scored (scorer skipped on the is_weak path).
+    assert scorer.calls == []
+    # Views are the unsteered originals (confidence unchanged).
+    assert [v.confidence for v in dec.steered_views] == [0.6]
+    # Still produces a decision through views_to_bl.
+    assert dec.P is not None and dec.Q is not None
+
+
+def test_steer_rebalance_scoring_failure_falls_back_unsteered() -> None:
+    """A failure GuardedScore (p_memorized None) ⇒ steered=False, unsteered views (1.6)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, fail=True)
+    rb = pd.Timestamp("2020-03-31")
+
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=scorer,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=rb,
+        real_symbols=_REAL_SYMBOLS,
+    )
+
+    assert dec.steered is False
+    assert dec.p_memorized is None
+    assert [v.confidence for v in dec.steered_views] == [0.6]
+    assert dec.P is not None and dec.Q is not None
+
+
+def test_steer_rebalance_disabled_falls_back_unsteered() -> None:
+    """config.enabled False ⇒ steered=False, no scoring, original views (1.6)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, p_memorized=0.2)
+    rb = pd.Timestamp("2020-03-31")
+
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=scorer,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=rb,
+        real_symbols=_REAL_SYMBOLS,
+        config=SteeringConfig(enabled=False),
+    )
+
+    assert dec.steered is False
+    assert dec.p_memorized is None
+    assert scorer.calls == []  # disabled ⇒ never scored
+    assert [v.confidence for v in dec.steered_views] == [0.6]
+
+
+def test_steer_rebalance_no_scorer_falls_back_unsteered() -> None:
+    """scorer is None ⇒ steered=False, p_memorized None, unsteered views (1.6)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    rb = pd.Timestamp("2020-03-31")
+
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=None,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=rb,
+        real_symbols=_REAL_SYMBOLS,
+    )
+
+    assert dec.steered is False
+    assert dec.p_memorized is None
+    assert [v.confidence for v in dec.steered_views] == [0.6]
+
+
+def test_steer_rebalance_gate_excludes_all_views_yields_none_none() -> None:
+    """p_memorized >= threshold ⇒ all views excluded ⇒ views_to_bl (None, None) (3.2)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, p_memorized=0.95)  # >= 0.8 threshold
+    rb = pd.Timestamp("2020-03-31")
+
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=scorer,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=rb,
+        real_symbols=_REAL_SYMBOLS,
+    )
+
+    # Gate fired: empty steered views; views_to_bl saw an empty list ⇒ (None, None).
+    assert dec.steered_views == []
+    assert dec.P is None and dec.Q is None
+    # p_memorized was measured (gate is a steered outcome, not a fallback).
+    assert dec.p_memorized == pytest.approx(0.95)
+    assert dec.steered is True
+
+
+def _build_inputs_stub(ctx):
+    """Inject build_inputs: derive a (macro_state, asset_snapshot) from ctx."""
+    return dict(MACRO_STATE), [dict(a) for a in ASSET_SNAPSHOT]
+
+
+def _combine_stub(ctx, P, Q):
+    """Inject combine: a tiny base-vs-tilt blend returning weights over real symbols.
+
+    When the steered views collapse to (None, None) we fall back to an equal-weight
+    base allocation — exactly the Track A behaviour (BL posterior -> base). When a
+    tilt survives, we lean the weight toward the long leg(s) of P. Always returns a
+    valid (sums-to-1) weight Series over the real-symbol columns of ctx['prices'].
+    """
+    symbols = list(ctx["prices"].columns)
+    base = pd.Series(1.0 / len(symbols), index=symbols)
+    if P is None:
+        return base
+    tilt = P.sum(axis=0)
+    tilt = tilt.reindex(symbols).fillna(0.0)
+    blended = base + 0.1 * tilt
+    return blended / blended.sum()
+
+
+def _ctx_with_prices(rb: pd.Timestamp) -> dict:
+    """A minimal walk_forward ctx: prices over the real symbols + macro_panel."""
+    idx = pd.DatetimeIndex([pd.Timestamp("2020-01-31"), pd.Timestamp("2020-02-29")])
+    prices = pd.DataFrame(
+        {s: [100.0, 101.0] for s in _REAL_SYMBOLS}, index=idx
+    )
+    return {
+        "rebalance_date": rb,
+        "prices": prices,
+        "returns": prices.pct_change().dropna(),
+        "macro_panel": _credit_stress_hist(),
+    }
+
+
+def test_make_steered_weight_fn_steered_path_returns_valid_row() -> None:
+    """weight_fn sources real_symbols from price columns, steers, returns valid weights (3.3)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, p_memorized=0.2)
+    rb = pd.Timestamp("2020-03-31")
+
+    weight_fn = make_steered_weight_fn(
+        agent=agent,
+        scorer=scorer,
+        real_symbols=_REAL_SYMBOLS,
+        build_inputs=_build_inputs_stub,
+        combine=_combine_stub,
+    )
+    w = weight_fn(_ctx_with_prices(rb))
+
+    assert isinstance(w, pd.Series)
+    assert list(w.index) == _REAL_SYMBOLS
+    assert w.sum() == pytest.approx(1.0)
+    # Steered tilt leaned weight toward the gold leg above equal weight.
+    gold_real = _AMAP.pseudo_to_real["Asset_C"]
+    assert w[gold_real] > 1.0 / len(_REAL_SYMBOLS)
+    # real_symbols in the weight_fn path come from the price columns.
+    assert agent.calls_views_to_bl  # views_to_bl was invoked
+
+
+def test_make_steered_weight_fn_unsteered_fallback_returns_base_row() -> None:
+    """is_weak ⇒ unsteered; weight_fn still returns a valid (base-blended) row (1.6, 3.3)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=True)
+    rb = pd.Timestamp("2020-03-31")
+
+    weight_fn = make_steered_weight_fn(
+        agent=agent,
+        scorer=scorer,
+        real_symbols=_REAL_SYMBOLS,
+        build_inputs=_build_inputs_stub,
+        combine=_combine_stub,
+    )
+    w = weight_fn(_ctx_with_prices(rb))
+
+    assert isinstance(w, pd.Series)
+    assert w.sum() == pytest.approx(1.0)
+    assert scorer.calls == []  # weak ⇒ unscored
+
+
+def test_make_steered_weight_fn_gate_excludes_all_falls_back_to_base() -> None:
+    """All views gated ⇒ views_to_bl (None, None) ⇒ combine returns the base row (3.2)."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, p_memorized=0.95)
+    rb = pd.Timestamp("2020-03-31")
+
+    weight_fn = make_steered_weight_fn(
+        agent=agent,
+        scorer=scorer,
+        real_symbols=_REAL_SYMBOLS,
+        build_inputs=_build_inputs_stub,
+        combine=_combine_stub,
+    )
+    w = weight_fn(_ctx_with_prices(rb))
+
+    # Combine fell back to the equal-weight base (no surviving tilt).
+    assert isinstance(w, pd.Series)
+    assert w.sum() == pytest.approx(1.0)
+    for s in _REAL_SYMBOLS:
+        assert w[s] == pytest.approx(1.0 / len(_REAL_SYMBOLS))
+
+
+def test_steered_decision_is_frozen() -> None:
+    """SteeredDecision is a frozen dataclass carrying the steered/unsteered outcome."""
+    view = _gold_view(confidence=0.6)
+    agent = _FakeAgent([view])
+    scorer = _FakeScoringAdapter(is_weak=False, p_memorized=0.2)
+    dec = steer_rebalance(
+        agent=agent,
+        scorer=scorer,
+        macro_state=dict(MACRO_STATE),
+        asset_snapshot=[dict(a) for a in ASSET_SNAPSHOT],
+        macro_hist=_credit_stress_hist(),
+        rebalance_date=pd.Timestamp("2020-03-31"),
+        real_symbols=_REAL_SYMBOLS,
+    )
+    with pytest.raises(Exception):
+        dec.steered = False  # type: ignore[misc]

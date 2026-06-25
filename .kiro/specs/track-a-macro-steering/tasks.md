@@ -55,7 +55,7 @@
   - _Requirements: 4.2, 5.2_
 
 - [ ] 3. Integration
-- [ ] 3.1 Steered rebalance composition for walk-forward
+- [x] 3.1 Steered rebalance composition for walk-forward
   - Compose the agent, characterizer, scoring path, and view steerer into a walk-forward-compatible steered decision step that holds the agent instance, sources real symbols from the sliced price columns, and feeds the shaped views into the existing unchanged view-to-Black-Litterman conversion
   - Keep the composition agent-type-agnostic: it accepts the base agent or any subclass (including the prompt-variant agent), so prompt refinement reuses it without changes and does not hard-depend on the variant
   - Apply the gating fallbacks so an unavailable/weak/disabled score yields the original Track A behavior for that date

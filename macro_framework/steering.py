@@ -34,7 +34,7 @@ from .anonymize import AssetMap
 from .llm_agent import LlmMacroAgent
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from datetime import date
 
     from recall_guard import GuardedScore
@@ -1025,3 +1025,279 @@ def score_distribution_report(
     if holdout_auc is not None:
         report["holdout_auc"] = float(holdout_auc)
     return report
+
+
+# ---------------------------------------------------------------------------
+# Task 3.1 — Steered rebalance composition for walk-forward.
+#
+# ``steer_rebalance`` is the single, network-free composition that wires the
+# already-built leaf pieces into ONE steered decision step, mirroring the design
+# "Steered rebalance" sequence (System Flows) and the ViewSteerer Implementation
+# Notes ("the steered weight_fn calls views_for_state → characterize →
+# score_rebalances → steer_views → views_to_bl"):
+#
+#   1. ``views, _ = agent.views_for_state(macro_state, asset_snapshot)``
+#   2. ``signal = characterize(macro_hist, rebalance_date, consistency_floor)``
+#   3. ``p_memorized`` — ONLY when ``config.enabled`` and a scorer is present and
+#      ``not scorer.is_weak``: render the directional prompt via
+#      ``render_directional`` and score it on the SEPARATE inference path
+#      (``scorer.score_rebalances([prompt])[0].p_memorized``, which is ``None`` on
+#      a parse/timeout failure). Otherwise ``p_memorized = None`` — the
+#      weak / disabled / no-scorer path, where ``steer_views`` passes through
+#      (Requirements 1.6, 1.7).
+#   4. ``steered_views = steer_views(views, p_memorized, signal, config)``
+#   5. ``P, Q = agent.views_to_bl(steered_views, real_symbols)`` — the UNCHANGED
+#      method; ``(None, None)`` when all views were excluded (Requirement 3.2),
+#      and the caller's ``combine`` then falls back to the base allocation exactly
+#      as Track A does.
+#   6. ``steered = config.enabled and p_memorized is not None`` — True only when a
+#      measured score actually shaped (or gated) the views.
+#
+# ``make_steered_weight_fn`` adapts this into a ``walk_forward`` ``weight_fn(ctx)
+# -> pd.Series``. To AVOID owning nb09's HRP / BL / blend math (Requirement 6.1),
+# that math is INJECTED: ``build_inputs(ctx) -> (macro_state, asset_snapshot)``
+# derives the agent inputs from the sliced ctx, and ``combine(ctx, P, Q) ->
+# pd.Series`` turns the steered (P, Q) — or the ``(None, None)`` fallback — into
+# target weights. The adapter holds ONE agent instance (design note: "holds the
+# same LlmMacroAgent (or VariantMacroAgent) instance") and sources
+# ``real_symbols`` from the price columns when not supplied, exactly as the Track
+# A weight_fn does (``real_symbols = list(ctx["prices"].columns)``).
+#
+# This task provides ONLY the composition + the steered/unsteered decision; it
+# writes NO artifacts (Requirement 3.3 — nb11 (task 4.1) owns the targets and the
+# decision log). The only steering effect is confidence/inclusion shaping via
+# ``steer_views``; the scorer's directional ``signal`` / ``raw_confidence`` are
+# never read and no return objective is introduced (Requirements 3.4, 3.5).
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SteeredDecision:
+    """The outcome of one steered rebalance decision (Requirements 1.6, 3.1-3.4).
+
+    Frozen so a decision is a stable value the (later) nb11 decision log can
+    persist verbatim. Carries the UNCHANGED ``views_to_bl`` output (``P``/``Q``,
+    possibly ``(None, None)`` when every view was excluded by the gate), the
+    shaped (or pass-through) ``steered_views``, the measured ``p_memorized``
+    (``None`` on the weak / disabled / no-scorer / scoring-failure path), the
+    deterministic ``regime_label``, and a ``steered`` flag that is ``False`` when
+    the decision fell back to plain Track A (unsteered).
+
+    Attributes
+    ----------
+    P, Q:
+        The ``LlmMacroAgent.views_to_bl`` output for the steered views — a
+        ``(pd.DataFrame, pd.DataFrame)`` BL view pair, or ``(None, None)`` when no
+        view survived (the caller's ``combine`` then falls back to the base
+        allocation, exactly as Track A; Requirement 3.2).
+    steered_views:
+        The views handed to ``views_to_bl``: shaped on the steered path, the
+        ORIGINAL unsteered views on the fallback path, or ``[]`` when the gate
+        excluded the whole rebalance (Requirements 3.1, 3.2, 1.6).
+    p_memorized:
+        The measured contamination score in ``[0, 1]`` for this rebalance, or
+        ``None`` when scoring was off / weak / unavailable / failed (Requirements
+        1.6, 1.7).
+    regime_label:
+        The deterministic PIT regime label from ``characterize`` (Requirement
+        2.5), carried for the decision log.
+    steered:
+        ``True`` only when ``config.enabled`` AND ``p_memorized is not None`` —
+        i.e. a measured score actually shaped or gated the views. ``False`` on
+        every fallback (disabled / weak / no scorer / scoring failure), where the
+        decision equals plain Track A for that date.
+    """
+
+    P: pd.DataFrame | None
+    Q: pd.DataFrame | None
+    steered_views: list[MacroView]
+    p_memorized: float | None
+    regime_label: str
+    steered: bool
+
+
+def steer_rebalance(
+    *,
+    agent: object,
+    scorer: object | None,
+    macro_state: dict[str, float],
+    asset_snapshot: list[dict[str, object]],
+    macro_hist: pd.DataFrame,
+    rebalance_date: pd.Timestamp,
+    real_symbols: list[str],
+    config: SteeringConfig = SteeringConfig(),
+) -> SteeredDecision:
+    """Compose one steered rebalance decision (design "Steered rebalance" flow).
+
+    Wires the already-built pieces — ``render_directional`` (2.1),
+    ``ScoringAdapter.score_rebalances`` (2.3), ``characterize`` (2.4),
+    ``steer_views`` (2.5) — plus the agent's UNCHANGED ``views_to_bl`` into one
+    network-free step. The agent and scorer are supplied by the caller (the
+    composition holds neither), so this is unit-testable with mocks.
+
+    Steps:
+
+    1. ``views, _ = agent.views_for_state(macro_state, asset_snapshot)`` — the
+       agent's own decision call, unchanged (Requirement 1.3 boundary).
+    2. ``signal = characterize(macro_hist, rebalance_date,
+       config.consistency_floor)`` — a deterministic PIT characterization of the
+       macro panel strictly before the rebalance date (Requirements 2.1, 2.2).
+    3. ``p_memorized`` is measured on the SEPARATE inference path ONLY when
+       ``config.enabled`` AND ``scorer is not None`` AND ``not scorer.is_weak``:
+       the directional prompt is rendered via ``render_directional`` and scored by
+       ``scorer.score_rebalances([prompt])[0]`` (its ``p_memorized`` is ``None`` on
+       a parse/timeout failure). Otherwise ``p_memorized = None`` — the weak /
+       disabled / no-scorer path, where ``steer_views`` passes through
+       (Requirements 1.6, 1.7).
+    4. ``steered_views = steer_views(views, p_memorized, signal, config)`` — the
+       only place contamination + macro consistency touch the views (confidence /
+       inclusion shaping only; Requirements 3.1, 3.4, 3.5).
+    5. ``P, Q = agent.views_to_bl(steered_views, real_symbols)`` — the UNCHANGED
+       method; ``(None, None)`` when the gate excluded all views (Requirement 3.2).
+    6. ``steered = config.enabled and p_memorized is not None``.
+
+    No artifacts are written here (Requirement 3.3 — nb11 owns targets / decision
+    log). The scorer's directional ``signal`` / ``raw_confidence`` are never read
+    (Requirements 3.4, 3.5).
+
+    Parameters
+    ----------
+    agent:
+        An ``LlmMacroAgent`` (or ``VariantMacroAgent``) instance — only its
+        ``views_for_state`` and the UNCHANGED ``views_to_bl`` are called.
+    scorer:
+        The calibrated scoring adapter (``ScoringAdapter`` or equivalent) exposing
+        ``is_weak`` and ``score_rebalances``; ``None`` disables scoring (pass-through).
+    macro_state:
+        The agent's z-scored macro state for this rebalance.
+    asset_snapshot:
+        The agent's anonymized asset snapshot for this rebalance.
+    macro_hist:
+        The macro panel sliced strictly before ``rebalance_date`` (e.g.
+        ``ctx["macro_panel"]``); consumed read-only by ``characterize``.
+    rebalance_date:
+        The decision date.
+    real_symbols:
+        The real tickers ``views_to_bl`` keys ``P``/``Q`` on (the price columns).
+    config:
+        Steering configuration (enabled flag, gate threshold, consistency floor).
+
+    Returns
+    -------
+    SteeredDecision
+        The (possibly ``(None, None)``) BL view pair, the steered / unsteered
+        views, the measured ``p_memorized``, the regime label, and the ``steered``
+        flag.
+    """
+    # 1. The agent's own decision call (unchanged).
+    views, _ = agent.views_for_state(macro_state, asset_snapshot)
+
+    # 2. Deterministic PIT macro characterization strictly before the date.
+    signal = characterize(macro_hist, rebalance_date, config.consistency_floor)
+
+    # 3. Measure p_memorized on the separate inference path, but only when scoring
+    #    is enabled, a scorer is present, and the calibrator is not weak. Each of
+    #    those gates degrades to the unsteered (p_memorized=None) path so the
+    #    steered variant equals plain Track A for that date (R1.6, R1.7).
+    p_memorized: float | None = None
+    if config.enabled and scorer is not None and not scorer.is_weak:
+        prompt = render_directional(macro_state, asset_snapshot)
+        score = scorer.score_rebalances([prompt])[0]
+        # None on a parse/timeout failure ⇒ steer_views passes through (R1.6).
+        p_memorized = score.p_memorized
+
+    # 4. The ONLY place contamination + macro consistency shape the views.
+    steered_views = steer_views(views, p_memorized, signal, config)
+
+    # 5. The UNCHANGED views_to_bl; (None, None) when the gate excluded all views.
+    P, Q = agent.views_to_bl(steered_views, real_symbols)
+
+    # 6. Steered iff a measured score actually shaped/gated the views.
+    steered = config.enabled and p_memorized is not None
+
+    return SteeredDecision(
+        P=P,
+        Q=Q,
+        steered_views=list(steered_views),
+        p_memorized=p_memorized,
+        regime_label=signal.regime_label,
+        steered=steered,
+    )
+
+
+def make_steered_weight_fn(
+    *,
+    agent: object,
+    scorer: object | None,
+    real_symbols: list[str] | None = None,
+    build_inputs: Callable[[dict], tuple[dict[str, float], list[dict[str, object]]]],
+    combine: Callable[[dict, pd.DataFrame | None, pd.DataFrame | None], pd.Series],
+    config: SteeringConfig = SteeringConfig(),
+) -> Callable[[dict], pd.Series]:
+    """Adapt ``steer_rebalance`` into a ``walk_forward`` ``weight_fn(ctx) -> pd.Series``.
+
+    Returns a closure holding ONE agent instance (design note: "holds the same
+    ``LlmMacroAgent`` (or ``VariantMacroAgent``) instance") and the scorer, so the
+    same agent runs ``views_for_state`` and the UNCHANGED ``views_to_bl`` for each
+    rebalance. nb09's HRP / BL / blend math is INJECTED rather than owned here
+    (Requirement 6.1):
+
+    * ``build_inputs(ctx) -> (macro_state, asset_snapshot)`` derives the agent
+      inputs from the (already PIT-sliced) ctx.
+    * ``combine(ctx, P, Q) -> pd.Series`` turns the steered ``(P, Q)`` — or the
+      ``(None, None)`` fallback — into target weights, owning the BL posterior /
+      base-allocation blend. When ``steer_views`` excludes all views, ``P``/``Q``
+      are ``None`` and ``combine`` falls back to the base allocation, exactly as
+      Track A does (Requirement 3.2).
+
+    The weight_fn sources ``real_symbols`` from ``list(ctx["prices"].columns)``
+    when ``real_symbols`` is not supplied (the real tickers, exactly as the Track
+    A weight_fn in nb09), reads ``macro_hist`` from ``ctx["macro_panel"]`` and the
+    date from ``ctx["rebalance_date"]``, calls ``steer_rebalance``, and returns
+    ``combine(ctx, dec.P, dec.Q)``.
+
+    This task writes no artifacts; nb11 (task 4.1) drives this weight_fn through
+    ``walk_forward`` to produce the steered variant's own targets / decision log
+    (Requirement 3.3).
+
+    Parameters
+    ----------
+    agent:
+        The agent instance reused across rebalances (only ``views_for_state`` and
+        the UNCHANGED ``views_to_bl`` are called).
+    scorer:
+        The calibrated scoring adapter (or ``None`` to disable scoring).
+    real_symbols:
+        The real tickers for ``views_to_bl``; when ``None`` they are sourced from
+        ``ctx["prices"].columns`` per rebalance (the Track A convention).
+    build_inputs:
+        Injected: maps a walk-forward ctx to ``(macro_state, asset_snapshot)``.
+    combine:
+        Injected: maps ``(ctx, P, Q)`` to a target-weight ``pd.Series`` (owns the
+        BL / base blend; falls back to base on ``(None, None)``).
+    config:
+        Steering configuration shared across rebalances.
+
+    Returns
+    -------
+    Callable[[dict], pd.Series]
+        A ``walk_forward``-compatible ``weight_fn``.
+    """
+
+    def weight_fn(ctx: dict) -> pd.Series:
+        macro_state, asset_snapshot = build_inputs(ctx)
+        # Source the real tickers exactly as the Track A weight_fn does.
+        symbols = real_symbols if real_symbols is not None else list(ctx["prices"].columns)
+        decision = steer_rebalance(
+            agent=agent,
+            scorer=scorer,
+            macro_state=macro_state,
+            asset_snapshot=asset_snapshot,
+            macro_hist=ctx["macro_panel"],
+            rebalance_date=ctx["rebalance_date"],
+            real_symbols=symbols,
+            config=config,
+        )
+        return combine(ctx, decision.P, decision.Q)
+
+    return weight_fn
