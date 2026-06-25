@@ -28,7 +28,10 @@ from recall_guard import MemoryGuardedScorer
 from recall_guard.dataset.fmp_corpora import build_calibration
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import date
+
+    from recall_guard import GuardedScore
 
 # Rounding mirrors macro_framework.llm_agent.LlmMacroAgent.views_for_state:
 # macro z-scores to 2dp, asset numeric fields to 3dp. The scorer must see the
@@ -332,3 +335,44 @@ class ScoringAdapter:
             is_weak=scorer.is_weak,
         )
         return cls(calibration)
+
+    def score_rebalances(self, prompts: Sequence[str]) -> list[GuardedScore]:
+        """Score per-rebalance directional prompts on the separate inference path.
+
+        A thin, order-preserving wrapper over the calibrated scorer's
+        ``score_many``: one NIM call per prompt, run on the calibrated
+        ``recall_guard`` scorer — the **separate, logprob-bearing inference
+        path**, not the agent's DSPy/OpenRouter call, which stays untouched
+        (Requirement 1.3). The prompts carry the same anonymized, z-scored PIT
+        macro content the agent reasoned over (rendered by ``render_directional``;
+        Requirement 1.2). Results align 1:1 with ``prompts`` in input order,
+        because ``MemoryGuardedScorer.score_many`` preserves order.
+
+        The full ``list[GuardedScore]`` is returned on purpose: task 2.7's
+        ``score_distribution_report`` needs ``p_memorized``, ``parse_ok``,
+        ``fail_reason``, and ``memguard_confidence``. The design Data Models note
+        ("Only ``p_memorized`` and ``fail_reason`` are steering inputs … the
+        scorer's ``signal`` / ``raw_confidence`` are never read"; design
+        "ScoringAdapter" Responsibilities) is a **downstream consumption
+        contract** enforced by the ViewSteerer (task 2.4 reads only
+        ``p_memorized``) and the gating logic — never read from a decision path
+        here — not a narrowing of this return type.
+
+        If the NIM endpoint rejects the credential mid-scoring, ``recall_guard``
+        raises ``ConfigurationError``; it is left to propagate unchanged so the
+        caller fails fast with an actionable error rather than acting on an
+        unscored result (Requirement 1.5).
+
+        Parameters
+        ----------
+        prompts:
+            Per-rebalance directional prompts (typically from
+            ``render_directional``), one per decision to score.
+
+        Returns
+        -------
+        list[GuardedScore]
+            One ``GuardedScore`` per prompt, in input order; failed scores carry
+            their ``fail_reason`` (the scorer does not drop them).
+        """
+        return self.scorer.score_many(prompts)

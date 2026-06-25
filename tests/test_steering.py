@@ -317,3 +317,177 @@ def test_calibrate_from_fmp_propagates_configuration_error_on_empty_key(
             out_dir=tmp_path,
             api_key="",
         )
+
+
+# ---------------------------------------------------------------------------
+# Task 2.3 — Scoring path on the separate inference path
+#
+# score_rebalances is a thin, order-preserving wrapper over the calibrated
+# scorer's score_many (one NIM call per prompt — the separate, logprob-bearing
+# inference path, NOT the agent's DSPy path). It returns the full list of
+# GuardedScore (task 2.7's reporter needs p_memorized / parse_ok / fail_reason /
+# memguard_confidence); the "expose only p_memorized + failure reason" rule is a
+# downstream consumption contract (the 2.4 ViewSteerer reads only p_memorized),
+# not a narrowing of this return type.
+#
+# The scorer is a FAKE here — no NIM, no FMP. We mirror the real
+# recall_guard.GuardedScore field shape and the real score_many contract
+# (Sequence[str] -> list[GuardedScore], order preserved).
+#
+# Requirements: 1.2 (same-content rebalance prompts scored), 1.3 (separate
+# logprob-bearing inference path via the calibrated scorer), 1.5 (a rejected
+# credential mid-scoring surfaces ConfigurationError, not swallowed).
+# ---------------------------------------------------------------------------
+
+
+def _fake_guarded_score(
+    *,
+    prompt: str,
+    p_memorized: float,
+    parse_ok: bool = True,
+    fail_reason: str | None = None,
+):
+    """Build a recall_guard-faithful GuardedScore for the fake scorer.
+
+    Uses the REAL GuardedScore so the test stays honest about the dataclass the
+    wrapper returns (prompt_hash / parse_ok / signal / raw_confidence /
+    p_memorized / memguard_confidence / features / fail_reason).
+    """
+    from hashlib import sha256
+
+    from recall_guard import GuardedScore
+
+    return GuardedScore(
+        prompt_hash=sha256(prompt.encode("utf-8")).hexdigest()[:16],
+        parse_ok=parse_ok,
+        signal=1 if parse_ok else None,
+        raw_confidence=0.5 if parse_ok else None,
+        p_memorized=p_memorized if parse_ok else None,
+        memguard_confidence=(0.5 * (1.0 - p_memorized)) if parse_ok else None,
+        features=None,
+        fail_reason=fail_reason,
+    )
+
+
+class _FakeCalibratedScorer:
+    """Stand-in for a calibrated MemoryGuardedScorer: only score_many is used.
+
+    Mirrors the real signature ``score_many(prompts, *, max_workers=8) ->
+    list[GuardedScore]`` and preserves input order. Records the prompts it was
+    called with so the test can assert delegation.
+    """
+
+    holdout_auc: float = 0.83
+    is_weak: bool = False
+
+    def __init__(self) -> None:
+        self.calls: list[list[str]] = []
+
+    def score_many(self, prompts, *, max_workers: int = 8):
+        self.calls.append(list(prompts))
+        return [
+            _fake_guarded_score(prompt=p, p_memorized=round(0.1 * i, 3))
+            for i, p in enumerate(prompts)
+        ]
+
+
+class _RaisingCalibratedScorer:
+    """Calibrated scorer whose score_many rejects the credential mid-scoring."""
+
+    holdout_auc: float = 0.83
+    is_weak: bool = False
+
+    def score_many(self, prompts, *, max_workers: int = 8):
+        raise ConfigurationError("NIM credential rejected")
+
+
+def _adapter_around(scorer) -> ScoringAdapter:
+    """Wrap a fake calibrated scorer in a ScoringAdapter (no calibration call)."""
+    return ScoringAdapter(
+        CalibrationResult(scorer=scorer, holdout_auc=scorer.holdout_auc, is_weak=scorer.is_weak)
+    )
+
+
+def test_score_rebalances_returns_one_score_per_prompt_in_order() -> None:
+    """Results align 1:1 with input prompts, in input order (1.2, 1.3)."""
+    scorer = _FakeCalibratedScorer()
+    adapter = _adapter_around(scorer)
+    prompts = ["prompt-A", "prompt-B", "prompt-C", "prompt-D"]
+
+    out = adapter.score_rebalances(prompts)
+
+    assert len(out) == len(prompts)
+    # Order preserved: prompt_hash of each result matches the prompt at that index.
+    from hashlib import sha256
+
+    for prompt, score in zip(prompts, out, strict=True):
+        assert score.prompt_hash == sha256(prompt.encode("utf-8")).hexdigest()[:16]
+
+
+def test_score_rebalances_delegates_to_scorer_score_many() -> None:
+    """score_rebalances delegates to the calibrated scorer's score_many (1.3)."""
+    scorer = _FakeCalibratedScorer()
+    adapter = _adapter_around(scorer)
+    prompts = ["p1", "p2", "p3"]
+
+    adapter.score_rebalances(prompts)
+
+    assert scorer.calls == [prompts]
+
+
+def test_score_rebalances_returns_full_guardedscore_for_reporter() -> None:
+    """Full GuardedScore is returned (2.7 reporter reads p_memorized/parse_ok/...)."""
+    scorer = _FakeCalibratedScorer()
+    adapter = _adapter_around(scorer)
+
+    out = adapter.score_rebalances(["only-prompt"])
+
+    score = out[0]
+    # The fields task 2.7 consumes must be present (not narrowed away).
+    assert hasattr(score, "p_memorized")
+    assert hasattr(score, "parse_ok")
+    assert hasattr(score, "fail_reason")
+    assert hasattr(score, "memguard_confidence")
+    assert score.parse_ok is True
+    assert score.p_memorized == 0.0
+
+
+def test_score_rebalances_preserves_failure_records() -> None:
+    """A failed (parse) score is returned verbatim with its fail_reason (1.2)."""
+
+    class _MixedScorer(_FakeCalibratedScorer):
+        def score_many(self, prompts, *, max_workers: int = 8):
+            self.calls.append(list(prompts))
+            return [
+                _fake_guarded_score(prompt="ok", p_memorized=0.2, parse_ok=True),
+                _fake_guarded_score(
+                    prompt="bad", p_memorized=0.0, parse_ok=False, fail_reason="parse_failure"
+                ),
+            ]
+
+    adapter = _adapter_around(_MixedScorer())
+    out = adapter.score_rebalances(["ok", "bad"])
+
+    assert out[0].parse_ok is True
+    assert out[1].parse_ok is False
+    assert out[1].fail_reason == "parse_failure"
+    assert out[1].p_memorized is None
+
+
+def test_score_rebalances_propagates_configuration_error() -> None:
+    """A ConfigurationError raised mid-scoring propagates out, not swallowed (1.5)."""
+    adapter = _adapter_around(_RaisingCalibratedScorer())
+
+    with pytest.raises(ConfigurationError):
+        adapter.score_rebalances(["p1", "p2"])
+
+
+def test_score_rebalances_handles_empty_prompts() -> None:
+    """No prompts ⇒ empty result, still a single delegated call (order-preserving)."""
+    scorer = _FakeCalibratedScorer()
+    adapter = _adapter_around(scorer)
+
+    out = adapter.score_rebalances([])
+
+    assert out == []
+    assert scorer.calls == [[]]

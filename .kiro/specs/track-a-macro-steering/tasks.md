@@ -23,7 +23,7 @@
   - Observable: with the library and FMP builder mocked, calibration yields a scorer plus quality flags from corpora read back off disk, and an empty/rejected credential raises the configuration error; unit tests cover each path
   - _Requirements: 1.2, 1.5, 1.7_
 
-- [ ] 2.3 Scoring path on the separate inference path
+- [x] 2.3 Scoring path on the separate inference path
   - Score rebalance prompts through the calibrated scorer on the separate logprob-bearing inference path, preserving input order
   - Expose only the memorization probability and failure reason to callers — never the scorer's own directional output — and propagate the configuration error if the credential is rejected while scoring
   - Observable: with the library mocked, scoring returns one result per prompt in input order carrying only the memorization probability/failure reason, and a rejected credential mid-scoring raises the configuration error; unit tests cover success and failure records
