@@ -1,7 +1,7 @@
 # Implementation Plan
 
 - [ ] 1. Foundation: declare the scoring dependency
-- [ ] 1.1 Add recall_guard as a pinned project dependency
+- [x] 1.1 Add recall_guard as a pinned project dependency
   - Add the released `recall_guard @ v0.1.0` git dependency to the project's dependency list and lock it
   - Confirm the environment resolves and `recall_guard`'s public scorer surface is importable
   - This dependency manifest is the only existing file the whole feature is permitted to edit; all other work is additive

@@ -17,7 +17,17 @@ dependencies = [
     "pyarrow",
     "python-dotenv",
     "quantstats>=0.0.81",
+    "recall-guard",
     "riskfolio-lib>=7.2.1",
     "sqlalchemy",
     "vectorbt>=0.28.2",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+]
+
+[tool.uv.sources]
+recall-guard = { git = "https://github.com/norandom/memguard_alpha.git", rev = "v0.1.0" }
