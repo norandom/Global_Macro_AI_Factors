@@ -698,3 +698,193 @@ def test_steering_signal_is_frozen() -> None:
     assert isinstance(sig, SteeringSignal)
     with pytest.raises(Exception):
         sig.regime_label = "tampered"  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# Task 2.5 — View confidence shaping and gating (ViewSteerer)
+#
+# steer_views(views, p_memorized, signal, config) produces a NEW list of
+# MacroView objects whose ONLY changed field is `confidence`:
+#   adjusted = clip(base * (1 - p_memorized) * signal.consistency(view), 0, 1)
+# (R3.1, R3.4). The macro-consistency floor is already applied INSIDE
+# signal.consistency (built with a floor by characterize in task 2.4) — it is
+# NOT re-applied here (no double-flooring).
+#
+# Gating (R3.2): p_memorized >= config.threshold ⇒ the whole rebalance's views
+# are dropped (empty list returned).
+#
+# Passthrough (R1.6 additive / R1.7 weak / disabled): when `not config.enabled`
+# OR `p_memorized is None`, the input views are returned UNCHANGED. The
+# composition (task 3.1) supplies p_memorized=None when the calibrator is_weak,
+# so the weak-calibrator case is handled here as the None case (steer_views does
+# not receive the scorer).
+#
+# steer_views never introduces a return/forecast objective (R3.5) and never
+# mutates the input list or its views (R3.4). Tests use the REAL MacroView and a
+# REAL SteeringSignal from characterize on a small synthetic panel.
+# ---------------------------------------------------------------------------
+
+from macro_framework.steering import (
+    SteeringConfig,
+    steer_views,
+)
+
+
+def _signal_for(rows: dict, *, consistency_floor: float = 0.5) -> SteeringSignal:
+    """A real SteeringSignal from characterize on a one-row synthetic panel."""
+    panel = _macro_panel(rows, ["2020-02-29"])
+    return characterize(panel, pd.Timestamp("2020-03-31"), consistency_floor=consistency_floor)
+
+
+def test_steering_config_defaults() -> None:
+    """SteeringConfig is a frozen dataclass with the design's defaults."""
+    cfg = SteeringConfig()
+    assert cfg.enabled is True
+    assert cfg.threshold == 0.8
+    assert cfg.consistency_floor == 0.5
+    with pytest.raises(Exception):
+        cfg.enabled = False  # type: ignore[misc]
+
+
+def test_steer_views_monotonic_in_p_memorized() -> None:
+    """Higher p_memorized ⇒ strictly lower adjusted confidence (R3.1)."""
+    # Fixed view + signal; vary only p_memorized (all below the 0.8 threshold).
+    sig = _signal_for(_CREDIT_STRESS)  # prefers gold/cash
+    view = _view("Asset_C", confidence=0.6)  # gold -> consistency 1.0
+    confs = [
+        steer_views([view], p_mem, sig)[0].confidence
+        for p_mem in (0.0, 0.2, 0.5, 0.7)
+    ]
+    # Strictly decreasing as p_memorized rises (pairwise; consecutive slices).
+    assert all(earlier > later for earlier, later in zip(confs, confs[1:]))
+
+
+def test_steer_views_exact_formula_preferred_view() -> None:
+    """adjusted == base*(1-p_mem)*consistency, clipped to [0,1] (R3.1, R3.4)."""
+    sig = _signal_for(_CREDIT_STRESS)
+    base = 0.6
+    p_mem = 0.25
+    # Asset_C = gold -> preferred under credit_stress -> consistency 1.0.
+    view = _view("Asset_C", confidence=base)
+    cons = sig.consistency(view)
+    assert cons == 1.0
+    out = steer_views([view], p_mem, sig)
+    expected = base * (1.0 - p_mem) * cons
+    assert out[0].confidence == pytest.approx(expected)
+
+
+def test_steer_views_exact_formula_contradicting_view_uses_signal_floor() -> None:
+    """Consistency floor comes from the SIGNAL, applied once (no double-floor)."""
+    floor = 0.5
+    sig = _signal_for(_CREDIT_STRESS, consistency_floor=floor)
+    base = 0.6
+    p_mem = 0.25
+    # Asset_B = tech -> NOT preferred under credit_stress -> consistency == floor.
+    view = _view("Asset_B", confidence=base)
+    cons = sig.consistency(view)
+    assert cons == floor
+    out = steer_views([view], p_mem, sig)
+    expected = base * (1.0 - p_mem) * floor
+    assert out[0].confidence == pytest.approx(expected)
+
+
+def test_steer_views_clips_to_unit_interval() -> None:
+    """Adjusted confidence is clipped into [0, 1] (R3.4)."""
+    sig = _signal_for(_NEUTRAL)  # neutral prefers all -> consistency 1.0
+    # A pathological over-1 base confidence with p_mem=0 would exceed 1 unclipped.
+    view = _view("Asset_A", confidence=1.5)
+    out = steer_views([view], 0.0, sig)
+    assert out[0].confidence == 1.0
+    # And it never goes below 0 (consistency/(1-p_mem) are non-negative anyway).
+    view0 = _view("Asset_A", confidence=0.0)
+    out0 = steer_views([view0], 0.5, sig)
+    assert out0[0].confidence == 0.0
+
+
+def test_steer_views_excludes_at_threshold(monkeypatch=None) -> None:
+    """p_memorized >= threshold ⇒ empty list (whole rebalance dropped) (R3.2)."""
+    sig = _signal_for(_NEUTRAL)
+    cfg = SteeringConfig(threshold=0.8)
+    views = [_view("Asset_A"), _view("Asset_B")]
+    # At the threshold.
+    assert steer_views(views, 0.8, sig, cfg) == []
+    # Above the threshold.
+    assert steer_views(views, 0.95, sig, cfg) == []
+
+
+def test_steer_views_below_threshold_keeps_views() -> None:
+    """p_memorized just below threshold ⇒ views retained (shaped, not dropped)."""
+    sig = _signal_for(_NEUTRAL)
+    cfg = SteeringConfig(threshold=0.8)
+    views = [_view("Asset_A", confidence=0.6)]
+    out = steer_views(views, 0.79, sig, cfg)
+    assert len(out) == 1
+
+
+def test_steer_views_passthrough_when_disabled() -> None:
+    """enabled=False ⇒ input views returned unchanged (R1.6)."""
+    sig = _signal_for(_CREDIT_STRESS)
+    cfg = SteeringConfig(enabled=False)
+    views = [_view("Asset_C", confidence=0.6), _view("Asset_B", confidence=0.4)]
+    out = steer_views(views, 0.3, sig, cfg)
+    assert [v.confidence for v in out] == [0.6, 0.4]
+    assert [v.to_dict() for v in out] == [v.to_dict() for v in views]
+
+
+def test_steer_views_passthrough_when_p_memorized_none() -> None:
+    """p_memorized is None (fail / weak calibrator) ⇒ unchanged (R1.6/R1.7)."""
+    sig = _signal_for(_CREDIT_STRESS)
+    views = [_view("Asset_C", confidence=0.6), _view("Asset_B", confidence=0.4)]
+    out = steer_views(views, None, sig)
+    assert [v.confidence for v in out] == [0.6, 0.4]
+    assert [v.to_dict() for v in out] == [v.to_dict() for v in views]
+
+
+def test_steer_views_does_not_mutate_input() -> None:
+    """Input list and its views are never mutated; output is fresh objects (R3.4)."""
+    sig = _signal_for(_CREDIT_STRESS)
+    view = _view("Asset_C", confidence=0.6)
+    views = [view]
+    before = view.to_dict()
+    out = steer_views(views, 0.25, sig)
+    # Input view object untouched.
+    assert view.to_dict() == before
+    assert view.confidence == 0.6
+    # New list and new object identity.
+    assert out is not views
+    assert out[0] is not view
+
+
+def test_steer_views_changes_only_confidence() -> None:
+    """Only confidence differs; legs/expected_excess/rationale identical (R3.4)."""
+    sig = _signal_for(_CREDIT_STRESS)
+    view = MacroView(
+        asset_long="Asset_C",
+        asset_short="Asset_B",
+        expected_excess_annualized=0.07,
+        confidence=0.6,
+        rationale="defensive tilt",
+    )
+    out = steer_views([view], 0.25, sig)[0]
+    assert out.asset_long == view.asset_long
+    assert out.asset_short == view.asset_short
+    assert out.expected_excess_annualized == view.expected_excess_annualized
+    assert out.rationale == view.rationale
+    assert out.confidence != view.confidence
+
+
+def test_steer_views_deterministic() -> None:
+    """Equal inputs ⇒ equal output (determinism)."""
+    sig = _signal_for(_GOLDILOCKS)
+    views = [_view("Asset_A", confidence=0.6), _view("Asset_D", confidence=0.4)]
+    a = steer_views(views, 0.3, sig)
+    b = steer_views([_view("Asset_A", confidence=0.6), _view("Asset_D", confidence=0.4)], 0.3, sig)
+    assert [v.to_dict() for v in a] == [v.to_dict() for v in b]
+
+
+def test_steer_views_empty_views_returns_empty() -> None:
+    """No views in ⇒ empty list out (and not the same object)."""
+    sig = _signal_for(_NEUTRAL)
+    views: list[MacroView] = []
+    out = steer_views(views, 0.3, sig)
+    assert out == []

@@ -36,7 +36,7 @@
   - Observable: a unit test confirms observations dated on/after the rebalance date are excluded, the regime label is deterministic, the consistency value stays within the floor-to-one band, and the signals artifact is written under a new filename
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 2.5 View confidence shaping and gating
+- [x] 2.5 View confidence shaping and gating
   - Shape each view's confidence as base confidence times one-minus-memorization times the macro consistency factor, returning a new view list and leaving expected-excess, asset legs, and the inputs untouched
   - Exclude a rebalance's views when memorization meets or exceeds the configured threshold; pass the views through unchanged when scoring is disabled, the calibrator is weak, or the memorization value is unavailable
   - Introduce only confidence/inclusion shaping — no return objective

@@ -592,3 +592,147 @@ def write_steering_signals(signals: Sequence[SteeringSignal], path: str | Path) 
     df = pd.DataFrame(records, columns=columns)
     df = df.set_index("rebalance_date")
     df.to_parquet(Path(path))
+
+
+# ---------------------------------------------------------------------------
+# Task 2.5 — ViewSteerer: confidence shaping and gating.
+#
+# ``steer_views`` is the only place the measured contamination score and the
+# macro-consistency signal touch the agent's views. Its sole effect is
+# confidence/inclusion shaping (Requirement 3.4) — it NEVER changes a view's
+# asset legs, expected excess, or rationale, and NEVER introduces a return /
+# forecast objective (Requirement 3.5). The shaped views are consumed by the
+# UNCHANGED ``LlmMacroAgent.views_to_bl``.
+#
+# Core formula (Requirements 3.1, 3.4):
+#     adjusted_confidence = base_confidence * (1 - p_memorized) * consistency
+# where ``consistency = signal.consistency(view)`` ALREADY carries the
+# macro-consistency floor (task 2.4's ``characterize`` built the SteeringSignal
+# with that floor). The floor is therefore NOT re-applied here — re-flooring
+# would double-apply it. The result is clipped to ``[0, 1]``.
+#
+# Gating (Requirement 3.2): when ``p_memorized >= config.threshold`` the whole
+# rebalance's views are excluded (an empty list is returned) — "down-weight or
+# exclude that view" at the rebalance level.
+#
+# Passthrough (Requirements 1.6 additive / 1.7 weak): when ``not
+# config.enabled`` OR ``p_memorized is None`` the input views are returned
+# UNCHANGED. The composition (task 3.1) supplies ``p_memorized=None`` when the
+# calibrator ``is_weak`` (steer_views never receives the scorer), so the
+# weak-calibrator graceful-degradation case is handled here as the None case —
+# the steered variant then equals plain Track A for that rebalance.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SteeringConfig:
+    """Configuration for view confidence shaping and gating (Requirements 1.6, 3.1-3.5).
+
+    Frozen so a config is a stable, hashable value shared across rebalances.
+
+    Attributes
+    ----------
+    enabled:
+        Master switch. ``False`` ⇒ ``steer_views`` returns the input views
+        unchanged (scoring is additive; Requirement 1.6).
+    threshold:
+        ``p_memorized`` at/above which a rebalance's views are excluded — the
+        hard contamination gate (Requirement 3.2). The research expects the
+        anonymized macro prompts to yield uniformly low ``p_memorized``, so this
+        gate may rarely or never fire; the ``(1 - p_memorized)`` discount applies
+        continuously regardless.
+    consistency_floor:
+        The minimum macro-consistency multiplier. This is the floor the
+        composition passes into ``characterize`` when building the
+        :class:`SteeringSignal` (the single source of truth for the signal's
+        floor). ``steer_views`` itself does NOT re-apply it: ``signal.consistency``
+        already returns values in ``[consistency_floor, 1.0]``, so re-flooring
+        here would double-apply it. The field lives on the config because the
+        composition reads it from one place when constructing both the signal and
+        this config.
+    """
+
+    enabled: bool = True
+    threshold: float = 0.8
+    consistency_floor: float = 0.5
+
+
+def steer_views(
+    views: list[MacroView],
+    p_memorized: float | None,
+    signal: SteeringSignal,
+    config: SteeringConfig = SteeringConfig(),
+) -> list[MacroView]:
+    """Shape view confidence from contamination + macro consistency (R1.6, 3.1-3.5).
+
+    Returns a **new** ``list[MacroView]`` of **new** ``MacroView`` objects; the
+    input list and its views are never mutated. Only ``confidence`` is changed —
+    ``asset_long``, ``asset_short``, ``expected_excess_annualized`` and
+    ``rationale`` are copied through unchanged (Requirement 3.4). No
+    return/forecast objective is ever introduced (Requirement 3.5).
+
+    Behaviour:
+
+    * **Passthrough** (Requirements 1.6, 1.7): if ``not config.enabled`` OR
+      ``p_memorized is None``, the input views are returned UNCHANGED (the same
+      content, returned as-is). The composition (task 3.1) supplies
+      ``p_memorized=None`` when the calibrator ``is_weak``, so the weak-calibrator
+      case degrades here to plain Track A.
+    * **Gate** (Requirement 3.2): if ``p_memorized >= config.threshold`` the
+      whole rebalance's views are excluded — an empty list is returned.
+    * **Shape** (Requirements 3.1, 3.4): otherwise each view's confidence becomes
+      ``clip(base * (1 - p_memorized) * signal.consistency(view), 0.0, 1.0)``.
+      ``signal.consistency(view)`` already carries the macro-consistency floor
+      (built by ``characterize``), so the floor is applied exactly once here.
+
+    Pure and deterministic: equal inputs ⇒ equal output (no randomness, no I/O).
+
+    Parameters
+    ----------
+    views:
+        The agent's views for ONE rebalance (must share that rebalance's
+        ``signal`` / ``p_memorized``).
+    p_memorized:
+        The measured contamination score in ``[0, 1]`` for this rebalance, or
+        ``None`` when scoring failed / the calibrator is weak / scoring is off.
+    signal:
+        The per-rebalance :class:`SteeringSignal` from ``characterize``; supplies
+        the floored ``consistency(view)`` multiplier.
+    config:
+        Steering configuration (enabled flag, gate threshold, consistency floor).
+
+    Returns
+    -------
+    list[MacroView]
+        Passthrough: the input views unchanged (disabled / ``p_memorized`` None).
+        Gated: an empty list (``p_memorized >= threshold``).
+        Shaped: a new list of new views with adjusted confidence only.
+    """
+    # Passthrough (Requirement 1.6 additive / 1.7 weak): return input unchanged.
+    if not config.enabled or p_memorized is None:
+        return views
+
+    # Hard contamination gate (Requirement 3.2): drop the rebalance's views.
+    if p_memorized >= config.threshold:
+        return []
+
+    from .llm_agent import MacroView  # read-only import (leaf consumer)
+
+    contamination_discount = 1.0 - p_memorized
+    steered: list[MacroView] = []
+    for view in views:
+        # consistency() already carries the macro-consistency floor (R3.1/3.4);
+        # do NOT re-floor here (no double application).
+        consistency = signal.consistency(view)
+        adjusted = view.confidence * contamination_discount * consistency
+        adjusted = min(1.0, max(0.0, adjusted))  # clip to [0, 1]
+        steered.append(
+            MacroView(
+                asset_long=view.asset_long,
+                asset_short=view.asset_short,
+                expected_excess_annualized=view.expected_excess_annualized,
+                confidence=adjusted,
+                rationale=view.rationale,
+            )
+        )
+    return steered
