@@ -164,3 +164,31 @@ validated live._
   control. Date-split (pre/post cutoff) is unnecessary and was thin post-cutoff; the framing split uses
   abundant pre-cutoff data.
 - Verify the regime-loadings parser separately (scoring needs no parse; consuming the loadings does).
+
+---
+
+## 2026-06-26 — Design generated + adversarial review
+
+_design.md written (Extension; light discovery = the two probes + gap analysis above). New leaf module
+`macro_framework/factor_scoring.py` (FactorScorer, regime-loadings renderer+parser, tilt-as-exposure,
+honesty_adjust, contrast harness, factor_stability) + nb13/nb14. Two parallel reviewers (gate +
+technical adversary)._
+
+- **Technical adversary: SOUND (with fixes).** Verified against real source: `compute_mia_features`
+  bypasses the parse gate; the `build_baseline`/`train`/`predict_proba` flow matches; **`ControlBaseline`
+  persistence is feasible** (verified by execution — fields JSON-serializable, `MCSCalibrator`/LR pickle
+  round-trip, reconstructed baseline feeds `predict_proba`); `views_to_bl` field-reinterpretation
+  (`Q=tilt·conviction/252`) correct with no edit; nb09 reuse (`hrp_cvar_weights_with_fixed`,
+  `bl_mv_weights` Utility, `build_walk_forward_targets`) + `AssetMap` + raw/z panel all confirmed; no
+  drift from the validated number-native probe.
+- **Gate reviewer: FAIL → repaired.** All 35 ACs traced; boundary + file-structure + non-predictive
+  integrity clean. Applied must-fixes: (1) **R1.5** — `ConfigurationError` lives only in the bypassed
+  façade, so `factor_scoring` defines its OWN and raises it (empty key / `baseline.n_valid==0` / auth
+  `RuntimeError`); (2) pin `from recall_guard.mia.mcs import train` (top-level alias `train_mcs`);
+  (3) `calibrate` passes `ref_lm=None` (ref_delta inert). Precision fixes: `feature_order` rides on the
+  pickled `MCSCalibrator` (not `ControlBaseline`); `head_to_head_report` reuse = add a "Track A (factor)"
+  entry to the input dicts; `view_stability` consumes dict views (log via `.to_dict()`); `honesty_adjust`
+  mirrors only the `steer_views` **discount** limb (no hard gate; R4 magnitude-only); `ContrastResult`
+  gains `n_pairs` + a paired effect size (R7 over the full stream, not a noisy point estimate);
+  persisted calibrator = joblib + JSON.
+- Phase → `design-generated`; requirements auto-approved (`-y`).
