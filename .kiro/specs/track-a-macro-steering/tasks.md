@@ -63,14 +63,14 @@
   - _Requirements: 1.6, 3.1, 3.2, 3.3, 3.4_
   - _Depends: 2.1, 2.3, 2.4, 2.5_
 
-- [ ] 3.2 Live calibration build and directional-template verification
+- [x] 3.2 Live calibration build and directional-template verification
   - Run the one-time live calibration end-to-end: build the dated FMP corpus, read it back, calibrate the chosen NIM model, and persist the corpora plus a calibration header recording the held-out separation score and weak flag
   - On a small live sample, confirm the chosen NIM model returns a parseable direction and confidence from the directional template before any full run
   - If the calibrator is weak, document the unsteered-fallback outcome as a valid contamination finding and append it to the append-only research log as a new dated entry
   - Observable: the persisted calibration artifacts (corpora files plus a header with separation score and weak flag) and a handful of parse-successful sample scores exist; any fallback decision is written as a new dated research-log entry without altering earlier entries
   - _Requirements: 1.5, 1.7, 6.3_
   - _Depends: 2.1, 2.2, 2.3_
-  - _Blocked: NIM inference authorization. A .env was provided; the NVIDIA_API_KEY lists models (GET /v1/models → 200) but POST /v1/chat/completions returns 403 "Authorization failed" for every model — the key has no inference entitlement and must be rotated to an inference-enabled NIM key. FMP (ultra plan) works on the stable API. Code prerequisites (2.1/2.2/2.3) are done + unit-tested; unblock by rotating the NIM key, then this runs as-is (model/cutoff + corpus-history plan in research.md 2026-06-26)._
+  - _Done: 2026-06-26 (NIM key rotated). Model meta/llama-4-maverick-17b-128e-instruct @ cutoff 2024-08-01 (logprobs-capable, clean Direction/Confidence parse, ~2024 cutoff in FMP's dense window). Corpora IS=40/OOS=100; holdout_auc=0.924, is_weak=False (VALID calibrator → steering enabled, not the weak fallback). Directional smoke: parse_ok, macro p_memorized≈0.05 (low contamination, as intended). Runner: scripts/calibrate_nim_scorer.py; metadata header data/track_a_scores_<model>.json (raw FMP corpora gitignored)._
 
 - [ ] 4. Validation: playbooks and evaluation
 - [ ] 4.1 (P) Macro characterization and steered-variant playbook

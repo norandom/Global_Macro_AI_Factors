@@ -14,3 +14,6 @@ wheels/
 .ipynb_checkpoints/
 .jupyter/
 .llm_cache/
+
+# FMP-derived calibration corpora (article text; regenerable via scripts/calibrate_nim_scorer.py)
+data/calibration/

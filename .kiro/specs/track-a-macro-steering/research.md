@@ -389,3 +389,38 @@ NIM calibration, each dependency was probed. Result: 3.2 is **blocked on NIM inf
 ### Status
 - 3.2 / 4.1 / 4.2 remain BLOCKED — now specifically on **NIM inference authorization** (FMP + OpenRouter
   keys are usable; FMP confirmed, OpenRouter not yet exercised). No code changes needed to unblock.
+
+---
+
+## 2026-06-26 — Task 3.2 result: calibration VALID (NIM key rotated)
+
+_The NIM key was rotated to an inference-enabled key; `/v1/chat/completions` now returns 200. Ran
+`scripts/calibrate_nim_scorer.py` (the reproducible 3.2 runner)._
+
+### Model selection (empirical)
+- Re-probed logprobs across candidates — ALL return logprobs now. Chose
+  **`meta/llama-4-maverick-17b-128e-instruct`** @ cutoff **2024-08-01**: it returns logprobs, emits a
+  clean `Direction: 1, Confidence: 0.52` answer (parses under recall_guard's evaluator), and its
+  ~2024-08 training cutoff puts both IS (pre-cutoff) and OOS (post-cutoff) inside FMP's dense news
+  window. (llama-3.1-8b refused the format; gpt-oss-20b emitted verbose reasoning; both also have a
+  2023-12 cutoff → thinner IS.)
+
+### Corpus
+- `build_calibration(cutoff=2024-08-01, target=100/side)` → **IS=40, OOS=100**. IS capped at 40 because
+  `news/general-latest` has essentially no history before ~2018 (the 2010–2018 sub-windows returned 0);
+  the 2018–2024 windows supplied 40. OOS (2024-08 → 2026) filled to 100. Raw corpora are gitignored
+  (FMP article text); regenerable via the runner.
+
+### Result — calibrator is VALID (not weak)
+- **`holdout_auc = 0.924`, `is_weak = False`** (gate `min_auc=0.6`). Despite the 40/100 imbalance, the
+  llama-4-maverick memorization signal cleanly separates pre- vs post-cutoff financial news.
+- **Directional smoke** on a sample anonymized macro state (`cpi_yoy_z=0.55, t10y2y_z=-1.59,
+  hy_oas_z=0.65`): `parse_ok=True, signal=-1, p_memorized ≈ 0.051`. The directional template parses,
+  and the dateless/anonymized macro prompt reads as **low contamination (~0.05)**.
+- **Interpretation (the thesis, confirmed):** the detector demonstrably works on real dated text
+  (AUC 0.92) yet the anonymized PIT macro prompts score low — so steering applies a gentle
+  `(1 − 0.05) ≈ 0.95` confidence discount and the 0.8 exclusion gate does not fire. This is the desired
+  low-contamination regime, not a failure. **Steering is enabled (the R1.7 weak fallback is NOT triggered).**
+- Persisted: `data/track_a_scores_meta_llama-4-maverick-17b-128e-instruct.json` (metadata header:
+  model, cutoff, auc, is_weak, n_is/n_oos, smoke). 4.1 / 4.2 are now unblocked (NIM inference works,
+  calibrator valid; OpenRouter still to be exercised by the agent runs).

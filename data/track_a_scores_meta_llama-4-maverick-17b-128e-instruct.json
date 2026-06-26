@@ -1,0 +1,27 @@
+{
+  "nim_model": "meta/llama-4-maverick-17b-128e-instruct",
+  "cutoff_date": "2024-08-01",
+  "calibrated": true,
+  "holdout_auc": 0.924,
+  "is_weak": false,
+  "min_auc": 0.6,
+  "reference_model": null,
+  "n_is": 40,
+  "n_oos": 100,
+  "corpora": {
+    "is": "data/calibration/is_memorized.jsonl",
+    "oos": "data/calibration/oos_control.jsonl"
+  },
+  "smoke": {
+    "macro_state": {
+      "cpi_yoy_z": 0.55,
+      "t10y2y_z": -1.59,
+      "hy_oas_z": 0.65
+    },
+    "parse_ok": true,
+    "signal": -1,
+    "p_memorized": 0.051084584353664926,
+    "fail_reason": null
+  },
+  "built_at": "2026-06-26T07:43:34.657373+00:00"
+}
