@@ -70,7 +70,7 @@
   - Observable: the persisted calibration artifacts (corpora files plus a header with separation score and weak flag) and a handful of parse-successful sample scores exist; any fallback decision is written as a new dated research-log entry without altering earlier entries
   - _Requirements: 1.5, 1.7, 6.3_
   - _Depends: 2.1, 2.2, 2.3_
-  - _Blocked: requires live NVIDIA_API_KEY + FMP_API_KEY for the one-time calibration corpus build + directional-template smoke; no .env / credentials provisioned in this environment. Code prerequisites (2.1/2.2/2.3) are done and unit-tested; unblock by providing the keys, then this task runs as-is._
+  - _Blocked: NIM inference authorization. A .env was provided; the NVIDIA_API_KEY lists models (GET /v1/models → 200) but POST /v1/chat/completions returns 403 "Authorization failed" for every model — the key has no inference entitlement and must be rotated to an inference-enabled NIM key. FMP (ultra plan) works on the stable API. Code prerequisites (2.1/2.2/2.3) are done + unit-tested; unblock by rotating the NIM key, then this runs as-is (model/cutoff + corpus-history plan in research.md 2026-06-26)._
 
 - [ ] 4. Validation: playbooks and evaluation
 - [ ] 4.1 (P) Macro characterization and steered-variant playbook
@@ -81,7 +81,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 3.3, 5.1, 5.2, 5.3, 6.1, 6.2, 6.3, 6.4_
   - _Boundary: notebook 11 macro characterization and steering (shared append-only research log, serialized)_
   - _Depends: 3.1, 3.2_
-  - _Blocked: depends on 3.2 (blocked); the notebook runs the agent + scoring + steered backtest end-to-end, requiring live OPENROUTER_KEY + NVIDIA_API_KEY + FMP_API_KEY; no credentials provisioned. The steering engine it consumes (macro_framework/steering.py) is complete and tested; unblock by providing the keys (and completing 3.2)._
+  - _Blocked: depends on 3.2, which is blocked on NIM inference authorization (NVIDIA_API_KEY lists models but 403s on /v1/chat/completions). The notebook runs the agent + scoring + steered backtest end-to-end (needs working NIM inference + OPENROUTER_KEY; FMP ok). The steering engine it consumes (macro_framework/steering.py) is complete and tested; unblock by rotating the NIM key and completing 3.2._
 
 - [ ] 4.2 (P) Point-in-time prompt-refinement playbook
   - Add a new numbered playbook that evaluates at least two prompt versions over the same point-in-time prompt stream via the variant agent, reporting each version's memorization distribution and view-stability metrics and the head-to-head deltas
@@ -91,7 +91,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 5.3, 6.1, 6.2, 6.3, 6.4_
   - _Boundary: notebook 12 prompt refinement (shared append-only research log, serialized)_
   - _Depends: 2.6, 3.1, 3.2_
-  - _Blocked: depends on 3.2 (blocked); the prompt-version sweep runs the variant agent + scoring end-to-end, requiring live OPENROUTER_KEY + NVIDIA_API_KEY (+ FMP_API_KEY); no credentials provisioned. Its building blocks (VariantMacroAgent, scorer, steerer, reporter) are complete and tested; unblock by providing the keys (and completing 3.2)._
+  - _Blocked: depends on 3.2, which is blocked on NIM inference authorization (NVIDIA_API_KEY lists models but 403s on /v1/chat/completions). The prompt-version sweep runs the variant agent + scoring end-to-end (needs working NIM inference + OPENROUTER_KEY; FMP ok). Its building blocks (VariantMacroAgent, scorer, steerer, reporter) are complete and tested; unblock by rotating the NIM key and completing 3.2._
 
 ## Implementation Notes
 - 2.6: A reviewer subagent ran `git checkout` on the uncommitted `steering.py` during a RED-phase mutation, which can wipe in-progress work. It restored from a backup; the parent then independently verified the working tree (VariantMacroAgent present, 62 tests green, llm_agent.py untouched) before committing. Future reviews must never reset/checkout uncommitted task work.

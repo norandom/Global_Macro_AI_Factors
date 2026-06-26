@@ -346,3 +346,46 @@ time, parent-side selective commits between. All offline tasks landed on `main`.
 - One reviewer subagent ran `git checkout` on uncommitted work (2.6) and restored from backup; the parent
   independently re-verified the tree before committing. Subsequent reviewers were instructed never to
   reset/checkout uncommitted task work. (Also recorded in tasks.md Implementation Notes.)
+
+---
+
+## 2026-06-26 — Live-credential diagnostics (task 3.2 attempt)
+
+_A `.env` with `NVIDIA_API_KEY` + `FMP_API_KEY` + `OPENROUTER_KEY` was provided. Before spending on
+NIM calibration, each dependency was probed. Result: 3.2 is **blocked on NIM inference auth**, not code._
+
+### NIM (NVIDIA) — BLOCKER
+- `GET /v1/models` → **HTTP 200, 121 models** (read access works).
+- `POST /v1/chat/completions` (meta/llama-3.1-8b-instruct, gpt-oss-20b, llama-4-maverick, llama-3.3-70b)
+  → **HTTP 403 `{"status":403,"title":"Forbidden","detail":"Authorization failed"}`** for ALL models.
+- Diagnosis: the provided `nvapi-…` key can **list** models but is **not entitled to run inference** on
+  `integrate.api.nvidia.com`. This is a key-level entitlement/rotation issue (the models exist; inference
+  auth fails), exactly as anticipated. **Remediation: rotate to / provide a NIM key with inference access
+  (build.nvidia.com personal key with credits, or an inference-entitled NGC key).** Until then, every
+  NIM-dependent step (3.2 calibration + scoring inside 4.1/4.2) cannot run.
+
+### FMP (ultra plan) — WORKS
+- The earlier `HTTP 403` was on the **legacy** `/api/v3/profile` endpoint (deprecated by FMP's API
+  migration), NOT an access issue (confirmed by the user; ultra plan).
+- recall_guard's `fmp_corpora` targets the **stable** API (`/stable/fmp-articles`,
+  `/stable/news/general-latest`); both returned **HTTP 200** with articles.
+- **Endpoint behaviour (important for corpus building):** `fmp-articles` IGNORES the `from`/`to` window
+  (returns only the latest ~today articles → they bucket as OOS); `news/general-latest` DOES honour the
+  window (returned 2023-dated rows for an IS window, 2024-dated for an OOS window). So the date-split IS
+  corpus must come from `news/general-latest`.
+- **History depth:** `news/general-latest` is **thin before ~2019** (sub-windows 2010–2018 returned 0).
+  A small `build_calibration(target=20, cutoff=2023-12-01)` probe filled OOS 20/20 but IS only **8/20**.
+
+### Model + cutoff selection (decision for when NIM inference works)
+- recall_guard ships NO packaged cutoffs (`load_cutoffs(path)` needs a file); the cutoff is a task input.
+- Because FMP news is dense only ~2019→2026, pick a NIM model whose **real training cutoff sits inside
+  that dense window** so BOTH IS (pre-cutoff) and OOS (post-cutoff) fill: a ~mid-2024 cutoff is ideal
+  (IS 2019–2024, OOS 2024–2026). A 2023-12 cutoff (llama-3.1/3.3) leaves IS data-thin → likely weak
+  calibrator (R1.7 fallback). Plan: once inference works, re-probe **logprobs support** (recall_guard's
+  MIA features require them) across candidates and prefer a logprobs-capable model with a ~2024 cutoff
+  (e.g. gpt-oss-20b ~2024-06, or llama-4-maverick ~2024-08); fall back to llama-3.1-8b (known-good
+  logprobs, cutoff 2023-12) and accept a likely-weak calibrator if the 2024-cutoff models lack logprobs.
+
+### Status
+- 3.2 / 4.1 / 4.2 remain BLOCKED — now specifically on **NIM inference authorization** (FMP + OpenRouter
+  keys are usable; FMP confirmed, OpenRouter not yet exercised). No code changes needed to unblock.
