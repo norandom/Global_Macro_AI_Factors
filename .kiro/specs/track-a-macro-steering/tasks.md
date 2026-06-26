@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Foundation: declare the scoring dependency
+- [x] 1. Foundation: declare the scoring dependency
 - [x] 1.1 Add recall_guard as a pinned project dependency
   - Add the released `recall_guard @ v0.1.0` git dependency to the project's dependency list and lock it
   - Confirm the environment resolves and `recall_guard`'s public scorer surface is importable
@@ -8,7 +8,7 @@
   - Observable: a fresh sync resolves the dependency and importing the scorer succeeds without pulling plotting/backtest extras; no existing module or notebook is modified beyond the dependency manifest
   - _Requirements: 1.1, 6.1_
 
-- [ ] 2. Core: steering module
+- [x] 2. Core: steering module
   > All sub-tasks below live in the single new steering module file, so they are sequential (shared file) rather than parallel; the first sub-task creates the module. Scope is obvious from the descriptions, so per-task boundary annotations are omitted.
 - [x] 2.1 Directional point-in-time prompt rendering
   - Render the same anonymized, z-scored macro state and asset snapshot the agent saw into a directional-forecast prompt that elicits a parseable direction and confidence
@@ -54,7 +54,7 @@
   - Observable: a unit test over mixed pass/fail scores returns correct distribution aggregates and failure rate without any network calls
   - _Requirements: 4.2, 5.2_
 
-- [ ] 3. Integration
+- [x] 3. Integration
 - [x] 3.1 Steered rebalance composition for walk-forward
   - Compose the agent, characterizer, scoring path, and view steerer into a walk-forward-compatible steered decision step that holds the agent instance, sources real symbols from the sliced price columns, and feeds the shaped views into the existing unchanged view-to-Black-Litterman conversion
   - Keep the composition agent-type-agnostic: it accepts the base agent or any subclass (including the prompt-variant agent), so prompt refinement reuses it without changes and does not hard-depend on the variant
@@ -72,7 +72,7 @@
   - _Depends: 2.1, 2.2, 2.3_
   - _Done: 2026-06-26 (NIM key rotated). Model meta/llama-4-maverick-17b-128e-instruct @ cutoff 2024-08-01 (logprobs-capable, clean Direction/Confidence parse, ~2024 cutoff in FMP's dense window). Corpora IS=40/OOS=100; holdout_auc=0.924, is_weak=False (VALID calibrator → steering enabled, not the weak fallback). Directional smoke: parse_ok, macro p_memorized≈0.05 (low contamination, as intended). Runner: scripts/calibrate_nim_scorer.py; metadata header data/track_a_scores_<model>.json (raw FMP corpora gitignored)._
 
-- [ ] 4. Validation: playbooks and evaluation
+- [x] 4. Validation: playbooks and evaluation
 - [x] 4.1 (P) Macro characterization and steered-variant playbook
   - Add a new numbered playbook that builds the point-in-time steering signals, scores the existing rebalance stream, runs the steered variant through the existing walk-forward and simulation, and persists steered targets, equity, decision log, and the score log under new filenames
   - Evaluate the steered variant with the existing head-to-head framework by adding it as an additional comparison entry, and additionally report its memorization-probability distribution; define success as lower-or-equal contamination with non-degraded head-to-head metrics
