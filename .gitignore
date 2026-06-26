@@ -22,3 +22,8 @@ data/calibration/
 # Regenerable via notebooks/11_*.ipynb; gitignored to avoid mixing price sources in committed data/.
 data/track_a_steered_targets_2019_2024.parquet
 data/track_a_steered_equity_2019_2024.parquet
+
+# Prompt-version variant caches + price-dependent (yfinance) prompt-refinement artifacts
+.llm_cache_*/
+data/prompt_refinement_*_targets_2019_2024.parquet
+data/prompt_refinement_*_equity_2019_2024.parquet

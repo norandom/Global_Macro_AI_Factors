@@ -83,7 +83,7 @@
   - _Depends: 3.1, 3.2_
   - _Done: 2026-06-26. nb11 authored + executed end-to-end (14/14 cells). Replays recorded v1 views; re-calibrates the 3.2 scorer (auc 0.913, is_weak=False → steering enabled). 13/72 rebalances steered (parse_fail_rate≈0.82 → 59 gracefully unsteered, R1.6); p_memorized mean 0.168 (gate never fires); head-to-head incl. "Track A (steered)" is non-degraded vs Track A (R5). Artifacts: macro_steering_signals + track_a_steered_agent_log committed; steered equity/targets gitignored (yfinance price substitution — Postgres DB absent; see research.md 2026-06-26). Passed adversarial review after adding the R6.3 research entry + reconciling narrative numbers._
 
-- [ ] 4.2 (P) Point-in-time prompt-refinement playbook
+- [x] 4.2 (P) Point-in-time prompt-refinement playbook
   - Add a new numbered playbook that evaluates at least two prompt versions over the same point-in-time prompt stream via the variant agent, reporting each version's memorization distribution and view-stability metrics and the head-to-head deltas
   - Accept a refined prompt only when its head-to-head metrics are no worse than the current prompt's, and preserve all prior versions under versioned, additive filenames
   - Append the comparison outcome as a new dated research-log entry without altering earlier entries; if this runs concurrently with the steered-variant playbook, serialize the research-log append so each writes its own dated entry
@@ -91,7 +91,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 5.3, 6.1, 6.2, 6.3, 6.4_
   - _Boundary: notebook 12 prompt refinement (shared append-only research log, serialized)_
   - _Depends: 2.6, 3.1, 3.2_
-  - _Blocked: depends on 3.2, which is blocked on NIM inference authorization (NVIDIA_API_KEY lists models but 403s on /v1/chat/completions). The prompt-version sweep runs the variant agent + scoring end-to-end (needs working NIM inference + OPENROUTER_KEY; FMP ok). Its building blocks (VariantMacroAgent, scorer, steerer, reporter) are complete and tested; unblock by rotating the NIM key and completing 3.2._
+  - _Done: 2026-06-26. nb12 authored + executed (27 cells). Compares v1 (replayed) vs v2 (refined, live OpenRouter via VariantMacroAgent over 72/72 macro states, cached in .llm_cache_v2). Per-version p_memorized distribution + view_stability + head-to-head deltas; accept-gate REJECTED v2 (8 metrics degraded) and kept v1 — a correct non-predictive decision. Finding: p_memorized is identical across versions because render_directional scores the macro INPUT (state-only, version-invariant); the comparison legitimately falls back to view-stability + head-to-head, and the invariance is documented as a valid result with a follow-up (score each version's emitted reasoning). Committed: prompt_refinement_{v1,v2}_scores + comparison JSON; price-dependent equity/targets + .llm_cache_v2 gitignored. Passed adversarial review (R6.3 entry present)._
 
 ## Implementation Notes
 - 2.6: A reviewer subagent ran `git checkout` on the uncommitted `steering.py` during a RED-phase mutation, which can wipe in-progress work. It restored from a backup; the parent then independently verified the working tree (VariantMacroAgent present, 62 tests green, llm_agent.py untouched) before committing. Future reviews must never reset/checkout uncommitted task work.

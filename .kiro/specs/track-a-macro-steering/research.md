@@ -471,3 +471,81 @@ agent views (no OpenRouter re-run); re-calibrates from the on-disk 3.2 corpora._
 - A larger / more format-reliable scoring model (or a more constrained directional template) would lift
   the 18% coverage; recorded here as a follow-up, not a blocker (the qualitative low-contamination,
   non-degraded conclusion holds on the scored subset).
+
+---
+
+## 2026-06-26 — Task 4.2 result: nb12 PIT prompt-refinement playbook (v2 REJECTED; v1 retained)
+
+_Authored + executed `notebooks/12_prompt_refinement_pit.ipynb` end-to-end (27 cells,
+0 errors). Compares two prompt versions over the SAME 72 PIT macro states. Reuses the
+finished steering engine + the task-3.2 model/cutoff; replays the recorded v1 baseline
+views (no OpenRouter re-run) and runs the v2 variant live (cached in `.llm_cache_v2`)._
+
+### v2 prompt rationale (the refinement direction)
+- **v1** = the baseline `macro_framework.llm_agent.AGENT_INSTRUCTIONS` ("macroeconomic game
+  theorist", 1021 chars), replayed from `data/track_a_agent_log.json` (preserved, R4.4).
+- **v2** = an authored "quantitative macro statistician" prompt (2078 chars) run via
+  `VariantMacroAgent(instructions=<v2>, prompt_version="v2", cache_dir=".llm_cache_v2")`.
+  Direction (project intent): reason MORE explicitly from the z-scored macro statistics
+  (name each z, its sign and extremeness vs its own 5y distribution, translate
+  mechanistically into a tilt) and LESS from recalling specific named events/dates/crises
+  (event-recall is what raises memorization) — pursuing lower-or-equal contamination at
+  non-degraded performance. v2 keeps the identical `MacroView` JSON contract. v2 produced
+  views on **72/72** unique macro states (2 views each), via OpenRouter `claude-sonnet-4.6`.
+
+### Calibrator (R1.7)
+- Re-calibrated in-cell from `data/calibration/*.jsonl` (IS=40, OOS=100) ->
+  **holdout_auc=0.988, is_weak=False** (steering ENABLED; weak-fallback NOT triggered).
+  The same calibrator scores both versions.
+
+### Per-version metrics (R4.2)
+- **p_memorized distribution.** `render_directional` scores the **shared PIT macro input
+  content** (identical macro_state + anonymized asset snapshot for both versions; the
+  versions differ only in the *views* they emit, captured by view-stability), so the
+  contamination of the shared input stream is **identical across versions**:
+  mean=0.1513, median=0.1042, p90=0.2017. **parse_fail_rate=0.792** (57/72 fail the strict
+  Direction/Confidence format; 15/72 parse-OK carry a measured p_memorized) — the expected
+  ~0.8 llama-4-maverick coverage caveat, surfaced honestly, not a bug. Low contamination
+  (<0.2), exclusion gate (0.8) never fires.
+- **view-stability** (`mf.view_stability`): v1 mean_n_views=2.03, mean_abs_expected=0.0640,
+  long_switch_rate=0.310; v2 mean_n_views=2.00, mean_abs_expected=0.0626,
+  long_switch_rate=0.324. v2's views are marginally smaller-magnitude and slightly less
+  stable (more long-leg switching) than v1's.
+
+### Head-to-head deltas (R4.3) + accept-gate (R4.5)
+- Both versions run the SAME pipeline (HRP-CVaR base + BL posterior + 0.7/0.3 blend) on the
+  SAME yfinance prices -> vbt portfolios -> `mf.head_to_head_report`. **Delta v2 - v1:**
+  total_return -0.0986, annualized_return -0.0070, sharpe -0.0579, sortino -0.0986,
+  calmar -0.0202, max_drawdown +0.0055 (worse), avg_turnover +0.0238 (worse); only
+  crisis_return +0.0053 improved.
+- **Accept-gate decision: REJECT v2, keep v1.** v2 degrades 8 head-to-head metrics beyond
+  tolerance (1e-3), so the no-worse gate (R4.5) blocks adoption. Contamination is
+  not-worse (equal, by construction of the shared input scoring), but the binding gate is
+  head-to-head no-worse, which v2 fails. **Both versions are preserved** (distinct caches +
+  versioned artifacts; R4.4). Success is non-predictive (R5.3): the gate never rewards
+  forecasting skill — it only refuses a refinement that degrades the existing evaluation.
+
+### Finding / interpretation
+- The refined "reason-from-statistics" prompt did NOT lower measured contamination of the
+  shared PIT input (the input the scorer sees is the same macro content; only the emitted
+  views change) and produced a modestly WEAKER head-to-head than the baseline. The honest
+  outcome is **reject and retain v1** — a valid, non-predictive result that demonstrates
+  the gate working as designed. A future refinement that also scored each version's own
+  emitted *reasoning text* (not just the shared directional input) could differentiate
+  contamination across versions; recorded as a follow-up, not a blocker.
+
+### Artifacts (R6.4, new filenames; existing untouched)
+- Committable (price-independent): `data/prompt_refinement_v1_scores.json`,
+  `data/prompt_refinement_v2_scores.json` (per-version prompt text + p_memorized
+  distribution + view-stability + per-date views), `data/prompt_refinement_comparison.json`
+  (deltas + accept/reject decision).
+- Price-dependent (gitignored by the parent, like nb11's steered artifacts):
+  `data/prompt_refinement_{v1,v2}_{targets,equity}_2019_2024.parquet`.
+
+### Environment caveats (documented, not methodological)
+- **Prices via yfinance:** the Postgres `etf_prices` DB is unprovisioned here, so the
+  notebook fetches daily prices via yfinance (in-notebook, additive; no module/committed-data
+  edit). BOTH versions + all baselines use the SAME yfinance prices, so the v2-vs-v1
+  comparison is internally consistent; a Postgres run would be the production path.
+- **parse_fail_rate ~0.79** is the expected llama-4-maverick coverage limitation
+  (graceful degradation to unsteered per R1.6), reported per version, not a defect.

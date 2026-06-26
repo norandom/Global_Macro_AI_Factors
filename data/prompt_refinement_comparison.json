@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "nim_model": "meta/llama-4-maverick-17b-128e-instruct",
+    "cutoff_date": "2024-08-01",
+    "holdout_auc": 0.988,
+    "is_weak": false,
+    "config": {
+      "enabled": true,
+      "threshold": 0.8,
+      "consistency_floor": 0.5
+    },
+    "n_rebalances": 72
+  },
+  "p_memorized": {
+    "v1_mean": 0.15130615781312565,
+    "v2_mean": 0.15130615781312565,
+    "contamination_not_worse": true
+  },
+  "view_stability": {
+    "v1": {
+      "mean_n_views": 2.0277777777777777,
+      "mean_abs_expected": 0.06397260273972602,
+      "long_switch_rate": 0.30985915492957744
+    },
+    "v2": {
+      "mean_n_views": 2.0,
+      "mean_abs_expected": 0.06256944444444446,
+      "long_switch_rate": 0.323943661971831
+    }
+  },
+  "head_to_head_delta_v2_minus_v1": {
+    "total_return": -0.098609,
+    "annualized_return": -0.007037,
+    "sharpe": -0.057938,
+    "sortino": -0.098598,
+    "calmar": -0.020166,
+    "crisis_return": 0.005303,
+    "annualized_vol": -0.001347,
+    "max_drawdown": 0.00552,
+    "crisis_max_drawdown": 0.00552,
+    "avg_turnover": 0.023784
+  },
+  "accept_gate": {
+    "tolerance": 0.001,
+    "head_to_head_not_worse": false,
+    "degraded_metrics": [
+      {
+        "metric": "total_return",
+        "delta": -0.098609,
+        "how": "dropped"
+      },
+      {
+        "metric": "annualized_return",
+        "delta": -0.007037,
+        "how": "dropped"
+      },
+      {
+        "metric": "sharpe",
+        "delta": -0.057938,
+        "how": "dropped"
+      },
+      {
+        "metric": "sortino",
+        "delta": -0.098598,
+        "how": "dropped"
+      },
+      {
+        "metric": "calmar",
+        "delta": -0.020166,
+        "how": "dropped"
+      },
+      {
+        "metric": "max_drawdown",
+        "delta": 0.00552,
+        "how": "rose"
+      },
+      {
+        "metric": "crisis_max_drawdown",
+        "delta": 0.00552,
+        "how": "rose"
+      },
+      {
+        "metric": "avg_turnover",
+        "delta": 0.023784,
+        "how": "rose"
+      }
+    ],
+    "decision": "REJECT_V2_KEEP_V1"
+  }
+}

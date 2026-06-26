@@ -1,0 +1,1184 @@
+{
+  "meta": {
+    "nim_model": "meta/llama-4-maverick-17b-128e-instruct",
+    "cutoff_date": "2024-08-01",
+    "holdout_auc": 0.988,
+    "is_weak": false,
+    "config": {
+      "enabled": true,
+      "threshold": 0.8,
+      "consistency_floor": 0.5
+    },
+    "n_rebalances": 72,
+    "prompt_version": "v2",
+    "prompt": "You are a quantitative macro statistician. You are given the current\nmacro state expressed strictly as z-scores against a rolling 5-year window, and an\nanonymized list of four assets identified only by letter and category, each with a\ntrailing 12-month return and a trailing annualized volatility.\n\nReason ONLY from the numbers in front of you. Specifically:\n 1. Read each z-score quantitatively. For every series, state its sign and how extreme it\n    is relative to its own 5-year distribution (|z|<0.5 = near-normal, 0.5..1.5 =\n    stretched, >1.5 = tail). Translate the z-scores MECHANISTICALLY into a portfolio\n    implication (e.g. a positive inflation z combined with a negative term-spread z and a\n    positive credit-spread z is a statistically tight, late-cycle / stress configuration\n    that argues for defensives over high-beta growth).\n 2. Cross-check the macro implication against the assets' own trailing return and\n    volatility z-behaviour (momentum and risk), and let the statistics \u2014 not any story \u2014\n    decide the tilt.\n 3. Do NOT recall or reference any specific historical event, named crisis, calendar\n    year, date, central-bank meeting, or real ticker. You do not know what year it is.\n    If a phrase names a remembered episode, replace it with the statistical condition that\n    episode would represent. Reason from the distribution, not from memory.\n 4. Emit concrete Black-Litterman view triples that tilt the portfolio against the\n    statistically dominant risk. A view has one \"long\" asset and optionally one \"short\"\n    asset, an expected annualized excess return (decimal, e.g. 0.05 = +5%/yr), and a\n    confidence 0..1 (0 = no information, 1 = certainty \u2014 practically top out at ~0.6).\n 5. Keep views few (1-3); prefer higher-quality, statistically-justified views over\n    quantity. Calibrate confidence to how extreme and mutually-consistent the z-scores are.\n\nOutput JSON array of views only. Use the asset letters exactly as given (e.g. \"Asset_A\").\nThe rationale of each view must cite the z-scores it rests on, not a remembered event.\n"
+  },
+  "p_memorized_distribution": {
+    "p_mem_mean": 0.15130615781312565,
+    "p_mem_median": 0.10419494411337857,
+    "p_mem_p90": 0.20171882713666964,
+    "memguard_confidence_mean": 0.5276141827689742,
+    "parse_fail_rate": 0.7916666666666666,
+    "n_scored": 72.0,
+    "holdout_auc": 0.988
+  },
+  "view_stability": {
+    "mean_n_views": 2.0,
+    "mean_abs_expected": 0.06256944444444446,
+    "long_switch_rate": 0.323943661971831
+  },
+  "views": {
+    "2019-01-02 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "t10y2y_z = -1.59 (tail inversion) combined with hy_oas_z = +0.65 (stretched credit spreads) and cpi_yoy_z = +0.55 (above-normal inflation) statistically defines a late-cycle stress configuration that is historically hostile to high-beta, high-volatility growth assets. Asset_B (tech_sector) carries the highest trailing vol (0.223) and a negative 12m return (-0.022), confirming negative momentum in the highest-risk asset. Asset_D (short_treasury_cash) is the sole positive returner (+0.017) with near-zero volatility (0.002), making it the statistically dominant defensive position. The tail z-score on the curve inversion drives high confidence in this directional tilt."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Within the risk-asset universe, cpi_yoy_z = +0.55 (stretched above-normal inflation) provides a statistical basis for preferring real assets over nominal equity exposure. Asset_C (gold_commodity) shows the least negative trailing return (-0.012) and the lowest annualized volatility (0.097) among non-cash assets, indicating relative momentum resilience. Asset_A (world_equity) has a more negative return (-0.031) and higher vol (0.144). The moderate confidence reflects that the inflation z-score is only in the stretched \u2014 not tail \u2014 range, limiting conviction on this relative view."
+      }
+    ],
+    "2019-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.6 is a tail reading (|z| > 1.5), placing the yield curve at its most inverted extreme within the 5-year window. This statistically argues for short-duration, cash-like instruments (Asset_D: short_treasury_cash, vol=0.002, trailing return=+1.8%) over high-beta growth (Asset_B: tech_sector, vol=0.237, trailing return=-1.0%). Asset_B's negative trailing return combined with its high volatility confirms deteriorating momentum in the highest-beta category. Credit spreads (hy_oas_z=-0.18) and inflation (cpi_yoy_z=-0.03) are near-normal, so the dominant risk is curve-driven growth deceleration, not an inflation or credit shock \u2014 reinforcing the short-duration long over high-vol growth."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.38,
+        "rationale": "With t10y2y_z at -1.6 (tail inversion) and credit spreads near-normal (hy_oas_z=-0.18), risk assets broadly face a statistically elevated growth-deceleration risk that is not yet priced into credit. Asset_A (world_equity) has near-flat trailing return (+1.3%) and moderate vol (14.8%), suggesting momentum is stalling. Asset_D's near-zero volatility and positive carry make it a statistically superior risk-adjusted hold in this configuration. Confidence is lower than the first view because the equity signal is less extreme than the tech signal."
+      }
+    ],
+    "2019-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.52 is a tail-level inversion (|z| > 1.5), statistically consistent with compressed forward growth and elevated recession probability. hy_oas_z = -0.58 indicates credit spreads are stretched tight, creating asymmetric risk for high-beta assets. Asset_B (tech_sector) carries the highest trailing vol (0.231) and near-zero incremental return advantage over Asset_A (+4.7% vs +4.8%), making it the weakest risk-adjusted long in this configuration. Asset_D (short_treasury_cash) has near-zero vol (0.002) and positive carry (+1.9%), providing a statistically clean defensive anchor when the curve is at a 5-year inversion extreme."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.38,
+        "rationale": "Within risk assets, Asset_A (world_equity) delivers comparable trailing return (+4.8% vs +4.7%) at materially lower vol (0.149 vs 0.231), implying a superior Sharpe profile. Under a tail yield-curve inversion (t10y2y_z = -1.52) with tight credit (hy_oas_z = -0.58), the statistical tilt favors lower-beta equity exposure over concentrated high-vol sector exposure. Confidence is moderate because cpi_yoy_z = 0.0 provides no additional directional signal to sharpen the view."
+      }
+    ],
+    "2019-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.61 is a tail-level curve inversion (|z|>1.5), statistically the dominant signal in this macro state. This configuration argues strongly against high-beta, long-duration growth assets. Asset_B (tech_sector) carries the highest trailing vol (0.223) and a momentum-inflated trailing return (+17%), making it the most exposed to a growth-repricing. Asset_D (short_treasury_cash) has near-zero vol (0.002) and positive carry (+2%), providing a statistically clean defensive anchor. The credit spread near-normality (hy_oas_z = -0.47) suggests credit has not yet repriced, amplifying the asymmetric downside risk for high-beta assets."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Within the equity complex, the extreme curve inversion (t10y2y_z = -1.61) with modestly above-neutral inflation (cpi_yoy_z = +0.41) favors broader, lower-volatility equity exposure over concentrated high-vol tech. Asset_A (world_equity, vol=0.139) offers meaningful diversification relative to Asset_B (tech_sector, vol=0.223) at a lower risk budget. The trailing return differential (+13.6% vs +17%) is modest, and the vol differential is statistically meaningful, supporting a rotation from high-vol tech toward broader equity as a relative defensive tilt. Confidence is moderate given that tight credit spreads (hy_oas_z = -0.47) have not yet confirmed the curve's stress signal."
+      }
+    ],
+    "2019-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.4 (tail-level inversion) combined with cpi_yoy_z = +0.54 (stretched inflation) is mechanistically a late-cycle tightening configuration. hy_oas_z = -0.75 indicates credit spreads are compressed, creating a statistical divergence that argues for spread widening and high-beta de-rating. Asset_B (tech_sector, vol=0.21, trailing return=+21.2%) is the highest-beta, most momentum-extended asset and is most exposed to a mean-reversion in risk appetite. Asset_D (short_treasury_cash, vol=0.002) provides near-zero duration risk and positive carry, making it the statistically dominant defensive leg in this configuration."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Within the equity complex, the curve inversion at -1.4z argues for lower-beta, diversified equity (Asset_A, vol=0.128, trailing=+11.7%) over concentrated high-vol tech (Asset_B, vol=0.21). The compressed credit spread (hy_oas_z = -0.75) suggests any spread normalization would disproportionately reprice high-duration, high-multiple assets. The vol differential (0.128 vs 0.21) provides a statistical basis for a quality tilt within equities, though confidence is moderate given both assets carry positive momentum."
+      }
+    ],
+    "2019-06-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.46 is at the stretched-to-tail boundary of curve inversion, a statistically late-cycle signal. Asset_B (tech_sector) carries the highest trailing vol (0.211) and only modest trailing return (0.044), indicating poor risk-adjusted momentum. Asset_D (short_treasury_cash) has near-zero vol (0.002) and positive carry (0.021 trailing return), making it the statistically dominant defensive anchor when the curve is this inverted and credit spreads (hy_oas_z = -0.01) have not yet compensated for the implied macro deterioration."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Within the equity complex, Asset_A (world_equity) shows superior trailing return (0.052 vs 0.044) at roughly half the volatility (0.129 vs 0.211) of Asset_B (tech_sector), yielding a meaningfully better Sharpe profile. With the curve deeply inverted (t10y2y_z = -1.46) and credit spreads near median (hy_oas_z = -0.01), high-beta concentrated sector exposure is statistically penalized relative to diversified equity; confidence is moderate because both assets remain risk-on and the credit spread signal is neutral rather than confirming."
+      }
+    ],
+    "2019-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.48,
+        "rationale": "t10y2y_z of -1.32 (stretched negative) signals late-cycle curve compression; this configuration statistically favors real/defensive assets over high-beta growth. Asset_C (gold_commodity) has delivered +12.5% trailing return at annualized vol of only 9.8%, a superior Sharpe profile. Asset_B (tech_sector) carries 21.7% annualized vol with a trailing return of 15.3% \u2014 elevated risk relative to reward given the curve signal. HY OAS z of -0.48 (near-normal, slightly tight) means credit has not yet repriced the late-cycle risk the curve is flagging, making high-beta equity vulnerable to a spread-widening catch-up. Long Asset_C / Short Asset_B exploits this divergence."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.32,
+        "rationale": "Secondary view: t10y2y_z of -1.32 with near-neutral CPI (z=+0.18) and modestly tight credit (hy_oas_z=-0.48) creates a configuration where real assets with low volatility are statistically preferred over broad world equity. Asset_C's trailing vol (9.8%) is materially below Asset_A's (12.9%), and its trailing return (12.5%) exceeds Asset_A's (9.8%), providing both momentum and risk-adjusted support. Confidence is moderate because the credit spread signal is not yet in tail territory, limiting conviction on the equity-negative leg."
+      }
+    ],
+    "2019-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.52 (tail inversion) signals late-cycle stress; hy_oas_z = -0.60 indicates credit complacency that historically mean-reverts under such curve conditions, penalizing high-beta growth (Asset_B, tech_sector, vol=0.216). Asset_C (gold_commodity) has delivered +15.4% trailing return at low vol (0.105), consistent with a flight-to-real-assets regime implied by extreme curve inversion. The long/short exploits the vol-adjusted divergence: Asset_C Sharpe-like ratio (~1.47) dominates Asset_B (~0.74) under a stress-mean-reversion scenario."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "With t10y2y_z at tail inversion (-1.52) and hy_oas_z stretched tight (-0.60), broad world equity (Asset_A) faces asymmetric downside if credit spreads normalize. Asset_C's low-vol momentum (+15.4% at vol 0.105) provides a statistically superior risk-adjusted profile. cpi_yoy_z near zero (+0.36) does not provide an inflation tailwind strong enough to offset the curve-inversion headwind for equities, but mildly supports real assets. Confidence is moderate given Asset_A's own solid trailing return (+12.2%) limits conviction."
+      }
+    ],
+    "2019-09-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "The t10y2y_z of -1.72 is a tail-level inversion (|z|>1.5), statistically consistent with a late-cycle or recessionary transition regime. In such regimes, high-volatility growth assets (Asset_B, vol=0.228) face asymmetric repricing risk, while real/defensive stores of value (Asset_C, gold, vol=0.111) tend to benefit from the associated risk-off bid. Asset_C's trailing 12m return of +25.8% confirms existing momentum aligned with this macro signal. HY OAS z of -0.43 (tight credit) suggests the risk-off repricing has not yet fully propagated, preserving upside for the long leg. Confidence is moderate because CPI z (+0.26) is near-normal, limiting the inflationary tailwind to gold, and credit spreads are not yet in stress territory."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "The deeply negative t10y2y_z (-1.72) argues for avoiding duration extension and high-beta equity risk. Asset_D (short_treasury_cash, vol=0.002) provides near-zero volatility carry that is statistically attractive when the curve is this inverted, as short-end rates are elevated relative to the 5-year distribution. Asset_B's high trailing volatility (0.228) with only +6.5% trailing return represents poor risk-adjusted momentum, making it a statistically weak candidate in a late-cycle configuration. Confidence is lower here because HY OAS z (-0.43) does not yet confirm broad risk aversion, limiting the urgency of a full defensive shift."
+      }
+    ],
+    "2019-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.59 is a tail-level curve inversion, statistically signaling forward growth deterioration. Asset_C (gold) has the strongest trailing momentum (+24.1%) at low vol (11.5%), consistent with a defensive hedge in this configuration. Asset_B (tech) carries the highest vol (23.1%) and is most exposed to a growth-slowdown repricing. The tight credit spread (hy_oas_z = -0.52) adds asymmetric downside risk to high-beta growth assets if spreads mean-revert."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": null,
+        "expected_excess_annualized": 0.02,
+        "confidence": 0.38,
+        "rationale": "With t10y2y_z at a 5-year tail extreme (-1.59), short-duration cash-equivalent (Asset_D) provides near-zero vol carry and insulates against duration risk embedded in a potential curve normalization. Inflation z-score is near-normal (+0.2), so there is no statistical penalty for holding short-duration instruments. This is a low-conviction defensive overlay rather than an aggressive bet."
+      }
+    ],
+    "2019-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.32 (tail-stretched inversion) signals late-cycle growth deterioration pressure. Asset_C (gold) has delivered comparable trailing return (+23.3%) to Asset_B (tech, +25.4%) at roughly half the annualized volatility (11.5% vs 22.9%), yielding a superior Sharpe profile. The credit-spread complacency (hy_oas_z = -0.40) suggests risk assets have not yet priced the curve's recessionary signal, making high-beta tech vulnerable to a spread-widening repricing. Long the low-vol real asset, short the high-vol growth asset is the statistically dominant tilt given this configuration."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "With t10y2y_z at -1.32 (stretched inversion) and cpi_yoy_z near-neutral (+0.25), real assets with low volatility are preferred over broad world equity. Asset_C's trailing vol (11.5%) is materially below Asset_A's (13.9%) while delivering higher trailing return (23.3% vs 12.3%), and the macro regime (curve deeply inverted, credit not yet wide) argues for defensiveness. Confidence is moderate because hy_oas_z is only mildly tight and does not yet confirm a full risk-off regime."
+      }
+    ],
+    "2019-12-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "cpi_yoy_z = +0.65 (stretched-positive inflation) combined with t10y2y_z = -1.29 (tail-level curve inversion) creates a statistically late-cycle configuration that historically rewards real assets over high-beta growth. Asset_C shows strong momentum (+19.5%) at low realized vol (11.5%), consistent with an inflation-hedge bid. Asset_B carries the highest vol (21.2%) and is most sensitive to a growth derating implied by deep curve inversion. hy_oas_z = -0.51 (mildly tight credit) limits confidence as systemic stress is not yet confirmed."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Broad world equity (Asset_A) carries positive trailing momentum (+14%) but remains a cyclical risk asset vulnerable to the growth slowdown implied by t10y2y_z = -1.29. Asset_C's lower vol (11.5% vs 13.4%) and inflation-sensitive category provide a statistically superior risk-adjusted profile under stretched inflation (cpi_yoy_z = +0.65). Lower confidence reflects that credit spreads have not widened, leaving the macro signal partially unconfirmed."
+      }
+    ],
+    "2020-01-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = +0.88 (stretched positive) supports real assets; t10y2y_z = -0.91 (stretched negative, curve inversion) pressures long-duration growth multiples. Asset_B's trailing return of +49.9% at vol 18.8% represents a statistically extreme momentum overshoot inconsistent with a tightening-curve, above-trend-inflation regime. Asset_C (gold) benefits from positive inflation z and acts as a hedge against curve-inversion-driven growth deceleration. The spread compression (hy_oas_z = -0.85) adds tail risk to high-beta growth if spreads mean-revert."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "t10y2y_z = -0.91 and cpi_yoy_z = +0.88 together indicate short rates are elevated relative to long rates in an above-normal inflation environment, making short-duration cash (Asset_D) attractive on a risk-adjusted basis. Asset_A (world equity) at trailing +22% with hy_oas_z = -0.85 (spreads compressed) faces asymmetric downside if credit spreads normalize from their stretched-negative position; the curve inversion z-score further signals deteriorating forward growth expectations that are not yet priced into equity momentum."
+      }
+    ],
+    "2020-02-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = +1.17 (stretched) combined with t10y2y_z = -1.20 (tail inversion) is a statistically tight restrictive-policy / late-cycle configuration. Real assets (gold_commodity) historically outperform in high-inflation, curve-inverted regimes relative to high-multiple growth (tech_sector). Asset_B's trailing 12m return of +45.7% at vol 17.1% implies significant momentum but also elevated valuation sensitivity to real rates; Asset_C's +20% return at lower vol 11.5% shows solid momentum with less rate-duration risk. The macro z-score combination argues for rotating from high-beta growth toward real-asset defensives."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) carries broad market beta that is vulnerable to the tail-level curve inversion (t10y2y_z = -1.20) signaling forward growth deceleration. Gold commodity (Asset_C) provides an inflation hedge (cpi_yoy_z = +1.17) with lower realized vol (11.5% vs 12.7%), making the risk-adjusted tilt modestly favorable. Confidence is lower than the B/C pair because hy_oas_z = -0.46 (compressed spreads) suggests credit markets are not yet pricing stress, limiting conviction on broad equity underperformance."
+      }
+    ],
+    "2020-03-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = +0.85 (stretched positive) mechanistically supports real assets / inflation hedges. t10y2y_z = -0.98 (stretched negative, flattened/inverted curve) is statistically adverse for high-multiple, long-duration growth equities such as tech. Asset_C exhibits strong trailing momentum (+19.8%) at low vol (12.3%), consistent with inflation-hedge demand; Asset_B's elevated vol (18.7%) and sensitivity to discount-rate pressure make it the natural short in this configuration. hy_oas_z = +0.43 (near-normal) does not yet signal systemic stress, so confidence is moderate rather than high."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) carries positive but modest trailing return (+7.1%) and moderate vol (13.7%). With t10y2y_z = -0.98 signaling curve compression and cpi_yoy_z = +0.85 eroding real earnings multiples, broad equity faces a statistically unfavorable macro backdrop relative to a commodity inflation hedge. Confidence is lower than the tech short because Asset_A's vol is closer to Asset_C's, reducing the statistical edge of the pair."
+      }
+    ],
+    "2020-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.58,
+        "rationale": "HY OAS z-score of +3.26 is a deep tail stress signal (|z| >> 1.5), indicating severe credit dislocation. In such regimes, high-volatility growth/tech (Asset_B, trailing vol 0.352, high beta) is statistically penalized while gold/commodity (Asset_C) exhibits defensive momentum (trailing 12m return +22.3%, vol 0.158 \u2014 strong risk-adjusted trend). The mildly negative term spread z (-0.53) reinforces a late-cycle tilt away from high-beta growth toward real assets."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.5,
+        "rationale": "With HY OAS z at +3.26 (tail), world equity (Asset_A) carries meaningful credit-cycle and earnings risk, evidenced by its negative trailing 12m return (-5.6%) and elevated vol (0.199). Short-duration cash/treasury (Asset_D) offers near-zero vol (0.002) and positive carry (+1.9%) with negligible drawdown risk in a credit-stress environment. The near-normal CPI z (-0.22) does not argue against holding short-duration instruments, making this a statistically clean defensive tilt."
+      }
+    ],
+    "2020-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.55,
+        "rationale": "HY OAS z-score of +2.22 (extreme tail) signals severe credit stress and risk-off conditions, mechanistically favoring safe-haven assets over high-beta growth. CPI z-score of -1.74 (deep tail, disinflationary) further supports gold as a real-asset hedge in a deflationary stress regime. Asset_C has strong momentum (+31.9%) with contained vol (16.6%), while Asset_B carries extreme vol (37.4%) and is statistically most exposed to credit-spread-driven de-risking. The flat/inverted curve (t10y2y_z = -0.57) adds incremental pressure on growth-sensitive equities."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.45,
+        "rationale": "World equity (Asset_A) shows near-zero trailing return (+0.2%) with elevated vol (21.7%), consistent with broad equity stress under extreme credit spread widening (hy_oas_z = +2.22). The disinflationary tail (cpi_yoy_z = -1.74) reduces the nominal earnings buffer for equities. Asset_C's superior risk-adjusted momentum (return/vol ratio ~1.92 vs. ~0.01 for Asset_A) statistically justifies the long-short tilt, with moderate confidence given the macro signals are mutually consistent but the curve signal is only mildly stretched."
+      }
+    ],
+    "2020-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "CPI YoY z = -1.9 (deep tail disinflationary shock) combined with HY OAS z = +1.35 (stretched credit stress) is mechanistically consistent with a demand-driven growth scare. In this configuration, real stores of value with low volatility (Asset_C: vol=16.9%, trailing return=34.1%) are statistically favored over high-beta, high-vol growth assets (Asset_B: vol=37.8%) whose valuations are sensitive to risk-premium expansion signaled by wide credit spreads. The near-normal term spread z (-0.44) does not offset the disinflationary/credit-stress signal."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.42,
+        "rationale": "HY OAS z = +1.35 indicates elevated systemic credit risk, which historically propagates to broad equity risk premia (Asset_A: world_equity, vol=22.4%). Asset_C's low volatility and strong momentum provide a statistically superior risk-adjusted profile under a credit-stress regime. The deeply negative CPI z (-1.9) further reduces the nominal earnings growth tailwind for equities, reinforcing the tilt toward the commodity/real-asset category."
+      }
+    ],
+    "2020-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "HY OAS z of +1.25 (stretched tail) signals elevated credit/risk stress, which statistically penalizes high-beta, high-vol assets like tech_sector (Asset_B, trailing vol 0.381). Gold_commodity (Asset_C) exhibits strong trailing momentum (+28.2%) with materially lower vol (0.171) and benefits from the disinflationary signal (CPI z = -1.27) combined with risk-off spread widening \u2014 a configuration where real assets with low credit sensitivity outperform high-beta growth. The long/short is justified by the divergence in vol-adjusted momentum and the macro stress signal."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.38,
+        "rationale": "With HY OAS z at +1.25 (stretched) and CPI z at -1.27 (tail-low), the risk environment favors capital preservation. Short_treasury_cash (Asset_D) offers near-zero vol (0.002) and positive carry in a stress environment. World_equity (Asset_A) has weak trailing return (+3.3%) with high vol (0.228), making its risk-adjusted profile unattractive when credit spreads are statistically wide. Confidence is moderate because the term spread z (-0.39) is near-normal, limiting conviction on duration direction."
+      }
+    ],
+    "2020-08-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = -0.94 (stretched negative) signals disinflation, which mechanistically supports real-asset stores of value with low duration risk. Asset_C exhibits strong trailing momentum (+36.4%) at low annualized vol (16.9%), a statistically superior risk-adjusted profile. Asset_A has near-zero trailing return (+0.6%) at high vol (23.2%), indicating poor momentum and elevated risk \u2014 consistent with a world equity complex struggling under a flat curve (t10y2y_z = -0.50) and mildly wider credit spreads (hy_oas_z = +0.31). The long/short pair exploits the disinflation tilt while hedging broad equity beta."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.38,
+        "rationale": "Asset_B (tech) carries the highest vol in the set (38.4%) and its trailing return (+39.4%) suggests crowded momentum positioning that is vulnerable to any credit-spread widening (hy_oas_z = +0.31, directionally adverse for high-beta growth) or curve flattening (t10y2y_z = -0.50, compressing the long-duration equity premium). Asset_C's lower vol and macro alignment with the disinflation signal (cpi_yoy_z = -0.94) make it a statistically cleaner long against the high-vol, late-momentum tech position. Confidence is moderate because the credit z is not yet in tail territory, limiting conviction on a sharp tech reversal."
+      }
+    ],
+    "2020-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.45,
+        "rationale": "cpi_yoy_z = -0.6 (stretched disinflationary) removes the primary headwind for long-duration growth assets; t10y2y_z = -0.14 (near-normal) signals no acute curve inversion stress; hy_oas_z = +0.22 (near-normal) confirms no credit-spread regime shift. Asset_B's trailing momentum (+57.6%) is statistically dominant across the asset set, and the macro z-score configuration does not contradict continuation. Short Asset_D (near-zero return, trivial vol) as the opportunity-cost anchor in a non-stressed environment."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.38,
+        "rationale": "Asset_C (gold_commodity) exhibits strong trailing momentum (+28.9%) at moderate annualized vol (0.182), yielding a statistically attractive return-to-risk ratio. The mild disinflationary signal (cpi_yoy_z = -0.6) combined with a near-normal credit spread (hy_oas_z = +0.22) is consistent with a residual uncertainty/real-rate bid for gold. Confidence is moderate because the macro z-scores are not extreme (all |z| < 1.5), limiting statistical conviction."
+      }
+    ],
+    "2020-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.38,
+        "rationale": "HY OAS z of +0.53 (stretched, widening) introduces a mild risk-off tilt that penalizes high-beta, high-volatility growth exposure. Asset_B (tech_sector) carries annualized vol of 0.388 \u2014 the highest in the set \u2014 and its trailing 12m return of +48.3% represents significant momentum that is vulnerable to a credit-spread-widening environment where risk premia are being repriced upward. Asset_C (gold_commodity) has delivered +27% trailing with lower vol (0.183) and benefits from the disinflationary-but-uncertain backdrop (CPI z = -0.51, modestly below norm) as well as its historical role as a hedge when credit conditions tighten. The long-C/short-B view captures the rotation from high-beta momentum into lower-vol alternative stores of value justified by the HY OAS z signal."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.28,
+        "rationale": "As a secondary, lower-conviction view: Asset_A (world_equity) at vol 0.233 and +8.6% trailing is less extreme than Asset_B but still credit-sensitive. With HY OAS z at +0.53 (stretched), broad equity risk premia face modest headwinds. Asset_C's lower vol and positive momentum relative to world equity provides a mild defensive tilt consistent with the credit-spread signal, though the near-neutral term spread (t10y2y_z = -0.15) and only modestly below-average inflation limit conviction."
+      }
+    ],
+    "2020-11-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = -0.8 (stretched negative) reduces real-yield headwinds for gold and signals disinflationary pressure that historically compresses equity risk premia for broad world equity. Asset_C shows superior trailing risk-adjusted momentum (return/vol \u2248 1.29) versus Asset_A (return/vol \u2248 0.15). The near-normal t10y2y_z (+0.35) and modestly elevated hy_oas_z (+0.47) do not contradict a defensive real-asset tilt over broad equity."
+      },
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "Within equity, Asset_B's trailing momentum is statistically dominant (+34.3% vs +3.5%) and the disinflationary macro state (cpi_yoy_z = -0.8) tends to support long-duration growth assets by reducing nominal discount-rate pressure. Confidence is capped at 0.38 because Asset_B's elevated vol (39.3%) and the slightly stretched hy_oas_z (+0.47) introduce meaningful downside risk if credit conditions deteriorate further."
+      }
+    ],
+    "2020-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = -0.93 (stretched negative) reduces the inflation risk premium and discount-rate headwind for equities; t10y2y_z = +0.22 and hy_oas_z = -0.25 (both near-normal) confirm no credit or curve stress. This disinflationary, low-stress configuration statistically favors broad risk assets over cash. Asset_A's trailing return (+11.4%) and moderate vol (0.239) suggest momentum without extreme crowding, making it the preferred long versus near-zero-return short-duration cash (Asset_D)."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Gold (Asset_C) has delivered +21.2% trailing with relatively low vol (0.189), a favorable Sharpe-like profile consistent with the disinflationary but uncertainty-present macro state (cpi_yoy_z = -0.93 does not preclude real-rate sensitivity). Asset_B (tech) has run +42% on vol of 0.397 \u2014 a statistically stretched momentum/vol ratio that implies elevated mean-reversion risk. With no macro z-score providing a fresh catalyst for further high-beta expansion, the relative trade of lower-vol momentum (gold) over extended high-vol momentum (tech) is statistically justified, though confidence is moderate given the benign credit backdrop."
+      }
+    ],
+    "2021-01-04 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.45,
+        "rationale": "Disinflation (cpi_yoy_z = -0.74) reduces discount-rate pressure on long-duration growth assets; compressed credit spreads (hy_oas_z = -0.58) and a mildly steepening curve (t10y2y_z = +0.58) confirm a risk-on statistical regime. Asset_B's strong trailing momentum (+41%) is consistent with this configuration. Short cash (Asset_D) as the opportunity-cost anchor. Confidence capped at 0.45 because z-scores are in the stretched but not tail range, and Asset_B's elevated trailing vol (39.7%) implies mean-reversion risk."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "Gold (Asset_C) exhibits strong trailing return (+24.1%) at comparatively low annualized volatility (19.2%), yielding a superior trailing Sharpe profile versus other risk assets. While disinflation (cpi_yoy_z = -0.74) is a mild headwind for inflation-hedge demand, the magnitude is only moderately stretched (|z| < 1.5), not a tail reading, so the headwind is limited. The steepening curve (t10y2y_z = +0.58) and compressed credit spreads do not statistically argue against holding a low-vol diversifier. Standalone long with moderate confidence given mixed directional signals."
+      }
+    ],
+    "2021-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.48,
+        "rationale": "cpi_yoy_z = -0.66 (disinflation, removes rate-hike drag on growth equities), t10y2y_z = +1.16 (curve steepening signals improving growth outlook, stretched but sub-tail), hy_oas_z = -0.57 (tight credit = low stress, supportive of high-beta). Tech sector trailing momentum (+33.2%) is consistent with this macro tilt. Short cash (Asset_D, +0.3% trailing) is statistically dominated in a risk-on, disinflation, steepening-curve regime."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.35,
+        "rationale": "World equity (Asset_A) benefits from the same disinflation + steepening + tight-spread configuration as tech but with lower vol (23.9% vs 40%), offering a more risk-efficient expression. Gold (Asset_C) historically underperforms in disinflation/risk-on regimes (negative cpi_yoy_z, negative hy_oas_z); its +16.5% trailing return likely reflects prior inflation fears that the current z-score distribution no longer supports, making it a statistically reasonable short leg."
+      }
+    ],
+    "2021-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.18,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = +1.95 (tail-level steepening) combined with hy_oas_z = -0.78 (compressed credit spreads, stretched risk-on) and near-neutral cpi_yoy_z = -0.21 defines a statistically growth-supportive, low-stress regime. High-beta tech (Asset_B) with +50.9% trailing return and elevated but rewarded vol (0.40) is the statistically dominant beneficiary. Short cash (Asset_D) captures the opportunity cost: near-zero return (0.1%) with negligible vol (0.002) in a regime where the curve is steeply positive and credit is unimpaired."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.38,
+        "rationale": "The same macro triplet (steep curve tail, tight credit, benign inflation) argues for broad equity (Asset_A, +20.1% trailing, vol 0.237) over gold (Asset_C, +5.2% trailing, vol 0.201). Gold's defensive/inflation-hedge role is statistically undermined by cpi_yoy_z = -0.21 (near-normal, no inflation tail) and hy_oas_z = -0.78 (no stress bid). Confidence is moderate rather than high because the gold-equity spread is less extreme than the cash-tech spread, and gold vol is only modestly below equity vol."
+      }
+    ],
+    "2021-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.45,
+        "rationale": "CPI z-score of +1.38 (stretched positive) mechanistically supports real assets such as gold over nominal high-beta growth. Asset_B (tech) carries the highest volatility (36% ann.) and has the most stretched trailing return (+66.8%), making it statistically vulnerable to mean-reversion. HY OAS at -0.95z (compressed) signals that risk-on sentiment is priced in, leaving limited spread buffer; when spreads are this compressed, high-beta assets bear asymmetric downside. Asset_C provides inflation hedge with lower volatility (19.1%) and modest but positive momentum (+7.9%). The t10y2y tail reading (+2.58z) adds duration-risk pressure on long-growth assets, further favoring the real-asset long vs. high-beta short."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Within equities, the steep curve tail (+2.58z) and compressed spreads (-0.95z) support broad equity participation but argue for lower-volatility diversified equity (Asset_A, 20.5% vol) over concentrated high-volatility tech (Asset_B, 36% vol). Asset_B's trailing return of +66.8% vs. Asset_A's +43.6% represents a momentum divergence that, combined with the inflation stretch (+1.38z), statistically favors rotation toward lower-beta equity exposure. Confidence is moderate given that compressed spreads still support risk assets broadly."
+      }
+    ],
+    "2021-05-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "CPI z-score of +3.36 (deep tail, >3\u03c3 above 5-year mean) strongly favors real assets such as gold over high-multiple, long-duration tech equity. Asset_B (tech_sector) carries the highest trailing vol (0.248) and the largest trailing return (0.543), suggesting crowded momentum that is statistically vulnerable to a real-rate repricing driven by the extreme inflation signal. Asset_C (gold_commodity) has muted trailing return (0.046) and moderate vol (0.170), consistent with an asset not yet pricing the inflation tail \u2014 creating a statistical entry opportunity. The steep curve (t10y2y_z +2.24) further pressures long-duration growth valuations, reinforcing the short-tech leg."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.4,
+        "rationale": "Within equities, the compressed HY OAS (z = -0.99, stretched below mean) signals credit complacency that disproportionately benefits high-beta, high-multiple tech (Asset_B) in the near term but creates asymmetric downside when spreads mean-revert toward zero or positive z territory. Asset_A (world_equity) has a lower trailing vol (0.167 vs 0.248) and a more moderate trailing return (0.354 vs 0.543), making it statistically less exposed to a simultaneous inflation shock and credit spread normalization. This is a quality/beta tilt within equities justified by the mutually consistent inflation tail and curve steepness signals."
+      }
+    ],
+    "2021-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "CPI z-score of +3.87 (deep tail, ~4\u03c3 above 5-year norm) is the dominant signal. Gold (Asset_C) is a canonical real-asset inflation hedge; its trailing return (+9.7%) and vol (16.5%) suggest it has not yet fully repriced the inflationary tail, leaving statistical upside. Tech/growth (Asset_B) carries high effective duration; the t10y2y z-score of +2.04 (tail-positive) indicates the curve is unusually steep, consistent with a large term premium being demanded \u2014 a headwind for long-duration assets. Asset_B's trailing momentum (+42.6%) is strong but its elevated vol (23.8%) in a tail-inflation + steep-curve regime raises the statistical probability of a sharp drawdown. The long C / short B spread exploits the inflation tail and term-premium risk simultaneously."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.5,
+        "rationale": "Standalone long on Asset_C (gold) is warranted by the CPI z-score of +3.87 alone. HY OAS z-score of -0.90 (moderately compressed) suggests credit markets are not yet pricing stress, meaning the inflation tail is not yet fully reflected across asset classes \u2014 gold's moderate trailing return (+9.7%) relative to the inflation z-score magnitude implies statistical underpricing of the inflation hedge. Confidence is capped at 0.50 because the compressed credit spread (hy_oas_z = -0.90) introduces ambiguity: risk appetite remains elevated, which could delay the gold repricing."
+      }
+    ],
+    "2021-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "CPI z-score of +3.75 is a deep tail inflation signal. Gold (Asset_C) is a canonical real-asset hedge against extreme inflation deviations; its near-flat trailing return (-0.8%) and moderate vol (16.6%) suggest it has not yet repriced to the inflation regime, implying statistical undervaluation relative to the macro state. Tech (Asset_B) carries the highest vol (22.6%) and the highest trailing return (42.5%), meaning it is priced for continued nominal growth \u2014 a configuration that is statistically vulnerable when inflation z-scores are this extreme, as real discount rates are likely to rise. The long-gold/short-tech tilt is justified by the inflation tail signal alone."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "HY OAS z-score of -1.15 (stretched-tight credit spreads) combined with a steepening curve (t10y2y_z = +1.41, stretched-positive) supports continued risk appetite in the near term. World equity (Asset_A) has strong trailing momentum (25.5%) with contained vol (14.4%), a favorable Sharpe-like profile. Short-treasury/cash (Asset_D) has near-zero return and negligible vol, making it a low-cost short in a risk-on, inflationary environment where cash real returns are deeply negative given the CPI z-score of +3.75. Confidence is moderate because the extreme inflation signal introduces tail risk that could reverse risk appetite abruptly."
+      }
+    ],
+    "2021-08-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI z-score of +3.3 is a deep tail inflation signal. Gold (real asset) historically benefits from extreme positive inflation deviations; short-duration cash/treasury (Asset_D) yields near zero in nominal terms and is deeply negative in real terms when inflation z >> 1.5. Despite Asset_C's negative trailing 12m return (-7.4%), the macro z-score configuration argues for mean-reversion toward real assets as the inflation tail dominates. Asset_D's near-zero nominal return (-0.1%) confirms it is a drag in a high-inflation regime."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "HY OAS z of -0.86 (tight spreads) and t10y2y z of +1.02 (steepening curve) support broad risk assets, favoring Asset_A (world equity, +28.5% trailing, vol 13.7%) over Asset_B (tech sector, +43.6% trailing, vol 22.1%). The extreme inflation z (+3.3) introduces tail risk for high-multiple, long-duration growth assets like tech; the steepening curve mechanistically compresses the present value of long-dated cash flows. Asset_A's lower volatility and broader sector diversification make it statistically preferable to concentrated high-beta tech in this configuration. Confidence is moderate given tight spreads still support risk broadly."
+      }
+    ],
+    "2021-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI YoY z=+2.92 is a deep inflationary tail. Gold (Asset_C) is a real-asset hedge that is statistically cheap on a trailing-return basis (-8% TTM) relative to the inflation signal, suggesting mean-reversion potential. Tech (Asset_B) carries the highest volatility (21.4%) and longest effective duration via growth multiples, making it most exposed to real-rate repricing when inflation z-scores are this extreme. The compressed HY OAS (z=-0.93) adds fragility: if credit spreads normalize, high-beta growth is doubly penalized. The long/short pair exploits the divergence between the inflationary tail and tech's still-elevated trailing return (+29.7%)."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.44,
+        "rationale": "Short-duration cash/treasury (Asset_D) benefits mechanistically from a steep yield curve (t10y2y z=+1.12) and extreme inflation (cpi z=+2.92), as front-end rates are elevated in real terms relative to the 5-year window. With HY OAS compressed (z=-0.93), the risk-reward of holding high-volatility tech over near-riskless short duration is statistically unfavorable: the spread compensation for bearing equity vol is near a 5-year low while inflation risk is near a 5-year high. Confidence is moderate because Asset_D's near-zero trailing return reflects this is already partially priced."
+      }
+    ],
+    "2021-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI YoY z of +2.84 (deep tail, >1.5\u03c3) mechanistically supports real assets (gold_commodity) over high-multiple growth (tech_sector). A bear-steepening term spread z of +1.42 further compresses the present value of long-duration cash flows embedded in tech valuations. Asset_B's trailing 12m return of +29% at annualized vol of 20.3% reflects elevated momentum that is statistically inconsistent with a tail-inflation, steepening regime; mean reversion risk is elevated. Asset_C's trailing return of -7.1% represents a depressed base in a commodity that historically benefits from above-distribution inflation z-scores, offering a statistical catch-up opportunity."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.45,
+        "rationale": "HY OAS z of -0.96 (stretched-negative, credit complacency) combined with tail inflation z of +2.84 creates a statistically divergent configuration where risk assets are priced for benign outcomes while the macro distribution argues for stress. Short_treasury_cash (Asset_D) carries near-zero vol (0.1%) and flat nominal return, providing a statistically clean hedge against the high-beta tech drawdown risk implied by the macro z-score combination. The compressed credit spread also raises the probability of a spread-widening episode that would disproportionately reprice high-multiple equities."
+      }
+    ],
+    "2021-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.48,
+        "rationale": "CPI z-score of +3.24 (deep tail, extreme inflationary regime) combined with HY OAS z-score of -0.93 (tight credit, risk-on) supports broad equities over tech-sector specifically. High-multiple tech (Asset_B) carries the greatest sensitivity to real-rate repricing when inflation is this far above its 5-year distribution. Asset_A (world_equity) offers broader sector diversification and lower vol (0.124 vs 0.192), providing a better risk-adjusted tilt in a regime where the inflation tail threatens growth-multiple compression. Both assets show strong trailing momentum, but the relative vol differential and inflation z-score magnitude justify the rotation."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "With CPI z-score at +3.24 (extreme tail), gold (Asset_C) is statistically anomalous in showing a negative trailing 12m return (-4.8%) \u2014 a divergence from its typical role as an inflation-regime hedge. The steep term spread (t10y2y_z = +1.01) and tight credit (hy_oas_z = -0.93) suggest the environment is not deflationary, making gold's underperformance a potential mean-reversion candidate. Asset_D (short_treasury_cash) offers near-zero nominal return (-0.1%) and essentially zero vol, making it the appropriate short leg; the view captures the statistical tension between extreme realized inflation and gold's negative momentum, with moderate confidence given the momentum headwind."
+      }
+    ],
+    "2021-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI z-score of +3.35 is a deep tail inflation signal. Gold (real asset, inflation hedge) is statistically favored over high-duration tech equity in extreme inflation regimes. Asset_B's trailing 12m return of +37.7% with vol of 18% implies elevated valuation risk under persistent inflation; Asset_C's near-flat trailing return (-0.6%) and moderate vol (13.9%) suggest it has not yet repriced to the inflation signal, offering a statistical catch-up. HY OAS z of -0.42 (near-normal, slightly tight) indicates no current stress premium is being demanded, which historically precedes spread widening when inflation is this extreme \u2014 further penalizing high-beta growth."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Within equities, world equity (Asset_A) is preferred over tech sector (Asset_B) given the extreme inflation z (+3.35) and modestly positive term spread z (+0.66). Asset_A's lower vol (11.2% vs 18%) and more moderate trailing return (22.4% vs 37.7%) suggest less valuation stretch. High-duration, high-multiple tech is statistically most exposed to an inflation-driven discount rate repricing; diversified world equity carries less duration sensitivity and lower momentum overhang."
+      }
+    ],
+    "2022-01-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI z-score of +3.17 is a deep tail inflation signal (|z|>3), which mechanistically supports real assets (gold_commodity) over high-multiple, long-duration growth proxies (tech_sector). Tech's trailing 12m return of +34.7% with vol of 19% reflects strong momentum, but extreme inflation tail readings statistically compress real earnings multiples for high-duration growth assets. Gold's trailing return of -4% and vol of 13.5% suggests it has not yet repriced to the inflation signal, creating a statistical mean-reversion opportunity. The compressed HY OAS (z=-0.93) confirms risk appetite is elevated, making the relative shift from high-beta growth to real assets a statistically justified defensive tilt rather than a full risk-off move."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": null,
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.38,
+        "rationale": "Short_treasury_cash (Asset_D) benefits mechanistically from a tail-positive inflation z-score (+3.17) combined with near-normal term spread (z=+0.39): in this configuration, short-duration instruments capture rising nominal short rates without bearing the duration risk that extreme inflation erodes. The near-zero trailing return (-0.1%) reflects a carry that is likely to improve as the inflation signal propagates into short-rate repricing. Confidence is moderate because the compressed credit spread (z=-0.93) suggests the market has not yet fully priced the inflation tail, limiting the urgency of the shift."
+      }
+    ],
+    "2022-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI z-score of +3.08 is a deep tail inflation signal (|z| >> 1.5). Gold (Asset_C) is a real-return asset that historically benefits from extreme inflation deviations, while tech (Asset_B) carries the highest duration-like sensitivity to real discount rate increases implied by a +3.08 inflation z. Asset_B's trailing vol of 0.201 vs Asset_C's 0.134 also reflects elevated risk in the short leg. Asset_C's negative trailing return (-3.4%) suggests it has not yet repriced to the inflation signal, adding a mean-reversion component. Confidence is moderate (0.52) because HY OAS z of -0.43 shows credit markets are not yet stressed, limiting the urgency of the defensive tilt."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "With CPI z at +3.08 (tail), short-duration cash-equivalent (Asset_D) preserves real optionality and avoids the real-rate compression risk embedded in high-beta tech (Asset_B). The term-spread z of -0.02 (near-normal) does not argue for curve steepening trades, but the inflation tail alone justifies a modest tilt toward the shortest-duration instrument. Confidence is lower (0.38) because Asset_D's near-zero trailing return and negligible vol offer limited excess return potential, and compressed HY OAS (-0.43 z) suggests the market is not yet pricing a risk-off scenario."
+      }
+    ],
+    "2022-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "CPI z-score of +3.0 is a deep tail inflation signal (|z| >> 1.5). Gold/commodity assets (Asset_C) are a canonical real-asset inflation hedge; their trailing return (+10.6%) and low vol (13%) show positive momentum with controlled risk. Tech/growth equities (Asset_B) carry the highest vol (21%) and are most exposed to real-rate compression driven by extreme inflation \u2014 the mild curve flattening (t10y2y_z = -0.54) further pressures long-duration growth cash flows. HY OAS near-normal (-0.3) suggests credit complacency, making the risk/reward of high-beta growth asymmetrically unfavorable relative to real assets."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "With CPI z-score at +3.0 (tail), broad world equity (Asset_A) faces headwinds from real-yield compression and potential multiple contraction in a sustained high-inflation regime. Asset_C (gold/commodity) provides a statistically motivated inflation hedge. Asset_A's trailing return (13.2%) and vol (13.2%) are respectable but do not compensate for the macro tail risk implied by the inflation z-score. Confidence is moderate because HY OAS is not yet stressed (z = -0.3), limiting the urgency of a full defensive tilt away from equities."
+      }
+    ],
+    "2022-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "CPI z-score of +3.03 (deep tail, far above 5-year norm) combined with t10y2y_z of -1.38 (stretched-negative, significant curve inversion) creates a statistically hostile environment for long-duration growth equities (Asset_B, tech_sector, high implied duration, vol 0.216). Gold/commodity (Asset_C) historically acts as a real-value store when inflation z is in the tail; its trailing vol (0.134) matches world equity but its return profile (0.119 trailing) is less momentum-stretched than tech (0.182), suggesting less crowding risk. The macro z-score configuration \u2014 extreme inflation + inverted curve \u2014 statistically favors real assets over high-multiple, high-beta growth."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "World equity (Asset_A) carries meaningful beta to a late-cycle derating. With cpi_yoy_z at +3.03 and t10y2y_z at -1.38, the statistical regime argues for compression of equity risk premia broadly. HY OAS z of -0.61 (mildly compressed) signals credit complacency that has not yet repriced, suggesting the equity risk premium may also be understated. Asset_C (gold_commodity) provides a partial hedge to this repricing risk. Confidence is moderate because Asset_A's trailing momentum (0.161) and lower vol (0.134) relative to tech reduce the conviction of a sharp near-term reversal versus the cleaner tech short."
+      }
+    ],
+    "2022-05-02 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "CPI z-score at +2.63 (deep tail, >2\u03c3 above 5-year distribution) mechanistically favors real assets over high-multiple growth. Asset_C (gold/commodity) has positive trailing momentum (+6.9%) and moderate vol (13.3%), consistent with real-asset demand under inflationary pressure. Asset_B (tech/growth) has the weakest trailing return (+2.0%) and highest vol (22.9%), yielding the worst Sharpe-like ratio in the universe. The inverted term spread (t10y2y_z = -0.97, stretched) further compresses the long-duration growth premium that tech-sector assets depend on. Confidence is high given the mutual consistency of the inflation tail and curve inversion signals."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "With CPI z-score at +2.63, real yields on short cash instruments (Asset_D, near-zero nominal return at -0.1%) are deeply negative in real terms, making cash a negative-carry position in real space. Asset_C's positive trailing return and inflation-hedge properties dominate Asset_D on a real-return basis. Confidence is moderate (0.40) because the near-neutral credit spread (hy_oas_z = -0.11) signals no systemic flight-to-safety bid that would otherwise favor cash, but the absolute return differential is modest and the macro signal is one-sided."
+      }
+    ],
+    "2022-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "CPI z-score of +2.57 is a deep tail inflation signal (|z|>2.5). Gold/commodity assets carry positive real-return sensitivity to inflation tail regimes, while high-volatility tech (trailing vol 0.254, nearly 2x world equity) is a long-duration growth asset whose discount rate is mechanistically penalized by persistent above-norm inflation. The t10y2y z of -0.61 (modestly stretched negative) reinforces a tightening-bias environment that compresses growth multiples. Asset_C's negative trailing return (-3.7%) vs. Asset_B's low positive (+2.7%) suggests neither has priced the inflation tail, but the macro configuration statistically favors the real asset over the high-beta growth asset on a forward basis."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.45,
+        "rationale": "Short-duration cash/treasury (Asset_D) benefits directly from the elevated rate environment implied by a CPI z of +2.57 combined with a mildly inverted curve (t10y2y z = -0.61). With HY OAS z near zero (+0.12), credit has not widened to compensate for the inflation tail, meaning risk-adjusted carry in short-duration instruments is statistically attractive relative to high-vol tech. Asset_D's near-zero trailing return reflects carry that is now mechanistically repricing upward in a persistent above-norm inflation regime, while Asset_B's 0.254 annualized vol represents uncompensated tail risk given the macro configuration."
+      }
+    ],
+    "2022-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.58,
+        "rationale": "CPI z=+2.57 (deep tail) supports real assets; HY OAS z=+1.59 (tail) and t10y2y z=-1.23 (stretched negative) together indicate a high-stress, tightening environment that is most punishing for high-beta, long-duration growth equities. Asset_C (gold_commodity) has positive trailing return (+1.8%) and moderate vol (13.8%), consistent with defensive real-asset demand. Asset_B (tech_sector) has deeply negative trailing return (-13.2%) and the highest vol (26.6%), confirming it is the most exposed to the prevailing macro stress. The z-score configuration strongly favors this long/short tilt."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.45,
+        "rationale": "With t10y2y z=-1.23 (stretched inverted curve) and HY OAS z=+1.59 (tail-wide credit spreads), short-duration cash-equivalent instruments are statistically preferred over broad world equity. Asset_D (short_treasury_cash) carries near-zero vol (0.2%) and positive carry in a high-rate environment implied by the inflation tail reading. Asset_A (world_equity) shows negative trailing return (-2.6%) and meaningful vol (15.6%), consistent with equity risk premium compression under these macro conditions. Confidence is moderate because the equity drawdown is not yet extreme, limiting statistical conviction on the short leg."
+      }
+    ],
+    "2022-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "CPI z=+2.2 (tail) and t10y2y z=-1.84 (tail) jointly form a late-cycle stress configuration that statistically penalizes high-beta growth assets. Asset_B (tech_sector) has already delivered -5.3% trailing with 27.4% vol, consistent with high-beta drawdown in this regime. Asset_D (short_treasury_cash) has near-zero vol and positive carry in a high-short-rate environment implied by the deeply inverted curve (t10y2y z=-1.84). The mutual consistency and tail extremity of both z-scores supports a 0.55 confidence."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.42,
+        "rationale": "CPI z=+2.2 is a tail inflation reading that mechanistically supports real assets over nominal equity. Asset_C (gold_commodity) at low vol (13.4%) offers inflation-hedge properties statistically favored when inflation z exceeds +1.5. Asset_A (world_equity) faces headwinds from both the inverted curve (t10y2y z=-1.84) and modestly widening credit spreads (hy_oas z=+0.62). Confidence is moderate (0.42) because Asset_C's trailing return is slightly negative (-4%), introducing momentum drag that tempers conviction."
+      }
+    ],
+    "2022-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.58,
+        "rationale": "CPI z=+1.99 (tail) and t10y2y z=-1.94 (tail) jointly signal a deeply inverted, high-inflation regime that is statistically most punishing for high-beta, long-duration growth assets. Asset_B carries the highest vol (28.1%) and worst trailing return (-14.2%), confirming negative momentum. Asset_D has near-zero vol (0.2%) and positive carry, making it the statistically dominant defensive position. HY OAS z=+0.78 (stretched) further supports de-risking from credit-sensitive equities."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "CPI z=+1.99 (tail) mechanistically favors real assets over nominal equity. Asset_C (gold_commodity) offers real-asset exposure with lower vol (13.7%) than world equity (16.1%), and while its trailing return is mildly negative (-6%), the inflation tail signal statistically supports a forward tilt. Asset_A (world_equity) faces headwinds from both the inverted curve (t10y2y z=-1.94) and elevated credit spreads (hy_oas z=+0.78). Confidence is moderate given Asset_C's own negative trailing momentum partially offsets the macro signal."
+      }
+    ],
+    "2022-10-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.58,
+        "rationale": "CPI z=+1.88 (upper tail) combined with t10y2y z=-2.04 (deep inversion tail) and hy_oas z=+1.11 (stretched credit spreads) form a mutually consistent late-cycle stress configuration. This statistically argues for maximum defensiveness: short_treasury_cash (Asset_D) has near-zero vol and positive carry in a high-rate environment, while tech_sector (Asset_B) is the highest-beta, highest-vol asset (-19.7% trailing, 29% vol) most exposed to tightening financial conditions and compressed growth expectations implied by the deep curve inversion."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.42,
+        "rationale": "CPI z=+1.88 in the upper tail supports a tilt toward inflation-sensitive real assets. Gold_commodity (Asset_C) carries lower volatility (13.8%) than tech_sector (29%) and historically functions as a real-asset hedge when inflation z-scores are in the tail. The negative trailing return on Asset_C (-5.6%) tempers confidence, but the macro signal dominates the momentum signal given the extreme inflation z and the corroborating credit spread stretch (hy_oas z=+1.11)."
+      }
+    ],
+    "2022-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.58,
+        "rationale": "CPI z=+1.64 (tail inflation) combined with t10y2y z=-1.98 (tail curve inversion) creates a statistically extreme tightening configuration that mechanistically penalizes long-duration, high-beta growth assets. Asset_B carries the highest volatility (30.5%) and worst trailing return (-20.1%), consistent with ongoing repricing. Asset_D has near-zero volatility and positive carry, directly benefiting from the elevated short-rate environment implied by the inverted curve. HY OAS z=+0.37 suggests credit stress has not fully materialized, leaving further downside risk in high-beta equities."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "Tail inflation (CPI z=+1.64) historically supports real assets as a statistical hedge against above-distribution price levels. Asset_C (gold_commodity) has lower volatility (14.1%) than Asset_B (30.5%) and a less negative trailing return (-8.7% vs -20.1%), suggesting relative resilience. The tail curve inversion (t10y2y z=-1.98) further suppresses the opportunity cost of holding non-yielding real assets, improving the statistical risk-reward of this pair. Confidence is moderate because HY OAS is not yet in tail territory, limiting the urgency of a full flight-to-safety tilt."
+      }
+    ],
+    "2022-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.58,
+        "rationale": "The t10y2y_z of -2.45 is a deep tail inversion (|z| >> 1.5), statistically the most extreme signal in the set and mechanistically associated with deteriorating growth expectations and elevated recession probability. Asset_B (tech_sector) is the highest-beta, highest-vol asset (ann_vol 0.325) with the worst trailing return (-18.7%), consistent with a growth asset already under pressure from the rate configuration. Asset_D (short_treasury_cash, ann_vol 0.002) benefits directly from the inverted curve environment via positive short-end carry and near-zero drawdown risk. The combination of extreme curve inversion and stretched inflation (cpi_yoy_z +1.35) makes this the highest-conviction pair."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "With cpi_yoy_z at +1.35 (stretched band), real-asset exposure via gold_commodity (Asset_C) is statistically favored as an inflation hedge. Asset_A (world_equity, trailing return -4%, vol 0.174) faces headwinds from both the inflation stretch and the deeply inverted curve (t10y2y_z -2.45), which historically in distributional terms precedes equity earnings deterioration. HY OAS z of +0.28 being near-normal suggests credit has not yet repriced, so broad equity risk remains latent. Confidence is moderate because Asset_C's trailing return is near flat (-0.2%), providing no momentum confirmation, and the HY signal is not yet alarming."
+      }
+    ],
+    "2023-01-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.55,
+        "rationale": "The combination of cpi_yoy_z=+1.04 (stretched inflationary pressure), t10y2y_z=-1.98 (deep tail curve inversion signaling late-cycle growth deterioration), and hy_oas_z=+0.5 (early credit spread widening) mechanistically argues against high-beta, long-duration growth exposure. Asset_B carries the highest trailing volatility (33.1%) and the worst trailing return (-28.1%), confirming negative momentum in a risk-off macro regime. Asset_D (short_treasury_cash) has near-zero volatility and positive carry, making it the statistically dominant defensive position in this configuration."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.4,
+        "rationale": "With cpi_yoy_z=+1.04 (inflation stretched above its 5-year norm) and t10y2y_z=-1.98 (curve deeply inverted, suppressing nominal growth expectations), real assets such as gold_commodity (Asset_C) are statistically favored over broad world_equity (Asset_A), which carries negative trailing momentum (-8.7%) and meaningful volatility (17.7%). The confidence is moderate because hy_oas_z=+0.5 is only mildly stretched, leaving open the possibility that credit stress does not fully materialize, which would limit the equity headwind."
+      }
+    ],
+    "2023-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.11,
+        "confidence": 0.55,
+        "rationale": "CPI z = +0.98 (stretched inflationary regime) supports real assets like gold_commodity, while t10y2y_z = -2.17 (deep tail inversion) is a statistically severe late-cycle signal that disproportionately penalizes high-multiple, high-volatility tech_sector assets. Asset_B's trailing 12m return of -13.1% with annualized vol of 32.8% confirms ongoing momentum deterioration and elevated risk. Asset_C's positive trailing return (+7.5%) and lower vol (15.1%) confirm relative statistical resilience. The long/short is justified by the inflation-inversion combination and cross-asset momentum divergence."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.5,
+        "rationale": "With t10y2y_z at -2.17 (extreme tail inversion) and HY OAS z near zero (credit complacency not yet resolved), the risk-reward for high-beta growth is asymmetrically negative. Asset_D (short_treasury_cash) offers near-zero vol (0.3%) and positive carry in an elevated short-rate environment consistent with CPI z = +0.98. The statistical configuration \u2014 extreme inversion plus above-norm inflation \u2014 argues for capital preservation in short-duration instruments versus continued exposure to the highest-vol, worst-momentum asset in the set."
+      }
+    ],
+    "2023-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.58,
+        "rationale": "t10y2y_z of -2.39 is a deep tail inversion (|z|>1.5), the single most extreme reading in the macro state. This mechanistically favors short-duration cash instruments (Asset_D) over high-beta, high-multiple tech (Asset_B). Asset_B's trailing 12m return of -10.7% with annualized vol of 32.9% confirms negative momentum and elevated realized risk, consistent with a late-cycle de-rating. Asset_D's near-zero vol (0.3%) and positive carry (+2.1%) provide a statistically dominant risk-adjusted anchor. cpi_yoy_z of +0.82 further compresses real returns for long-duration growth assets."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.42,
+        "rationale": "The combination of cpi_yoy_z = +0.82 (stretched inflation) and t10y2y_z = -2.39 (extreme inversion) creates a stagflationary-stress configuration that statistically favors real assets over high-beta growth. Asset_C (gold) carries lower trailing vol (15.3%) than Asset_B (32.9%) and its modest negative trailing return (-3.7%) does not contradict a forward inflation-hedge thesis driven by the z-score configuration. Confidence is moderate because hy_oas_z = -0.06 (near-normal credit spreads) limits the urgency of a full flight-to-safety tilt."
+      }
+    ],
+    "2023-04-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "t10y2y_z = -1.73 is a deep tail inversion (|z|>1.5), statistically the most extreme signal in the macro state. This configuration mechanistically favors short-duration cash-like instruments over high-beta growth assets. Asset_D (short_treasury_cash) has positive trailing return (+2.4%) with near-zero volatility (0.3%), confirming momentum and risk consistency with the macro signal. Asset_B (tech_sector) has negative trailing return (-5.4%) and the highest volatility (31.9%), indicating it is already under distributional stress. The mild CPI z (+0.41) does not offset the curve signal, and HY OAS near-normal (+0.26) suggests credit has not yet cushioned tech valuations via spread compression."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "Asset_C (gold_commodity) shows positive trailing return (+1.7%) with moderate volatility (16%), consistent with a defensive store-of-value bid that aligns with the extreme curve inversion (t10y2y_z = -1.73) signaling late-cycle stress. Asset_A (world_equity) has negative trailing return (-2.9%) and moderate volatility (16.9%), reflecting equity weakness consistent with the macro configuration. The near-normal CPI z (+0.41) provides a mild real-asset tailwind for gold without triggering an inflationary tail that would hurt equities via rate shock, supporting a modest long gold / short broad equity tilt. Confidence is lower than the first view because HY OAS normality (+0.26) limits the urgency of a full risk-off rotation."
+      }
+    ],
+    "2023-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "The t10y2y_z of -1.69 is a deep tail inversion (|z|>1.5), statistically consistent with late-cycle/recessionary-risk regimes that favor defensive stores of value over high-beta growth. Asset_C (gold) delivers 5.2% trailing return at annualized vol of 0.153 (Sharpe ~0.34), while Asset_B (tech) delivers 7.4% at vol 0.309 (Sharpe ~0.24) \u2014 inferior risk-adjusted profile. The slight positive CPI z (+0.41) further supports real-asset defensiveness. Confidence is moderate because HY OAS z (+0.20) is near-normal, indicating credit stress has not yet confirmed the curve signal."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.45,
+        "rationale": "With t10y2y_z at -1.69, the short end of the curve is statistically elevated, making short-duration cash (Asset_D, vol 0.003, return 2.8%) an attractive risk-adjusted alternative to broad world equity (Asset_A, vol 0.163, return 1.7%). Asset_A's trailing return is near zero in real terms given the positive CPI z (+0.41), while Asset_D provides positive carry with negligible volatility. The view is moderate confidence as HY OAS near-normal (+0.20) suggests equity tail risk is not yet fully priced."
+      }
+    ],
+    "2023-06-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z=-1.88 is a tail-level inversion (>1.5\u03c3), mechanistically signaling late-cycle growth deterioration risk. Asset_B (tech, vol=0.307) is the highest-beta, most momentum-extended asset and is most exposed to a growth repricing. Asset_C (gold, vol=0.153) is a low-beta defensive with near-zero correlation to growth risk and benefits from real-rate uncertainty implied by the inverted curve. The mild hy_oas_z=+0.33 corroborates modest risk-off tilt without requiring a full stress allocation."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "Short-duration cash (Asset_D, vol=0.003) is the lowest-risk asset in the set and benefits directly from the inverted curve environment where short rates are elevated relative to long rates (t10y2y_z=-1.88 tail). With CPI near normal (z=+0.1), there is no inflation penalty for holding short-duration instruments. This view is a secondary, lower-confidence complement to the gold/tech view, capturing the carry advantage of the short end while reducing high-beta tech exposure."
+      }
+    ],
+    "2023-07-03 00:00:00": [
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.55,
+        "rationale": "t10y2y_z = -2.26 is a tail-level inversion (|z| > 2), statistically inconsistent with sustained high-beta growth outperformance. Asset_B (tech_sector) carries trailing vol of 28.2% and a 36.2% trailing return \u2014 momentum that is stretched relative to a macro regime where the curve is this inverted. Asset_D (short_treasury_cash) has near-zero vol (0.3%) and positive carry in an elevated short-rate environment implied by the inverted curve. The hy_oas_z = -0.27 near-normal spread suggests credit has not yet repriced the growth risk, making the long-short asymmetry favorable: limited downside on the short-duration cash leg, meaningful mean-reversion risk on the high-beta leg."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "Gold (Asset_C) offers a low-correlation defensive with trailing vol (15.2%) comparable to world equity but with no duration or credit risk. With cpi_yoy_z near-normal (-0.3) there is no strong inflation tailwind, but the tail curve inversion (t10y2y_z = -2.26) combined with compressed credit spreads (hy_oas_z = -0.27) creates a statistically elevated probability of a risk-off repricing event. Gold's modest trailing return (5.3%) suggests it is not crowded relative to the macro stress implied by the curve, providing asymmetric upside if credit spreads mean-revert upward. Confidence is moderate given the absence of an inflation z-score tailwind."
+      }
+    ],
+    "2023-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.52,
+        "rationale": "t10y2y_z = -1.91 is a tail-level inversion (>1.5\u03c3), statistically consistent with late-cycle stress and elevated probability of risk-asset drawdown. hy_oas_z = -0.52 shows credit spreads have not repriced this risk, creating a divergence that historically resolves via spread widening and high-beta equity underperformance. Asset_B (tech_sector) carries the highest trailing vol (0.264) and the highest trailing return (0.268), suggesting momentum crowding in the highest-beta segment \u2014 the most exposed to a credit/growth repricing. Asset_C (gold_commodity) has moderate vol (0.149), positive trailing return (0.115), and benefits from curve-inversion/defensive regimes where real rates are uncertain. The long gold / short tech tilt is justified by the extreme curve z-score and the credit-spread complacency divergence."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": null,
+        "expected_excess_annualized": 0.02,
+        "confidence": 0.38,
+        "rationale": "Asset_D (short_treasury_cash) has near-zero volatility (0.003) and a positive carry (0.039 trailing return). With cpi_yoy_z = -0.22 (near-normal, no inflation tail risk to erode cash returns) and the curve deeply inverted (t10y2y_z = -1.91), the short end of the curve is statistically elevated in yield relative to its 5-year distribution, making cash/short-duration a low-risk anchor. This is a modest defensive overlay, not a primary view, reflecting the statistical case for capital preservation when the curve is at a tail inversion and credit spreads have yet to widen."
+      }
+    ],
+    "2023-09-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "t10y2y_z = -1.61 is a tail-level inversion (|z| > 1.5), statistically consistent with late-cycle rate stress. This environment mechanistically pressures high-duration, high-multiple growth assets (Asset_B, tech_sector, vol=0.26) more than real assets. Asset_C (gold_commodity) carries positive trailing momentum (+12.4%) and moderate vol (0.147), and gold tends to benefit from real-rate uncertainty embedded in extreme curve inversion. HY OAS z = -0.47 (near-normal, slightly tight) does not yet confirm a full risk-off regime, so confidence is moderate rather than high."
+      },
+      {
+        "asset_long": "Asset_D",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "With t10y2y_z at -1.61 (deep tail inversion), short-duration cash-equivalent exposure (Asset_D, short_treasury_cash, vol=0.003) offers statistically low drawdown risk and positive carry in an inverted curve environment where the front end yields more than the long end. Asset_B's trailing vol of 0.26 and high return (+29.8%) reflect momentum that is statistically vulnerable to a regime where the curve inversion resolves via growth deceleration. CPI z near zero (-0.07) removes the inflation hedge argument for long-duration but supports short-end real returns."
+      }
+    ],
+    "2023-10-02 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.45,
+        "rationale": "t10y2y_z = -1.08 (stretched negative) with hy_oas_z = -0.31 (below-normal credit spreads) indicates risk assets are not pricing the curve inversion as a stress event. Asset_B has the strongest trailing momentum (+33.1%) and elevated but not extreme vol (0.254), consistent with a risk-on environment where credit is benign. Asset_D (short_treasury_cash) has near-zero vol and low return, making it the statistical opportunity cost of holding cash in a compressed-spread environment. Confidence is moderate because the inverted curve introduces tail risk to the long leg."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Gold_commodity (Asset_C) shows solid trailing return (+11.0%) with vol (0.145) comparable to world equity, providing a statistically uncorrelated hedge. With t10y2y_z = -1.08 signaling a stretched curve inversion and cpi_yoy_z near zero, real rate uncertainty is elevated; gold historically performs as a diversifier in this distributional configuration without requiring an inflationary impulse. Confidence is modest as the macro signal is not extreme enough to warrant high conviction on a standalone defensive position."
+      }
+    ],
+    "2023-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_A",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.32,
+        "rationale": "Asset_B (tech_sector) has delivered trailing 12m return of +27.8% vs Asset_A (world_equity) at +4.5%, with vol of 24.1% vs 12.5%. The term spread z of -0.68 (stretched negative) is a mild headwind for broad equities but the near-neutral HY OAS z (+0.04) and near-normal CPI z (-0.26) do not signal imminent credit or inflation stress. The strong momentum differential (+23.3pp) in a non-stressed credit environment statistically supports a tilt toward the higher-momentum asset, though the inverted curve tempers confidence materially."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.28,
+        "rationale": "Asset_C (gold_commodity) shows trailing 12m return of +20.4% with annualized vol of 14.3% \u2014 a favorable return-to-risk profile. The stretched-negative term spread z (-0.68) historically co-occurs with real rate compression or curve-flattening regimes that are statistically associated with gold outperformance relative to cash. Asset_D (short_treasury_cash) at +4.7% return and near-zero vol is the opportunity cost. With CPI z near-normal and credit spreads neutral, gold's momentum is not contradicted by macro tail risks, supporting a modest long gold vs. cash tilt."
+      }
+    ],
+    "2023-12-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.12,
+        "confidence": 0.52,
+        "rationale": "Tight credit spreads (hy_oas_z = -0.49) and below-average inflation (cpi_yoy_z = -0.31) create a statistically favorable environment for high-beta growth equities. Asset_B's trailing 12m return of +44.4% at annualized vol of 22.1% reflects strong momentum consistent with a risk-on regime. The stretched-negative term spread (t10y2y_z = -0.92) does introduce late-cycle caution, capping confidence, but the absence of credit stress argues against defensiveness. Asset_D offers near-zero excess return in this spread environment and is the natural short."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "The stretched-negative term spread (t10y2y_z = -0.92) signals curve compression that has historically been associated with increased macro uncertainty, providing a statistical basis for a partial hedge via gold. Asset_C's trailing return of +16.1% at moderate vol (14.1%) demonstrates positive momentum without excessive risk. With inflation near-normal (cpi_yoy_z = -0.31), gold is not driven by inflation premium here but by its negative correlation to curve-flattening stress scenarios, justifying a modest standalone long at lower confidence."
+      }
+    ],
+    "2024-01-02 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "HY OAS z-score at -0.89 and t10y2y z-score at -0.88 indicate both credit spreads and the term structure are stretched tight relative to their 5-year distributions \u2014 a configuration where risk premia have already compressed significantly. Asset_B's trailing 12m return of +59.9% represents extreme momentum extension at 19.5% vol, suggesting asymmetric downside if risk appetite mean-reverts. Asset_A offers comparable equity exposure at 12% vol and +17.2% trailing return, a more moderate risk-adjusted profile. The long A / short B view captures a rotation from high-beta momentum into lower-vol broad equity as the statistical risk environment argues against further high-beta re-rating."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.3,
+        "rationale": "With the yield curve z-score at -0.88 (flatter/more inverted than 5-year norm), the term structure configuration is consistent with late-cycle conditions where real growth expectations are subdued. Asset_C (gold_commodity) at +14.1% trailing return and 13.6% vol provides a modest diversifying allocation. CPI z at -0.25 is near-normal so the inflation-hedge argument is weak, but the flat curve and tight credit spread combination statistically supports a small allocation to a non-credit, non-duration asset as a tail hedge against a risk-off repricing. Confidence is low given the absence of a strong inflation or stress signal."
+      }
+    ],
+    "2024-02-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.48,
+        "rationale": "HY OAS z of -0.68 (stretched-negative, credit spreads compressed) and t10y2y z of -0.76 (curve inverted but not deteriorating into stress) together form a risk-on, low-default-fear configuration that statistically favors high-beta growth equity over defensive commodity stores of value. Asset_B's trailing momentum (+48.7% / vol 0.189, Sharpe-like ratio ~2.6) is consistent with this regime. Asset_C's muted trailing return (+5.6%) aligns with the near-zero CPI z (-0.35), removing the inflation-hedge demand that would otherwise support gold. The long/short pair isolates the risk-on tilt while hedging broad market beta partially."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "World equity (Asset_A) benefits from the same compressed-credit-spread environment (hy_oas_z -0.68) with lower idiosyncratic volatility (0.115) than tech. Trailing return of +14.5% shows positive but moderate momentum, offering a diversified risk-on exposure. Confidence is lower than the B/C pair because the near-normal CPI z (-0.35) and still-inverted curve (t10y2y_z -0.76) introduce modest macro uncertainty that could cap upside relative to the more momentum-driven tech view."
+      }
+    ],
+    "2024-03-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "t10y2y_z of -0.91 (stretched negative) signals late-cycle curve compression, which historically penalizes high-beta growth relative to broad equity. Asset_B (tech_sector) has a trailing 12m return of +52.9% and vol of 18.2%, indicating extreme momentum stretch that is statistically vulnerable to mean-reversion when the curve signal is this negative. Asset_A (world_equity) at +18.8% return and 10.9% vol offers better risk-adjusted exposure with less momentum overhang. The tight HY OAS (z=-0.95) supports equities broadly but the curve warns against the highest-beta leg."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "With t10y2y_z at -0.91 (stretched flat/inverted), short-duration cash (Asset_D) is near its ceiling in terms of yield benefit and offers no upside if the curve eventually normalizes. Gold (Asset_C) at +11.6% trailing return and 12.7% vol provides a statistically reasonable hedge against the tail scenario implied by the inverted curve, while CPI z near zero (-0.34) does not argue against it. This is a modest diversifying tilt, not a high-conviction call, hence lower confidence."
+      }
+    ],
+    "2024-04-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.45,
+        "rationale": "t10y2y_z = -0.89 (stretched inverted curve) historically compresses the risk premium for high-duration, high-beta growth assets more than broad equity. Asset_B's trailing return of +45.7% at vol 18% represents a momentum overshoot relative to the macro signal; Asset_A at +24.8% and vol 10.8% offers better risk-adjusted exposure to the same risk-on environment with less sensitivity to a curve-driven growth repricing. The long/short tilts within equity, reducing high-beta tech exposure while retaining broad market participation."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "HY OAS z-score at -1.06 indicates credit spreads are in the lower tail of their 5-year distribution, meaning the market is pricing minimal stress. This is a statistically mean-reverting condition: when spreads are this tight, the asymmetric risk is widening. Asset_C (gold/commodity) at +12.2% trailing return and vol 12.8% provides a hedge against a spread-widening or curve-normalization scenario without requiring a directional macro call on inflation (cpi_yoy_z = -0.22, near-normal). The modest confidence reflects that tight spreads can persist, but the statistical skew argues for partial defensive allocation."
+      }
+    ],
+    "2024-05-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.42,
+        "rationale": "HY OAS z of -1.01 and t10y2y z of -0.81 indicate a stretched risk-on, flat-curve configuration. In this regime, high-beta tech (Asset_B, vol 18.1%) is statistically more exposed to spread mean-reversion than diversified world equity (Asset_A, vol 10.0%). Asset_A delivers comparable momentum (20.6% vs 31.2%) at 45% lower realized vol, yielding a superior risk-adjusted profile. The tilt is long quality-momentum over high-beta momentum, sized modestly given CPI is near-normal and no acute stress signal is present."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.03,
+        "confidence": 0.32,
+        "rationale": "With credit spreads at -1.01z (tail-tight) and the yield curve at -0.81z (stretched flat), the statistical probability of spread normalization is elevated. Asset_C (gold_commodity) has positive trailing momentum (14.8%) and moderate vol (12.4%), and its category is negatively correlated with credit-spread compression regimes, providing a partial hedge against the dominant tail risk of spread widening. Confidence is modest because CPI z (-0.28) is near-normal, limiting the inflationary tailwind for gold."
+      }
+    ],
+    "2024-06-03 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "t10y2y_z = -0.83 (stretched negative) signals curve flattening/inversion consistent with deteriorating forward growth expectations. hy_oas_z = -0.97 (stretched negative) indicates credit spreads are compressed, meaning high-beta growth assets like tech (Asset_B) carry asymmetric downside if the spread mean-reverts. Asset_C (gold/commodity) has comparable trailing return (+18.3%) to Asset_B but lower vol (12.6% vs 18%), offering a better risk-adjusted profile under a late-cycle distributional regime. The long-C/short-B tilt reduces curve-inversion and spread-reversion exposure while preserving momentum participation."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.32,
+        "rationale": "cpi_yoy_z = -0.34 (near-normal) removes the inflation headwind for equities, and hy_oas_z = -0.97 confirms current risk appetite remains elevated. Asset_A (world equity) has strong trailing momentum (+18.2%) at low vol (9.9%), yielding a favorable risk-adjusted carry over Asset_D (short treasury/cash, +5.4%). The curve inversion signal (t10y2y_z = -0.83) tempers confidence \u2014 this is not a high-conviction risk-on call \u2014 but the spread compression and benign inflation z-score support a modest overweight to diversified equity over cash equivalents in the near term."
+      }
+    ],
+    "2024-07-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.52,
+        "rationale": "HY OAS z of -0.94 (stretched tight) and CPI z of -0.45 (near-normal, disinflationary) together signal a risk-on, low-stress regime that favors broad equity over cash-equivalent short treasuries. Asset_A's strong trailing Sharpe (21.8% return / 9.4% vol) confirms momentum alignment with the macro tilt. The term-spread z of -0.77 (curve compressed) moderates but does not negate this view, as tight credit spreads historically dominate in near-term equity pricing."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "The term-spread z of -0.77 (stretched negative, curve flat/inverted relative to 5-year norm) introduces a latent growth-deceleration signal that disproportionately penalizes high-duration, high-beta growth assets. Asset_B's trailing vol of 17.8% versus Asset_A's 9.4% means the curve compression risk is amplified in tech. Preferring diversified world equity over concentrated tech sector captures the risk-on macro signal while reducing exposure to the growth-slowdown tail implied by the flat curve."
+      }
+    ],
+    "2024-08-01 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.38,
+        "rationale": "hy_oas_z = -0.89 (stretched negative) signals credit/risk priced for perfection, which historically compresses the incremental reward to high-beta growth exposure. Asset_B carries 2x the annualized vol of Asset_A (19.3% vs 9.5%) for only ~4pp of additional trailing return, implying deteriorating risk-adjusted momentum. With t10y2y_z = -0.54 (curve still flat/inverted relative to 5yr norm), rate-sensitive high-duration tech faces a less favorable rate backdrop than broad diversified equity. Tilt favors Asset_A's superior Sharpe-like profile over Asset_B's high-beta exposure when spread cushion is thin."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.06,
+        "confidence": 0.32,
+        "rationale": "Asset_C (gold_commodity) exhibits the strongest trailing return (24.5%) at moderate volatility (13.7%), delivering a risk-adjusted return profile that dominates Asset_D's near-zero real return (5.4% at 0.3% vol, essentially cash). With cpi_yoy_z = -0.48 (near-normal, not deeply deflationary), real yields are not sharply rising, which does not structurally impair gold. The compressed hy_oas_z = -0.89 suggests that if credit spreads mean-revert, gold's diversification properties become incrementally valuable. Confidence is moderate because gold's strong trailing return may already price in much of this, and the macro configuration is not extreme (all |z| < 1.0)."
+      }
+    ],
+    "2024-09-02 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.09,
+        "confidence": 0.52,
+        "rationale": "cpi_yoy_z = -0.62 (stretched below norm) and hy_oas_z = -0.94 (stretched compressed) jointly signal a low-inflation, low-stress regime that statistically favors broad risk assets over cash. Asset_A exhibits strong trailing momentum (18.5%) at relatively low volatility (10.1%), producing the best risk-adjusted profile among risk assets. Asset_D's 5.4% return is dominated in this configuration. Confidence is moderate because both z-scores are in the stretched but not tail range (|z| < 1.5)."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_C",
+        "expected_excess_annualized": 0.05,
+        "confidence": 0.38,
+        "rationale": "Asset_C's 28.4% trailing return is anomalously high for a commodity-hedge asset in a regime where hy_oas_z = -0.94 (compressed spreads, low stress) and cpi_yoy_z = -0.62 (below-trend inflation) \u2014 both conditions that statistically reduce the hedging premium for gold. The trailing return likely embeds a mean-reversion risk. Asset_A's momentum is more consistent with the macro signal. Confidence is lower (0.38) because the term-spread z is near-normal (-0.25), leaving some ambiguity about the growth trajectory."
+      }
+    ],
+    "2024-10-01 00:00:00": [
+      {
+        "asset_long": "Asset_B",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.18,
+        "confidence": 0.52,
+        "rationale": "hy_oas_z = -1.04 (tail-level credit spread compression) combined with cpi_yoy_z = -0.7 (below-trend inflation) and near-neutral t10y2y_z = -0.03 creates a statistically low-stress, risk-on configuration. High-beta tech (Asset_B, +39.2% trailing, vol 0.211) is favored over near-zero-return cash (Asset_D, +5.4%, vol 0.003) when credit stress is at distributional lows and inflation is not a headwind."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": null,
+        "expected_excess_annualized": 0.08,
+        "confidence": 0.42,
+        "rationale": "Asset_C (gold_commodity) shows the highest return-to-vol ratio in the cross-section (+40.6% / 0.144 annualized vol), suggesting strong risk-adjusted momentum. With cpi_yoy_z = -0.7 (disinflation but not deflationary tail), gold retains a real-asset hedge property while its momentum signal is statistically dominant; the absence of curve stress (t10y2y_z near zero) does not contradict this positioning. Confidence is moderate as gold's macro sensitivity is cross-cutting."
+      }
+    ],
+    "2024-11-01 00:00:00": [
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.48,
+        "rationale": "hy_oas_z = -1.14 is a tail-level compression of credit spreads, statistically indicating peak risk appetite and elevated mean-reversion probability for high-beta growth assets. Asset_B (tech, vol=21.4%) is the most exposed to a spread normalization shock. Asset_C (gold, vol=14.4%) has comparable trailing momentum (37.9% vs 36.5%) but is structurally less correlated to credit spread widening; it also benefits from the below-trend inflation signal (cpi_yoy_z = -0.64) which reduces real-rate headwinds for non-yielding stores of value. The long/short pair captures the tail-risk asymmetry without a directional macro bet on equities broadly."
+      },
+      {
+        "asset_long": "Asset_A",
+        "asset_short": null,
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.32,
+        "rationale": "With t10y2y_z near zero (curve near its 5-year median) and cpi_yoy_z modestly negative, there is no statistical signal of imminent recession or rate shock. Asset_A (world equity, vol=10.1%) offers diversified equity exposure at roughly half the volatility of Asset_B, with solid trailing return (23.3%). The low-vol profile limits drawdown if hy_oas_z mean-reverts from its tail compression, making a modest long position statistically defensible in this configuration. Confidence is capped low given the tail-level spread tightness which represents a latent risk-off trigger."
+      }
+    ],
+    "2024-12-02 00:00:00": [
+      {
+        "asset_long": "Asset_A",
+        "asset_short": "Asset_D",
+        "expected_excess_annualized": 0.07,
+        "confidence": 0.45,
+        "rationale": "HY OAS at -1.22z (tail-level tightness) confirms a statistically risk-on regime. World equity (Asset_A) has strong trailing momentum (+27.2%) at low realized vol (10%), making it the most efficient risk-adjusted vehicle to express the risk-on tilt. Short cash (Asset_D) as the funding leg. Confidence is moderate because credit spread compression at this extreme also signals limited further upside and elevated mean-reversion risk."
+      },
+      {
+        "asset_long": "Asset_C",
+        "asset_short": "Asset_B",
+        "expected_excess_annualized": 0.04,
+        "confidence": 0.35,
+        "rationale": "Mild disinflation (cpi_yoy_z = -0.59, stretched but not extreme) combined with tail-tight credit spreads creates an asymmetric risk environment where high-beta growth (Asset_B, tech, vol=21.4%) is more exposed to a spread-widening reversal than gold (Asset_C, vol=15.1%), which has the highest trailing return (29.8%) and a lower-beta profile. This pair captures a modest defensive tilt within the risk-on regime, justified by the statistical asymmetry of HY OAS at -1.22z."
+      }
+    ]
+  }
+}
