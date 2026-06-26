@@ -109,3 +109,58 @@ built the validated calibrator and scored paired PIT vs non-PIT prompts._
 
 **Document status:** written (new research log for this spec). **Next:**
 `/kiro-spec-design version-aware-factor-scoring` (or `-y` to auto-approve requirements and proceed).
+
+---
+
+## 2026-06-26 — NUMBER-NATIVE calibration validated (drops news; supersedes B-vs-C)
+
+_Direction from the user: "for my AI factors I am not interested in news, but in using the models to
+perform inference on the numbers." The news calibration corpus was a recall_guard general-purpose
+artifact; it measures "news-likeness memorization," which is the wrong target and was the source of the
+gap-analysis probe's noise/reversal. Re-grounded calibration on the macro numbers themselves and
+validated live._
+
+### Design: number-native, no news
+- The contamination target for "inference on the numbers" is: **does revealing the period in the numbers
+  trigger recall, vs forcing inference?** Operationalized as the calibration labels, on the factor task:
+  - **IS / recall class** = pre-cutoff macro states presented **identifyingly** (real date + raw levels +
+    real tickers) — recall-enabled.
+  - **OOS / honest class** = the **same** states presented **anonymized** (z-scores, no date, Asset_A–D) —
+    recall-disabled by construction.
+  - Calibrate on exactly the distribution we score → **no domain mismatch** (the news problem). Uses only
+    the FRED panel (134 pre-cutoff months → ample); **no FMP / no news**.
+
+### Live validation (`scratchpad/probe_number_native.py`, llama-4-maverick @ cutoff 2024-08-01)
+- Corpus: 67 identifying (IS) + 67 anonymized (OOS), same regime-loadings task.
+- **`holdout_auc = 0.9619`, `is_weak = False`** — identifying-vs-anonymized **separates strongly**;
+  recall-from-numbers is detectable. (vs the news calibrator's domain-mismatched, noisy result.)
+- Held-out anon (PIT) vs identifying (non-PIT) `p_memorized`:
+  - 2020-03-31: **0.007 vs 0.832** (Δ +0.825) — anonymized = pure inference; revealing the COVID-crash
+    date/levels = strong recall. The thesis in one row.
+  - 2022-06-30: **0.757 vs 0.940** (Δ +0.183) — even anonymized 2022 scores high: extreme/unique regimes
+    are **self-identifying** (the z-scores alone pin the period). Anonymization is not a binary guard;
+    the contamination measure adds signal beyond it (and the honesty-adjusted exposure will correctly
+    discount such states).
+  - 2019-07-31: **0.404 vs 0.430** (Δ +0.026) — unremarkable month, little to recall; small delta.
+- All deltas non-negative (identifying ≥ anon) — directionally consistent, unlike the news probe.
+
+### Decisions
+- **Adopt number-native calibration; drop news/FMP entirely.** This supersedes the gap analysis's B
+  (news-proxy) vs C (factor-corpus) framing — the anon-vs-identifying split on the factor task is better
+  than both (no mismatch, AUC 0.96, directionally consistent).
+- The R7 PIT-vs-non-PIT contrast and the calibration now share the **same identifying-vs-anonymized
+  axis**: calibration trains the boundary; R7 applies it over the full rebalance stream to report the
+  premium. The +0.825 (2020) / +0.183 (2022) deltas show the premium is real and number-native.
+- Self-identifying-regime finding (2022 anon ≈ 0.76) is a **feature**: honesty-adjusted exposure
+  down-weights regimes the model recognizes even when anonymized — exactly the residual-recall guard.
+- Requirements updated: Boundary Context locked decisions replace the news-calibrator reuse with this
+  number-native calibrator; out-of-scope now excludes news-based calibration and FMP; ACs unchanged
+  (they were written tool-neutral and survive the pivot).
+
+### Carry to design
+- Calibration cost: ~135 NIM calls (build_baseline on 67 OOS + train on 67+67) per run; consider
+  persisting the trained calibrator + baseline to avoid recalibrating each notebook run.
+- The IS/OOS split is **same-date identifying-vs-anonymized** (framing-only difference) — the cleanest
+  control. Date-split (pre/post cutoff) is unnecessary and was thin post-cutoff; the framing split uses
+  abundant pre-cutoff data.
+- Verify the regime-loadings parser separately (scoring needs no parse; consuming the loadings does).

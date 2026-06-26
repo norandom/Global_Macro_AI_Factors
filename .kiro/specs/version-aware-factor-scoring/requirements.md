@@ -14,7 +14,10 @@ that scores each prompt version's own factor prompt and reasoning (not a version
 input-only directional prompt), and an **honesty-adjusted exposure** that down-weights a factor by its
 measured contamination. It also includes a **PIT vs non-PIT inference contrast** that quantifies the
 **contamination premium** — how much apparent performance is lookahead/recall rather than genuine
-inference. Success is non-predictive throughout: factors are characterizations, never forecasts.
+inference. Contamination is measured **number-natively** — the model performs inference on the macro
+numbers, and the calibrator is trained on those numbers (recall-enabled identifying states vs honest
+anonymized states), **not on a news corpus**. Success is non-predictive throughout: factors are
+characterizations, never forecasts.
 
 ## Boundary Context
 
@@ -28,23 +31,33 @@ inference. Success is non-predictive throughout: factors are characterizations, 
   cross-asset macro-exposure **β matrix**, **thematic-intensity** factors, **cross-sectional
   regime-alignment** ranking, and **macro-dispersion / causal-contradiction tail** factors; changing
   the Baseline or Track B contracts; modifying the contamination library or its directional scoring
-  façade; new external data sources beyond the existing FRED macro panel and the FMP calibration corpus.
+  façade; news-based contamination calibration; new external data sources beyond the existing FRED macro
+  panel.
 - **Adjacent expectations**:
   - Depends on the released contamination library's public membership-inference primitives and a
     valid scoring credential at run time; the spec does not own credential provisioning.
   - Reuses the existing point-in-time slicing, rolling z-scores, anonymized assets, the Black-Litterman
     view-to-input conversion, and the head-to-head evaluation without changing them.
-  - Live dependencies (NIM scoring, FMP corpus, OpenRouter agent) are available; the project's price
-    database is not provisioned in this environment, so notebooks substitute a public price source
-    (documented), and price-dependent artifacts are not committed.
+  - Live dependencies (NIM scoring, OpenRouter agent) are available; the project's price database is not
+    provisioned in this environment, so notebooks substitute a public price source (documented), and
+    price-dependent artifacts are not committed. No news/FMP corpus is required (calibration is
+    number-native on the FRED panel).
 - **Locked decisions (2026-06-26, from the project description)** — recorded as constraints; the
   acceptance criteria stay tool-neutral:
   - Contamination is measured via the released library's **public MIA primitives**
     (`NvidiaLM` logprobs → `compute_mia_features` → `MCSCalibrator.predict_proba`, with
-    `build_baseline` / `train_mcs` for calibration), **bypassing the directional `MemoryGuardedScorer`
+    `build_baseline` / `train` for calibration), **bypassing the directional `MemoryGuardedScorer`
     façade** (no `direction + confidence` parse required).
-  - Reuse the validated calibrator: `meta/llama-4-maverick-17b-128e-instruct` @ cutoff `2024-08-01`
-    (holdout_auc ≈ 0.9, `is_weak=False`).
+  - **Number-native calibration (no news / no FMP).** The calibrator is trained on the macro numbers
+    themselves, on the factor task: the **recall class (IS)** = pre-cutoff macro states presented
+    identifyingly (real date + raw levels + real tickers); the **honest class (OOS)** = the same states
+    presented anonymized (z-scores, no date, Asset_A–D). This calibrates the recall-vs-inference boundary
+    on exactly the distribution being scored — no domain mismatch. Validated 2026-06-26:
+    `holdout_auc ≈ 0.96`, `is_weak=False` (see research.md). A consequence (also validated): extreme,
+    self-identifying regimes (e.g. 2022) read as partially recalled even when anonymized, so the
+    contamination measure adds signal beyond anonymization.
+  - Scoring model: `meta/llama-4-maverick-17b-128e-instruct` (logprob-bearing on NIM; cutoff
+    `2024-08-01` defines the pre-cutoff IS window).
   - Named macro axes for the regime-loadings factor: inflation pressure, growth/cycle, credit/liquidity
     stress, policy stance, risk appetite.
   - Honesty-adjusted exposure = `raw_loading × (1 − p_memorized)`.
