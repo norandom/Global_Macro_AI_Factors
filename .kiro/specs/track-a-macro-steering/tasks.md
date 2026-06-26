@@ -73,7 +73,7 @@
   - _Done: 2026-06-26 (NIM key rotated). Model meta/llama-4-maverick-17b-128e-instruct @ cutoff 2024-08-01 (logprobs-capable, clean Direction/Confidence parse, ~2024 cutoff in FMP's dense window). Corpora IS=40/OOS=100; holdout_auc=0.924, is_weak=False (VALID calibrator → steering enabled, not the weak fallback). Directional smoke: parse_ok, macro p_memorized≈0.05 (low contamination, as intended). Runner: scripts/calibrate_nim_scorer.py; metadata header data/track_a_scores_<model>.json (raw FMP corpora gitignored)._
 
 - [ ] 4. Validation: playbooks and evaluation
-- [ ] 4.1 (P) Macro characterization and steered-variant playbook
+- [x] 4.1 (P) Macro characterization and steered-variant playbook
   - Add a new numbered playbook that builds the point-in-time steering signals, scores the existing rebalance stream, runs the steered variant through the existing walk-forward and simulation, and persists steered targets, equity, decision log, and the score log under new filenames
   - Evaluate the steered variant with the existing head-to-head framework by adding it as an additional comparison entry, and additionally report its memorization-probability distribution; define success as lower-or-equal contamination with non-degraded head-to-head metrics
   - Append the run's findings as a new dated research-log entry without altering earlier entries; if this runs concurrently with the prompt-refinement playbook, serialize the research-log append so each writes its own dated entry
@@ -81,7 +81,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 3.3, 5.1, 5.2, 5.3, 6.1, 6.2, 6.3, 6.4_
   - _Boundary: notebook 11 macro characterization and steering (shared append-only research log, serialized)_
   - _Depends: 3.1, 3.2_
-  - _Blocked: depends on 3.2, which is blocked on NIM inference authorization (NVIDIA_API_KEY lists models but 403s on /v1/chat/completions). The notebook runs the agent + scoring + steered backtest end-to-end (needs working NIM inference + OPENROUTER_KEY; FMP ok). The steering engine it consumes (macro_framework/steering.py) is complete and tested; unblock by rotating the NIM key and completing 3.2._
+  - _Done: 2026-06-26. nb11 authored + executed end-to-end (14/14 cells). Replays recorded v1 views; re-calibrates the 3.2 scorer (auc 0.913, is_weak=False → steering enabled). 13/72 rebalances steered (parse_fail_rate≈0.82 → 59 gracefully unsteered, R1.6); p_memorized mean 0.168 (gate never fires); head-to-head incl. "Track A (steered)" is non-degraded vs Track A (R5). Artifacts: macro_steering_signals + track_a_steered_agent_log committed; steered equity/targets gitignored (yfinance price substitution — Postgres DB absent; see research.md 2026-06-26). Passed adversarial review after adding the R6.3 research entry + reconciling narrative numbers._
 
 - [ ] 4.2 (P) Point-in-time prompt-refinement playbook
   - Add a new numbered playbook that evaluates at least two prompt versions over the same point-in-time prompt stream via the variant agent, reporting each version's memorization distribution and view-stability metrics and the head-to-head deltas

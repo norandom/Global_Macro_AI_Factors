@@ -17,3 +17,8 @@ wheels/
 
 # FMP-derived calibration corpora (article text; regenerable via scripts/calibrate_nim_scorer.py)
 data/calibration/
+
+# nb11 steered equity/targets are price-source-dependent (yfinance here; Postgres in prod).
+# Regenerable via notebooks/11_*.ipynb; gitignored to avoid mixing price sources in committed data/.
+data/track_a_steered_targets_2019_2024.parquet
+data/track_a_steered_equity_2019_2024.parquet

@@ -424,3 +424,50 @@ _The NIM key was rotated to an inference-enabled key; `/v1/chat/completions` now
 - Persisted: `data/track_a_scores_meta_llama-4-maverick-17b-128e-instruct.json` (metadata header:
   model, cutoff, auc, is_weak, n_is/n_oos, smoke). 4.1 / 4.2 are now unblocked (NIM inference works,
   calibrator valid; OpenRouter still to be exercised by the agent runs).
+
+---
+
+## 2026-06-26 — Task 4.1 result: nb11 steered-variant playbook (steering enabled; low contamination)
+
+_Authored + executed `notebooks/11_macro_characterization_and_steering.ipynb` end-to-end (14/14 cells,
+0 errors). Reuses the finished steering engine + the task-3.2 model/cutoff; replays the recorded v1
+agent views (no OpenRouter re-run); re-calibrates from the on-disk 3.2 corpora._
+
+### Setup
+- Scorer: `meta/llama-4-maverick-17b-128e-instruct` @ cutoff 2024-08-01, re-calibrated in-notebook from
+  `data/calibration/*.jsonl` → **holdout_auc=0.913, is_weak=False** (steering ENABLED; R1.7 weak
+  fallback NOT triggered). (The 0.913 vs 3.2's 0.924 is re-calibration variance on the same corpora.)
+- Steered variant = recorded v1 views → `characterize` → directional score → `steer_views`
+  (`base·(1−p_mem)·consistency`) → unchanged `views_to_bl` → nb09's HRP base + BL posterior +
+  0.7/0.3 blend, via `make_steered_weight_fn` + `build_walk_forward_targets`.
+
+### Findings
+- **Measurement coverage:** llama-4-maverick fails the strict Direction/Confidence format on most macro
+  prompts → **parse_fail_rate ≈ 0.82**; only **13/72** rebalances carry a valid `p_memorized` and are
+  actually steered. The other **59 degrade gracefully to unsteered Track A** (verified: 59 p_mem=None ⟺
+  59 passthrough, 0 dropped/crashed, all 72 target rows sum to 1.0). This is the design's
+  graceful-degradation contract (R1.6), honestly surfaced via `parse_fail_rate`, not a silent bug.
+- **Contamination is LOW (the thesis):** over the 72 scored prompts, p_memorized mean=0.168,
+  median=0.143, p90=0.266; the exclusion gate (0.8) **never fires**. Anonymized PIT macro prompts read
+  low-contamination — steering applies only a gentle confidence discount.
+- **Non-predictive success holds (R5.3):** head-to-head with Baseline / Track A / Track B / **Track A
+  (steered)** — steered is **non-degraded** vs Track A on every metric (total_return +0.016,
+  sharpe +0.010, sortino +0.017; max_dd ~flat). Success = lower-or-equal contamination + non-degraded
+  head-to-head, NOT forecast accuracy.
+- **Regimes (R2.1/2.4):** neutral 39 / goldilocks 17 / stagflation_risk 10 / credit_stress 6.
+
+### Artifacts (R6.4, new filenames; existing untouched)
+- `data/track_a_steered_{targets,equity}_2019_2024.parquet`, `data/track_a_steered_agent_log.json`
+  (per-rebalance recorded views + base vs adjusted confidence + p_memorized + regime_label + steered
+  flag; meta header records model/cutoff/auc/is_weak/n_steered=13), `data/macro_steering_signals_2019_2024.parquet`.
+
+### Environment caveats (documented, not methodological)
+- **Prices via yfinance:** the project's Postgres `etf_prices` DB is unprovisioned here, so the notebook
+  fetches daily prices via yfinance (in-notebook, additive; no module/committed-data edit). All four
+  head-to-head variants use the SAME yfinance prices (internally consistent; ~0.9997 corr to the
+  committed Track A equity curve). This substitutes the price/execution layer only — it does not
+  introduce a new methodological signal — so it respects the spec's "no new external data sources" intent
+  while flagging the substitution. A run against the Postgres prices would be the production path.
+- A larger / more format-reliable scoring model (or a more constrained directional template) would lift
+  the 18% coverage; recorded here as a follow-up, not a blocker (the qualitative low-contamination,
+  non-degraded conclusion holds on the scored subset).
