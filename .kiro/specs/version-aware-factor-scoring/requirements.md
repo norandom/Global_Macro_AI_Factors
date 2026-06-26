@@ -12,16 +12,18 @@ The MVP delivers exactly two factor archetypes — a **regime-as-loadings** char
 **BL-tilt-as-exposure** reframe of the agent's views — plus a **version-aware** contamination scorer
 that scores each prompt version's own factor prompt and reasoning (not a version-independent,
 input-only directional prompt), and an **honesty-adjusted exposure** that down-weights a factor by its
-measured contamination. Success is non-predictive throughout: factors are characterizations, never
-forecasts.
+measured contamination. It also includes a **PIT vs non-PIT inference contrast** that quantifies the
+**contamination premium** — how much apparent performance is lookahead/recall rather than genuine
+inference. Success is non-predictive throughout: factors are characterizations, never forecasts.
 
 ## Boundary Context
 
 - **In scope**: a version-aware contamination scorer that distinguishes prompt versions; the two MVP
   factor archetypes (regime-as-loadings, BL-tilt-as-exposure); the honesty-adjusted exposure
   (raw loading discounted by measured contamination); a prompt-refinement playbook that compares
-  versions by version-aware contamination + factor stability + head-to-head; an append-only research
-  log.
+  versions by version-aware contamination + factor stability + head-to-head; a **PIT vs non-PIT
+  inference contrast** that measures the contamination premium (the non-PIT diagnostic control is never
+  deployed); an append-only research log.
 - **Out of scope**: any predictive-return / alpha objective; the deferred (future) factor archetypes —
   cross-asset macro-exposure **β matrix**, **thematic-intensity** factors, **cross-sectional
   regime-alignment** ranking, and **macro-dispersion / causal-contradiction tail** factors; changing
@@ -48,6 +50,10 @@ forecasts.
   - Honesty-adjusted exposure = `raw_loading × (1 − p_memorized)`.
   - Build additively on `macro_framework/steering.py` via new symbols/modules; new playbooks continue
     the existing numbering (`13_…`, `14_…`).
+  - The non-PIT diagnostic control re-introduces, relative to the PIT path, exactly: real asset
+    identities (de-anonymized tickers), calendar dating (the actual rebalance date/year), and raw
+    non-normalized macro levels — the maximal recall-enabling contrast. A graded one-axis-at-a-time
+    ablation is deferred (future).
 
 ## Requirements
 
@@ -154,3 +160,27 @@ results stay reproducible and success is defined without forecasting.
 5. The scoring and factor layers shall measure factor contamination without depending on the
    contamination library's directional-scoring façade (the architectural counterpart of the
    directional-parse-free requirement 1.3).
+
+### Requirement 7: PIT vs non-PIT inference contrast (contamination premium)
+
+**Objective:** As a researcher, I want to measure the difference between point-in-time and
+non-point-in-time inference in both contamination and head-to-head performance, so that I can quantify
+how much apparent performance is lookahead/recall rather than genuine inference.
+
+#### Acceptance Criteria
+
+1. The contrast playbook shall run the same factor pipeline over the same rebalance stream in two
+   variants: a point-in-time variant (anonymized identities, z-scored state, no calendar dating) and a
+   non-point-in-time variant that re-introduces identifying and lookahead-enabling context (real asset
+   identities, calendar dating, and raw non-normalized levels).
+2. When both variants have run, the contrast playbook shall report the measured `p_memorized` for each
+   variant and their difference.
+3. When both variants have run, the contrast playbook shall report the head-to-head metrics for each
+   variant and their difference.
+4. The non-point-in-time variant shall be labeled a diagnostic control and shall not be used to produce
+   the deployable steered portfolio.
+5. Where the non-point-in-time variant exhibits higher measured contamination than the point-in-time
+   variant, the contrast playbook shall report the associated head-to-head difference as the
+   contamination premium (lookahead/recall bias) rather than as attainable skill.
+6. The contrast shall hold all inputs other than the point-in-time discipline equal between the two
+   variants, so that the reported difference is attributable to that discipline.
