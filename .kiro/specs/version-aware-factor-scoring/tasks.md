@@ -11,7 +11,7 @@
 
 - [ ] 2. Core: factor scoring module
   > All sub-tasks below live in the single new module file `macro_framework/factor_scoring.py`, so they are sequential (shared file), not parallel; the first sub-task creates the module. Scope is obvious from the descriptions, so per-task boundary annotations are omitted.
-- [ ] 2.1 Regime-loadings prompt renderer
+- [x] 2.1 Regime-loadings prompt renderer
   - Create the module and a single renderer that emits the regime-as-loadings factor task, in either an anonymized (point-in-time, z-scored, no date/ticker) or an identifying form (real tickers + as-of date + raw levels), differing only by the identifying additions
   - The prompt requests continuous loadings in `[-1, +1]` on the fixed named macro axes and never asks for a buy/sell direction or an expected return
   - The anonymized form carries only as-of, date-free macro content (the point-in-time property the scorer relies on)

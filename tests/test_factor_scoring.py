@@ -90,3 +90,155 @@ def test_feature_path_does_not_use_directional_facade() -> None:
     assert "macro_framework.factor_scoring" not in sys.modules
     facade_spec = importlib.util.find_spec("recall_guard.harness.scorer")
     assert facade_spec is not None, "facade module exists in the library (we just do not depend on it)"
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.1 — Regime-loadings prompt renderer (Requirements 1.4, 2.1, 2.2,     #
+# 2.3, 2.5, 7.1, 7.6)                                                          #
+# --------------------------------------------------------------------------- #
+
+import re
+
+import pandas as pd
+import pytest
+
+# Tokens that would reveal the period or the real assets to the model; the
+# anonymized (PIT) form must contain NONE of these (R1.4, R2.3).
+_REAL_TICKERS = ("SWDA", "XLK", "IAU", "BIL", "SWDA.L")
+_DIRECTION_TOKENS = ("buy", "sell", "direction", "expected return", "forecast")
+
+
+def _macro_state() -> dict[str, float]:
+    # z-scored macro state (PIT, recall-disabled framing).
+    return {"cpi_yoy_z": 1.42, "t10y2y_z": -0.83, "hy_oas_z": 0.57}
+
+
+def _raw_levels() -> dict[str, float]:
+    # raw non-normalized macro levels (recall-enabling addition for identifying).
+    return {"cpi_yoy": 0.089, "t10y2y": -0.41, "hy_oas": 4.62}
+
+
+def _asset_snapshot() -> list[dict[str, object]]:
+    # anonymized asset descriptors: letter id + category only, no ticker.
+    return [
+        {"id": "Asset_A", "category": "world_equity", "trailing_12m_return": 0.18,
+         "trailing_vol_ann": 0.14},
+        {"id": "Asset_B", "category": "tech_sector", "trailing_12m_return": 0.31,
+         "trailing_vol_ann": 0.22},
+        {"id": "Asset_C", "category": "gold_commodity", "trailing_12m_return": 0.06,
+         "trailing_vol_ann": 0.11},
+        {"id": "Asset_D", "category": "short_treasury_cash", "trailing_12m_return": 0.02,
+         "trailing_vol_ann": 0.01},
+    ]
+
+
+def test_macro_axes_constant() -> None:
+    """The five named macro axes are exposed as the locked MACRO_AXES tuple."""
+    from macro_framework.factor_scoring import MACRO_AXES
+
+    assert MACRO_AXES == ("inflation", "growth", "credit_stress", "policy", "risk_appetite")
+
+
+def test_anonymized_form_has_no_date_or_ticker() -> None:
+    """Anonymized (PIT, default) form leaks no calendar date/year and no real ticker (1.4, 2.3)."""
+    from macro_framework.factor_scoring import render_regime_loadings_prompt
+
+    prompt = render_regime_loadings_prompt(_macro_state(), _asset_snapshot())
+
+    # No 4-digit year and no ISO date.
+    assert re.search(r"\b\d{4}\b", prompt) is None, "anonymized prompt must not contain a 4-digit year"
+    assert re.search(r"\b\d{4}-\d{2}-\d{2}\b", prompt) is None, "anonymized prompt must not contain an ISO date"
+
+    # No real tickers.
+    for ticker in _REAL_TICKERS:
+        assert ticker not in prompt, f"anonymized prompt leaked real ticker {ticker!r}"
+
+
+def test_anonymized_asks_for_loadings_on_all_axes_no_direction() -> None:
+    """Prompt requests [-1, 1] loadings on all five axes; never a buy/sell/return ask (2.1, 2.2, 2.5)."""
+    from macro_framework.factor_scoring import MACRO_AXES, render_regime_loadings_prompt
+
+    prompt = render_regime_loadings_prompt(_macro_state(), _asset_snapshot())
+    lowered = prompt.lower()
+
+    # All five named axes are present.
+    for axis in MACRO_AXES:
+        assert axis in prompt, f"prompt must name the macro axis {axis!r}"
+
+    # The bounded [-1, 1] range is requested.
+    assert ("-1" in prompt and "+1" in prompt) or "[-1, 1]" in prompt or "[-1,1]" in prompt
+
+    # No directional / forecast ask.
+    for token in _DIRECTION_TOKENS:
+        assert token not in lowered, f"prompt must not ask for {token!r}"
+
+
+def test_identifying_adds_tokens_and_otherwise_matches_anonymized() -> None:
+    """Identifying form adds tickers + as_of + raw levels and is otherwise the same template (7.6)."""
+    from macro_framework.factor_scoring import render_regime_loadings_prompt
+
+    macro = _macro_state()
+    assets = _asset_snapshot()
+    as_of = pd.Timestamp("2022-06-30")
+    raw = _raw_levels()
+
+    anon = render_regime_loadings_prompt(macro, assets)
+    ident = render_regime_loadings_prompt(
+        macro, assets, identifying=True, as_of=as_of, raw_levels=raw
+    )
+
+    # The identifying form differs from the anonymized form.
+    assert ident != anon
+
+    # Exactly the recall-enabling additions appear in the identifying form.
+    assert "2022-06-30" in ident
+    for ticker in _REAL_TICKERS:
+        if ticker == "SWDA.L":
+            continue
+        assert ticker in ident, f"identifying prompt must reveal real ticker {ticker!r}"
+    # Raw levels are surfaced.
+    assert any(str(v) in ident or f"{v:g}" in ident for v in raw.values())
+
+    # Token-identical except the additions: every non-empty line of the anonymized
+    # form must still appear verbatim in the identifying form (the identifying form
+    # only ADDS the identity/date/raw-level lines, R7.6).
+    for line in anon.splitlines():
+        if line.strip():
+            assert line in ident, f"identifying form dropped/altered anonymized line: {line!r}"
+
+
+def test_renderer_is_deterministic() -> None:
+    """Equal inputs produce an identical string (deterministic)."""
+    from macro_framework.factor_scoring import render_regime_loadings_prompt
+
+    macro = _macro_state()
+    assets = _asset_snapshot()
+
+    a1 = render_regime_loadings_prompt(macro, assets)
+    a2 = render_regime_loadings_prompt(macro, assets)
+    assert a1 == a2
+
+    as_of = pd.Timestamp("2022-06-30")
+    raw = _raw_levels()
+    i1 = render_regime_loadings_prompt(macro, assets, identifying=True, as_of=as_of, raw_levels=raw)
+    i2 = render_regime_loadings_prompt(macro, assets, identifying=True, as_of=as_of, raw_levels=raw)
+    assert i1 == i2
+
+
+def test_identifying_requires_as_of_and_raw_levels() -> None:
+    """identifying=True without as_of/raw_levels raises a clear error (7.6 preconditions)."""
+    from macro_framework.factor_scoring import render_regime_loadings_prompt
+
+    macro = _macro_state()
+    assets = _asset_snapshot()
+
+    with pytest.raises(ValueError):
+        render_regime_loadings_prompt(macro, assets, identifying=True)
+
+    with pytest.raises(ValueError):
+        render_regime_loadings_prompt(
+            macro, assets, identifying=True, as_of=pd.Timestamp("2022-06-30")
+        )
+
+    with pytest.raises(ValueError):
+        render_regime_loadings_prompt(macro, assets, identifying=True, raw_levels=_raw_levels())
