@@ -1159,3 +1159,110 @@ def loadings_to_tilt_views(
             )
         )
     return views
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.7 — HonestyAdjust: HonestyConfig + honesty_adjust                      #
+# (Requirements 4.1, 4.2, 4.3, 4.4)                                            #
+#                                                                              #
+# Down-weight each view's dimensionless exposure tilt by its measured           #
+# contamination so recall-tainted reasoning is discounted while genuine         #
+# inference is retained:                                                        #
+#                                                                              #
+#   adjusted_tilt = expected_excess_annualized · (1 − p_memorized)              #
+#                                                                              #
+# This mirrors ONLY the *discount* limb of steering.steer_views                 #
+# (`raw·(1−p_mem)`) and is a RE-IMPLEMENTATION — steering.py is never imported   #
+# or edited (R6.1/R6.5). The key difference from steer_views: there is NO hard  #
+# exclusion gate — R4 is magnitude-only, so views are down-weighted, never      #
+# dropped. The adjustment changes ONLY the exposure magnitude                   #
+# (expected_excess_annualized); asset_long / asset_short / confidence /         #
+# rationale are copied through unchanged (4.4), and no return/forecast          #
+# objective is ever introduced (the discount scales the existing tilt only).    #
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True)
+class HonestyConfig:
+    """Configuration for the honesty (contamination-discount) adjustment (R4).
+
+    Attributes:
+        enabled: when ``False``, :func:`honesty_adjust` is a passthrough that
+            returns the input views UNCHANGED regardless of ``p_memorized``
+            (the off switch; the weak-calibrator fallback is supplied instead by
+            the caller as ``p_memorized=None``) (R4.3).
+    """
+
+    enabled: bool = True
+
+
+def honesty_adjust(
+    views: list[MacroView],
+    p_memorized: float | None,
+    config: HonestyConfig = HonestyConfig(),
+) -> list[MacroView]:
+    """Down-weight exposure tilts by measured contamination — magnitude-only (R4).
+
+    Returns a **new** ``list[MacroView]`` of **new** ``MacroView`` objects; the
+    input list and its views are never mutated. Only the exposure magnitude
+    (``expected_excess_annualized``) is changed — ``asset_long``,
+    ``asset_short``, ``confidence`` and ``rationale`` are copied through
+    unchanged (R4.4, magnitude-only; no return/forecast objective is introduced).
+
+    Behaviour:
+
+    * **Passthrough** (R4.3): if ``not config.enabled`` OR ``p_memorized is
+      None``, the input views are returned UNCHANGED (returned as-is). The
+      composition supplies ``p_memorized=None`` when the calibrator ``is_weak``,
+      so the weak-calibrator case degrades here to the unadjusted raw exposure.
+    * **Discount** (R4.1, R4.2): otherwise each view's tilt becomes
+      ``expected_excess_annualized · (1 − clip(p_memorized, 0, 1))``. Higher
+      ``p_memorized`` ⇒ a lower-or-equal adjusted tilt (R4.1, monotone);
+      ``p_memorized == 0`` ⇒ the adjusted tilt equals the raw tilt (R4.2).
+
+    This mirrors ONLY the *discount* limb of ``steering.steer_views`` and is a
+    re-implementation, NOT an import/edit of ``steering.py``. Unlike
+    ``steer_views``, there is **NO hard exclusion gate**: R4 is magnitude-only,
+    so a high ``p_memorized`` down-weights the views but never drops them (the
+    returned list is never made empty by the discount).
+
+    Pure and deterministic: equal inputs ⇒ equal output (no randomness, no I/O).
+
+    Args:
+        views: the exposure-tilt views for ONE rebalance (must share that
+            rebalance's ``p_memorized``).
+        p_memorized: the measured contamination score in ``[0, 1]`` for this
+            rebalance, or ``None`` when scoring failed / the calibrator is weak /
+            the adjustment is off.
+        config: the honesty configuration (the ``enabled`` flag).
+
+    Returns:
+        Passthrough — the input views unchanged (disabled / ``p_memorized``
+        ``None``); otherwise a new list of new views with the tilt magnitude
+        discounted by ``(1 − p_memorized)``.
+    """
+    # Passthrough (R4.3): leave the raw exposure unadjusted rather than apply an
+    # unvalidated discount (the weak-calibrator path arrives here as None).
+    if not config.enabled or p_memorized is None:
+        return views
+
+    # Clip p_memorized into [0, 1] so the discount factor stays in [0, 1]
+    # (a calibrated probability is already bounded; this is a defensive guard).
+    p_clipped = min(1.0, max(0.0, float(p_memorized)))
+    discount = 1.0 - p_clipped
+
+    adjusted: list[MacroView] = []
+    for view in views:
+        # Magnitude-only (R4.4): scale the tilt; copy every other field unchanged.
+        # NO hard gate — the view is always retained, only down-weighted (R4.1).
+        adjusted_tilt = view.expected_excess_annualized * discount
+        adjusted.append(
+            MacroView(
+                asset_long=view.asset_long,
+                asset_short=view.asset_short,
+                expected_excess_annualized=adjusted_tilt,
+                confidence=view.confidence,
+                rationale=view.rationale,
+            )
+        )
+    return adjusted

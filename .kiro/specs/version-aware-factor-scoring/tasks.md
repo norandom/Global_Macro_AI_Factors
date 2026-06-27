@@ -47,7 +47,7 @@
   - Observable: unit tests show each view carries a dimensionless tilt and conviction (no expected return), the existing conversion produces the expected `tilt × conviction` magnitude, and no predictive-return objective is introduced
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 2.7 Honesty-adjusted exposure
+- [x] 2.7 Honesty-adjusted exposure
   - Down-weight each exposure tilt as a function of its measured memorization (tilt times one-minus-probability), returning a new view list and changing only magnitude; pass views through unchanged when the probability is unavailable or the calibrator is weak; apply only the discount (no hard exclusion gate)
   - Observable: unit tests show the adjusted exposure falls monotonically as memorization rises, equals the raw exposure at zero memorization, passes through unchanged on missing/weak, leaves asset legs/rationale untouched, and returns a new list
   - _Requirements: 4.1, 4.2, 4.3, 4.4_

@@ -1457,3 +1457,199 @@ def test_loadings_to_tilt_views_introduces_no_predictive_objective() -> None:
         assert by_long_b[pseudo].confidence == pytest.approx(0.9)
         # No short leg / directional bet.
         assert by_long_a[pseudo].asset_short is None
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.7 — HonestyAdjust: HonestyConfig + honesty_adjust                      #
+# (Requirements 4.1, 4.2, 4.3, 4.4)                                            #
+#                                                                              #
+# honesty_adjust down-weights each view's dimensionless exposure tilt by its   #
+# measured contamination: adjusted_tilt = expected_excess_annualized·(1−p_mem).#
+# It mirrors ONLY the discount limb of steering.steer_views — NO hard          #
+# exclusion gate (R4 is magnitude-only): higher p_memorized ⇒ lower-or-equal   #
+# tilt (4.1); p_memorized == 0 ⇒ raw tilt (4.2); p_memorized is None OR        #
+# disabled ⇒ passthrough unchanged (4.3); only expected_excess_annualized      #
+# changes (4.4). These tests use the REAL MacroView; steering.py is never      #
+# imported or edited.                                                          #
+# --------------------------------------------------------------------------- #
+
+
+def _honesty_views() -> list[MacroView]:
+    """A small list of real MacroView exposure-tilt views for the honesty tests.
+
+    Positive tilts below 1.0 so the (1 - p_memorized) discount is strictly
+    decreasing in p_memorized over the test range and never clips at a bound.
+    """
+    return [
+        MacroView(
+            asset_long="Asset_A",
+            asset_short=None,
+            expected_excess_annualized=0.40,
+            confidence=0.5,
+            rationale="tilt for Asset_A",
+        ),
+        MacroView(
+            asset_long="Asset_B",
+            asset_short=None,
+            expected_excess_annualized=0.10,
+            confidence=0.8,
+            rationale="tilt for Asset_B",
+        ),
+    ]
+
+
+def test_honesty_higher_p_memorized_yields_strictly_lower_tilt() -> None:
+    """Higher p_memorized ⇒ strictly lower adjusted tilt for a positive tilt (4.1).
+
+    adjusted_tilt = raw·(1 − p_memorized) is monotone decreasing in p_memorized;
+    for a positive raw tilt below 1.0 a larger p_memorized gives a strictly
+    smaller (lower-or-equal, here strictly lower) adjusted exposure magnitude.
+    """
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+
+    low = honesty_adjust(views, 0.2)
+    high = honesty_adjust(views, 0.8)
+
+    assert len(low) == len(high) == len(views)
+    for raw, lo, hi in zip(views, low, high):
+        # Both discounted relative to raw; the higher p_memorized is strictly lower.
+        assert lo.expected_excess_annualized < raw.expected_excess_annualized
+        assert hi.expected_excess_annualized < lo.expected_excess_annualized
+
+
+def test_honesty_p_memorized_zero_equals_raw_tilt() -> None:
+    """p_memorized == 0 ⇒ adjusted tilt equals the raw tilt (4.2)."""
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+    adjusted = honesty_adjust(views, 0.0)
+
+    assert len(adjusted) == len(views)
+    for raw, adj in zip(views, adjusted):
+        assert adj.expected_excess_annualized == pytest.approx(
+            raw.expected_excess_annualized
+        )
+
+
+def test_honesty_none_p_memorized_returns_views_unchanged() -> None:
+    """p_memorized is None ⇒ input views returned UNCHANGED (4.3).
+
+    The weak-calibrator path is supplied by the caller as p_memorized=None; the
+    honesty layer leaves the raw exposure unadjusted (same values).
+    """
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+    result = honesty_adjust(views, None)
+
+    assert len(result) == len(views)
+    for raw, adj in zip(views, result):
+        assert adj.expected_excess_annualized == pytest.approx(
+            raw.expected_excess_annualized
+        )
+
+
+def test_honesty_disabled_config_returns_views_unchanged() -> None:
+    """not config.enabled ⇒ input views returned UNCHANGED even with a real p_mem (4.3)."""
+    from macro_framework.factor_scoring import HonestyConfig, honesty_adjust
+
+    views = _honesty_views()
+    result = honesty_adjust(views, 0.9, HonestyConfig(enabled=False))
+
+    assert len(result) == len(views)
+    for raw, adj in zip(views, result):
+        assert adj.expected_excess_annualized == pytest.approx(
+            raw.expected_excess_annualized
+        )
+
+
+def test_honesty_config_is_frozen_dataclass_default_enabled_true() -> None:
+    """HonestyConfig is a frozen dataclass defaulting to enabled=True."""
+    import dataclasses
+
+    from macro_framework.factor_scoring import HonestyConfig
+
+    assert dataclasses.is_dataclass(HonestyConfig)
+    cfg = HonestyConfig()
+    assert cfg.enabled is True
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        cfg.enabled = False  # type: ignore[misc]
+
+
+def test_honesty_is_magnitude_only_other_fields_unchanged() -> None:
+    """Magnitude-only: only expected_excess_annualized changes (4.4).
+
+    asset_long / asset_short / confidence / rationale are copied UNCHANGED; the
+    discount affects only the exposure magnitude — no return objective is
+    introduced (4.4).
+    """
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+    adjusted = honesty_adjust(views, 0.3)
+
+    assert len(adjusted) == len(views)
+    for raw, adj in zip(views, adjusted):
+        assert adj.asset_long == raw.asset_long
+        assert adj.asset_short == raw.asset_short
+        assert adj.confidence == pytest.approx(raw.confidence)
+        assert adj.rationale == raw.rationale
+        # The only changed field is the magnitude.
+        assert adj.expected_excess_annualized == pytest.approx(
+            raw.expected_excess_annualized * (1.0 - 0.3)
+        )
+
+
+def test_honesty_returns_new_objects_input_not_mutated() -> None:
+    """Returns a NEW list of NEW MacroView; the input list/views are not mutated."""
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+    raw_tilts_before = [v.expected_excess_annualized for v in views]
+    list_id_before = id(views)
+
+    adjusted = honesty_adjust(views, 0.5)
+
+    # New list and new view objects.
+    assert id(adjusted) != list_id_before
+    for raw, adj in zip(views, adjusted):
+        assert adj is not raw
+    # Input list and its views are untouched (MacroView is mutable, so verify).
+    assert id(views) == list_id_before
+    assert [v.expected_excess_annualized for v in views] == raw_tilts_before
+
+
+def test_honesty_no_hard_gate_high_p_memorized_still_returns_views() -> None:
+    """No exclusion gate: a high p_memorized (0.95) still returns the views (4.4).
+
+    This is the key difference from steer_views: R4 is magnitude-only — the
+    views are down-weighted, NOT dropped. The result is non-empty, with strictly
+    smaller (but still present) tilts.
+    """
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+    adjusted = honesty_adjust(views, 0.95)
+
+    # NOT an empty list — the discount-only property (no hard gate).
+    assert len(adjusted) == len(views)
+    for raw, adj in zip(views, adjusted):
+        assert adj.expected_excess_annualized == pytest.approx(
+            raw.expected_excess_annualized * (1.0 - 0.95)
+        )
+        assert adj.expected_excess_annualized < raw.expected_excess_annualized
+
+
+def test_honesty_is_deterministic() -> None:
+    """Determinism: equal inputs ⇒ equal adjusted tilts (no randomness, no I/O)."""
+    from macro_framework.factor_scoring import honesty_adjust
+
+    views = _honesty_views()
+    first = honesty_adjust(views, 0.42)
+    second = honesty_adjust(views, 0.42)
+
+    assert [v.expected_excess_annualized for v in first] == [
+        v.expected_excess_annualized for v in second
+    ]
