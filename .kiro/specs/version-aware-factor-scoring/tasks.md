@@ -86,6 +86,7 @@
   - _Requirements: 2.4, 3.3, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 6.4_
   - _Boundary: notebook 13 macro factor scoring (shared append-only research log, serialized)_
   - _Depends: 3.1, 3.2_
+  - _Deferred: 2026-06-27 (user "stop here" after the 3.2 weak-calibrator finding). Engine + persisted calibrator ready; this notebook needs live OpenRouter and would run UNSTEERED (is_weak=True, R4.3). Resume = run nb13 against the persisted calibrator._
 
 - [ ] 4.2 (P) Version-aware prompt refinement + PIT-vs-non-PIT contrast playbook
   - Add a new numbered playbook that evaluates at least two prompt versions over the same point-in-time stream, reporting each version's memorization distribution (which now differs by version) and factor-stability and the head-to-head deltas, with an accept-gate that adopts a refinement only at no-greater contamination and no-worse metrics, preserving prior versions
@@ -95,6 +96,7 @@
   - _Requirements: 1.2, 5.1, 5.2, 5.3, 5.4, 5.5, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
   - _Boundary: notebook 14 prompt refinement and contrast (shared append-only research log, serialized)_
   - _Depends: 2.8, 2.9, 3.1, 3.2_
+  - _Deferred: 2026-06-27 (user "stop here"). Resume = run nb14 (version-aware p_memorized distribution + PIT-vs-non-PIT contrast); the controlled contrast is expected to show little separable premium per the 3.2 finding._
 
 ## Implementation Notes
 - Carried forward from track-a-macro-steering: `recall_guard@v0.1.0` + pytest/pytest-mock are installed; run tests with `uv run pytest -q`. Offline core tasks mock `NvidiaLM`/the MIA primitives (no network). Reviewers must never `git checkout`/`reset` uncommitted task work.
