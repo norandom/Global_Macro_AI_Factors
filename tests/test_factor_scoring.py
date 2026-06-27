@@ -1653,3 +1653,223 @@ def test_honesty_is_deterministic() -> None:
     assert [v.expected_excess_annualized for v in first] == [
         v.expected_excess_annualized for v in second
     ]
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.8 — FactorStability: factor_stability                                 #
+# (Requirement 5.2)                                                            #
+#                                                                              #
+# factor_stability summarizes the variability of ONE prompt version's regime  #
+# loadings across the point-in-time stream: per-axis standard deviation        #
+# (`<axis>_std`) and a mean absolute month-to-month change (`<axis>_mac`),     #
+# plus overall summaries. It considers only parsed loadings (skips            #
+# parse_ok=False entries) and handles empty / single-entry streams without     #
+# crashing or emitting NaN. Pure + deterministic; no I/O. These tests use the  #
+# REAL RegimeLoadings dataclass.                                               #
+# --------------------------------------------------------------------------- #
+
+
+def _stability_loadings(rb: pd.Timestamp, values: dict[str, float], *, parse_ok: bool = True):
+    """Build one RegimeLoadings keyed by ``rb`` with the given per-axis values."""
+    from macro_framework.factor_scoring import RegimeLoadings
+
+    return RegimeLoadings(rebalance_date=rb, loadings=dict(values), parse_ok=parse_ok)
+
+
+def _crafted_stream() -> dict[pd.Timestamp, object]:
+    """A crafted 3-date stream whose per-axis std / mean-abs-change are hand-known.
+
+    Only the ``inflation`` axis is exercised numerically here for an exact check;
+    the remaining axes are held constant (zero variability) so the summary
+    arithmetic is fully determined and verifiable.
+
+    inflation series: [0.0, 0.6, 0.3] over three consecutive month-ends.
+      - population std: mean=0.3, deviations=[-0.3, 0.3, 0.0] ->
+        sqrt((0.09+0.09+0.0)/3) = sqrt(0.06) ≈ 0.2449489742783178.
+      - mean abs month-to-month change: |0.6-0.0|=0.6, |0.3-0.6|=0.3 ->
+        (0.6+0.3)/2 = 0.45.
+    """
+    return {
+        pd.Timestamp("2021-01-31"): _stability_loadings(
+            pd.Timestamp("2021-01-31"),
+            {"inflation": 0.0, "growth": 0.0, "credit_stress": 0.0,
+             "policy": 0.0, "risk_appetite": 0.0},
+        ),
+        pd.Timestamp("2021-02-28"): _stability_loadings(
+            pd.Timestamp("2021-02-28"),
+            {"inflation": 0.6, "growth": 0.0, "credit_stress": 0.0,
+             "policy": 0.0, "risk_appetite": 0.0},
+        ),
+        pd.Timestamp("2021-03-31"): _stability_loadings(
+            pd.Timestamp("2021-03-31"),
+            {"inflation": 0.3, "growth": 0.0, "credit_stress": 0.0,
+             "policy": 0.0, "risk_appetite": 0.0},
+        ),
+    }
+
+
+def test_factor_stability_per_axis_variability_known_values() -> None:
+    """A crafted stream yields the known per-axis std + mean-abs-change (5.2).
+
+    The metric summarizes the variability of the version's loadings across the
+    PIT stream: per-axis population std (`<axis>_std`) and mean abs month-to-month
+    change (`<axis>_mac`). The inflation series [0.0, 0.6, 0.3] has a known std
+    (≈0.244949) and mean-abs-change (0.45); the constant axes have zero of both.
+    """
+    from macro_framework.factor_scoring import MACRO_AXES, factor_stability
+
+    result = factor_stability(_crafted_stream())
+
+    assert isinstance(result, dict)
+
+    # inflation: the exercised axis with a known std + mean-abs-change.
+    assert result["inflation_std"] == pytest.approx(0.2449489742783178)
+    assert result["inflation_mac"] == pytest.approx(0.45)
+
+    # The constant axes have zero variability on both summaries.
+    for axis in MACRO_AXES:
+        if axis == "inflation":
+            continue
+        assert result[f"{axis}_std"] == pytest.approx(0.0)
+        assert result[f"{axis}_mac"] == pytest.approx(0.0)
+
+
+def test_factor_stability_reports_overall_summary() -> None:
+    """The metric reports an overall summary across the axes (5.2).
+
+    Beyond the per-axis keys, an overall summary collapses the per-axis variability
+    into single numbers (the mean per-axis std and mean per-axis mean-abs-change).
+    With only inflation varying, the overall mean std is inflation_std / 5.
+    """
+    from macro_framework.factor_scoring import factor_stability
+
+    result = factor_stability(_crafted_stream())
+
+    # The overall mean std is the average of the five per-axis stds; only
+    # inflation is non-zero, so it is inflation_std / len(MACRO_AXES).
+    assert result["mean_std"] == pytest.approx(0.2449489742783178 / 5)
+    assert result["mean_mac"] == pytest.approx(0.45 / 5)
+
+
+def test_factor_stability_empty_stream_is_well_defined_no_crash() -> None:
+    """An empty stream returns well-defined output (no error, no NaN) (5.2)."""
+    import math
+
+    from macro_framework.factor_scoring import MACRO_AXES, factor_stability
+
+    result = factor_stability({})
+
+    assert isinstance(result, dict)
+    # Every reported value is finite (no NaN explosion on the empty stream).
+    for value in result.values():
+        assert math.isfinite(value), "empty-stream summary must not emit NaN/Inf"
+    # The per-axis std of an empty stream is a well-defined 0.0 (no variability).
+    for axis in MACRO_AXES:
+        assert result[f"{axis}_std"] == pytest.approx(0.0)
+        assert result[f"{axis}_mac"] == pytest.approx(0.0)
+
+
+def test_factor_stability_single_entry_stream_is_well_defined_no_crash() -> None:
+    """A single-entry stream returns well-defined output: zero variability (5.2).
+
+    One observation has no spread and no month-to-month change, so every per-axis
+    std and mean-abs-change is a well-defined 0.0 — never NaN, never a crash.
+    """
+    import math
+
+    from macro_framework.factor_scoring import MACRO_AXES, factor_stability
+
+    stream = {
+        pd.Timestamp("2022-06-30"): _stability_loadings(
+            pd.Timestamp("2022-06-30"),
+            {"inflation": 0.4, "growth": -0.2, "credit_stress": 0.6,
+             "policy": -0.1, "risk_appetite": -0.3},
+        )
+    }
+
+    result = factor_stability(stream)
+
+    for value in result.values():
+        assert math.isfinite(value), "single-entry summary must not emit NaN/Inf"
+    for axis in MACRO_AXES:
+        assert result[f"{axis}_std"] == pytest.approx(0.0)
+        assert result[f"{axis}_mac"] == pytest.approx(0.0)
+
+
+def test_factor_stability_excludes_not_parsed_entries() -> None:
+    """parse_ok=False entries are excluded from the variability summary (5.2).
+
+    Adding a not-parsed entry to the crafted stream must NOT change the metric:
+    only parsed loadings count. The result must equal the parsed-only result.
+    """
+    from macro_framework.factor_scoring import factor_stability
+
+    parsed_only = _crafted_stream()
+    with_garbage = dict(parsed_only)
+    # A not-parsed entry with wild values that WOULD shift every summary if counted.
+    with_garbage[pd.Timestamp("2021-04-30")] = _stability_loadings(
+        pd.Timestamp("2021-04-30"),
+        {"inflation": 9.9, "growth": 9.9, "credit_stress": 9.9,
+         "policy": 9.9, "risk_appetite": 9.9},
+        parse_ok=False,
+    )
+
+    base = factor_stability(parsed_only)
+    filtered = factor_stability(with_garbage)
+
+    assert filtered == base
+
+
+def test_factor_stability_all_not_parsed_is_well_defined_no_crash() -> None:
+    """A stream of only not-parsed entries degrades to the empty-stream output (5.2)."""
+    import math
+
+    from macro_framework.factor_scoring import MACRO_AXES, factor_stability
+
+    stream = {
+        pd.Timestamp("2021-01-31"): _stability_loadings(
+            pd.Timestamp("2021-01-31"), {}, parse_ok=False
+        ),
+        pd.Timestamp("2021-02-28"): _stability_loadings(
+            pd.Timestamp("2021-02-28"),
+            {"inflation": 0.5, "growth": 0.5, "credit_stress": 0.5,
+             "policy": 0.5, "risk_appetite": 0.5},
+            parse_ok=False,
+        ),
+    }
+
+    result = factor_stability(stream)
+
+    for value in result.values():
+        assert math.isfinite(value), "all-not-parsed summary must not emit NaN/Inf"
+    for axis in MACRO_AXES:
+        assert result[f"{axis}_std"] == pytest.approx(0.0)
+        assert result[f"{axis}_mac"] == pytest.approx(0.0)
+
+
+def test_factor_stability_is_deterministic() -> None:
+    """Determinism: equal inputs ⇒ equal summary (no randomness, no I/O) (5.2)."""
+    from macro_framework.factor_scoring import factor_stability
+
+    stream = _crafted_stream()
+    first = factor_stability(stream)
+    second = factor_stability(stream)
+
+    assert first == second
+
+
+def test_factor_stability_orders_by_date_not_dict_insertion() -> None:
+    """The month-to-month change uses chronological order, not dict insertion (5.2).
+
+    The PIT stream's variability is time-ordered: the mean-abs-change must be
+    computed over the date-sorted sequence regardless of the dict's insertion
+    order, so a shuffled-insertion stream yields the SAME summary.
+    """
+    from macro_framework.factor_scoring import factor_stability
+
+    ordered = _crafted_stream()
+    keys = list(ordered)
+    # Insert in reversed order; date-sorting inside the metric must normalize it.
+    shuffled = {k: ordered[k] for k in reversed(keys)}
+
+    assert factor_stability(shuffled) == factor_stability(ordered)

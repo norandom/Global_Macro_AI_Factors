@@ -1266,3 +1266,124 @@ def honesty_adjust(
             )
         )
     return adjusted
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.8 — FactorStability: factor_stability                                 #
+# (Requirement 5.2)                                                            #
+#                                                                              #
+# Summarize the variability of ONE prompt version's regime loadings across the #
+# point-in-time stream so refinement (nb14) can compare versions by factor      #
+# stability (R5.2). Two complementary per-axis summaries are reported:          #
+#                                                                              #
+#   <axis>_std — population standard deviation of the axis's loading across the #
+#                stream (overall spread of the axis around its own mean);       #
+#   <axis>_mac — mean absolute month-to-month change of the axis's loading over #
+#                the DATE-SORTED stream (run-to-run jitter of the PIT series).  #
+#                                                                              #
+# plus the overall summaries mean_std / mean_mac (the mean per-axis std /       #
+# mean-abs-change across MACRO_AXES). Only parsed loadings count (parse_ok      #
+# entries with the full axis vector); not-parsed entries are skipped. Empty /   #
+# single-entry / all-not-parsed streams degrade to a well-defined all-zero      #
+# summary (no crash, no NaN). Pure + deterministic; no I/O.                     #
+# --------------------------------------------------------------------------- #
+
+
+def _population_std(values: list[float]) -> float:
+    """Population standard deviation of ``values`` (0.0 for <2 entries).
+
+    Population (not sample) so a single observation is a well-defined ``0.0``
+    rather than a ``ZeroDivisionError`` / ``NaN`` — the spread of one point is
+    zero. Deterministic; no I/O.
+    """
+    n = len(values)
+    if n < 2:
+        return 0.0
+    mean = sum(values) / n
+    variance = sum((v - mean) ** 2 for v in values) / n
+    return math.sqrt(variance)
+
+
+def _mean_abs_change(values: list[float]) -> float:
+    """Mean absolute consecutive change of an ORDERED sequence (0.0 for <2).
+
+    The caller passes the date-sorted axis series; with fewer than two points
+    there is no transition, so the change is a well-defined ``0.0``.
+    Deterministic; no I/O.
+    """
+    if len(values) < 2:
+        return 0.0
+    deltas = [abs(values[i] - values[i - 1]) for i in range(1, len(values))]
+    return sum(deltas) / len(deltas)
+
+
+def factor_stability(
+    loadings_by_date: dict[pd.Timestamp, RegimeLoadings],
+) -> dict[str, float]:
+    """Summarize a prompt version's loadings variability across the PIT stream (R5.2).
+
+    The factor-stability metric: how much the version's regime-loadings factor
+    moves across the point-in-time rebalance stream. For each named
+    :data:`MACRO_AXES` axis it reports two complementary summaries, plus two
+    overall collapses:
+
+    - ``<axis>_std`` — the population standard deviation of that axis's loading
+      across the stream (the overall spread around the axis's own mean);
+    - ``<axis>_mac`` — the mean absolute month-to-month change of that axis's
+      loading over the DATE-SORTED stream (the run-to-run jitter of the series);
+    - ``mean_std`` / ``mean_mac`` — the mean per-axis ``std`` / ``mac`` across
+      ``MACRO_AXES`` (single-number overall stability summaries).
+
+    Only parsed loadings count: entries with ``parse_ok=False`` are skipped (a
+    not-parsed rebalance falls back to the base allocation, so it carries no
+    factor vector to measure). An entry that, despite ``parse_ok=True``, is
+    missing an axis contributes nothing to that axis's series.
+
+    Empty, single-entry, or all-not-parsed streams degrade to a well-defined
+    all-zero summary — every key present, every value ``0.0`` — never a crash and
+    never a ``NaN`` explosion (population std + the <2-point change guard).
+
+    Pure and deterministic: equal inputs yield an identical dict; the
+    month-to-month change is computed over the chronological (date-sorted)
+    sequence, so the dict's insertion order does not affect the result. No I/O.
+
+    Args:
+        loadings_by_date: the per-rebalance regime-loadings stream for ONE prompt
+            version, keyed by ``rebalance_date`` (e.g. the artifact emitted by
+            :func:`parse_loadings`).
+
+    Returns:
+        A flat ``dict[str, float]`` with ``<axis>_std`` and ``<axis>_mac`` for
+        every :data:`MACRO_AXES` axis plus the overall ``mean_std`` / ``mean_mac``.
+    """
+    # Consider only parsed entries (R5.2: a not-parsed rebalance carries no
+    # factor vector). Sort by rebalance date so the month-to-month change is the
+    # chronological run-to-run jitter, independent of dict insertion order.
+    parsed = [
+        rl for rl in loadings_by_date.values() if getattr(rl, "parse_ok", False)
+    ]
+    parsed.sort(key=lambda rl: rl.rebalance_date)
+
+    summary: dict[str, float] = {}
+    per_axis_std: list[float] = []
+    per_axis_mac: list[float] = []
+
+    for axis in MACRO_AXES:
+        # The axis's date-ordered series across the parsed stream; an entry that
+        # omits this axis contributes nothing to it (never a fabricated value).
+        series = [
+            float(rl.loadings[axis]) for rl in parsed if axis in rl.loadings
+        ]
+        axis_std = _population_std(series)
+        axis_mac = _mean_abs_change(series)
+        summary[f"{axis}_std"] = axis_std
+        summary[f"{axis}_mac"] = axis_mac
+        per_axis_std.append(axis_std)
+        per_axis_mac.append(axis_mac)
+
+    # Overall single-number summaries: the mean per-axis std / mean-abs-change.
+    n_axes = len(MACRO_AXES)
+    summary["mean_std"] = sum(per_axis_std) / n_axes if n_axes else 0.0
+    summary["mean_mac"] = sum(per_axis_mac) / n_axes if n_axes else 0.0
+
+    return summary

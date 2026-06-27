@@ -52,7 +52,7 @@
   - Observable: unit tests show the adjusted exposure falls monotonically as memorization rises, equals the raw exposure at zero memorization, passes through unchanged on missing/weak, leaves asset legs/rationale untouched, and returns a new list
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 2.8 Factor-stability metric
+- [x] 2.8 Factor-stability metric
   - Compute a per-version factor-stability metric defined as the variability of the version's factor loadings across the point-in-time stream
   - Observable: a unit test over a crafted loadings stream returns the expected per-axis variability summary
   - _Requirements: 5.2_
