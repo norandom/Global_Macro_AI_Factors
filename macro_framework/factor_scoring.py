@@ -37,7 +37,7 @@ from recall_guard.mia.mcs import train
 from .llm_agent import MacroView
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
     from datetime import date
     from pathlib import Path
 
@@ -1610,3 +1610,286 @@ def run_pit_vs_nonpit_contrast(
         nonpit_metrics=dict(nonpit_metrics),
         n_pairs=len(pit_p),
     )
+
+
+# --------------------------------------------------------------------------- #
+# Task 3.1 — Integration: steered factor weight-fn composition for walk-forward #
+# (Requirements 1.4, 3.1, 3.2, 3.3, 4.3)                                       #
+#                                                                              #
+# Compose the finished pieces — render_regime_loadings_prompt (2.1),            #
+# parse_loadings (2.2), FactorScorer.score (2.4), loadings_to_tilt_views (2.6), #
+# honesty_adjust (2.7) — plus the agent's UNCHANGED views_to_bl into one        #
+# network-free, walk-forward-compatible factor decision step. The "Factor       #
+# rebalance" sequence (design System Flows):                                    #
+#                                                                              #
+#   render anonymized PIT prompt (R1.4) → generate loadings (injected) → parse  #
+#   → score the SAME prompt for p_memorized → loadings→tilt views → honesty     #
+#   adjust → UNCHANGED views_to_bl → HRP+BL blend (injected via `combine`).      #
+#                                                                              #
+# Gating fallbacks (design gating note): a loadings parse-fail ⇒ (None, None)   #
+# ⇒ the caller's `combine` falls back to the base allocation; p_memorized       #
+# unavailable / scorer.is_weak / scorer is None ⇒ the honesty step passes       #
+# through (unadjusted exposures) but P/Q are still produced from the raw tilt.   #
+# No directional signal is read and no return objective is introduced (R3.4).    #
+#                                                                              #
+# Mirrors the predecessor steering.steer_rebalance / make_steered_weight_fn      #
+# SHAPE (read for the pattern) — but steering.py is never imported or edited     #
+# (R6.1/R6.5); this is the factor analogue. The composition owns NEITHER the     #
+# LLM call (injected `generate_loadings`) NOR nb09's HRP/BL/blend (injected      #
+# `combine`), keeping it agent-type-agnostic and unit-testable with mocks.       #
+# --------------------------------------------------------------------------- #
+
+
+def _conviction_from_loadings(loadings: RegimeLoadings) -> float:
+    """A dimensionless, non-return-bearing conviction in ``[0, 1]`` from the loadings.
+
+    The clipped L2 norm of the parsed loading vector, normalized by the maximum
+    possible norm (``sqrt(len(MACRO_AXES))`` when every axis sits at ``±1``), so a
+    flat/neutral regime yields a near-zero conviction and a saturated regime
+    approaches ``1.0``. Non-finite loadings are treated as ``0`` (inert), mirroring
+    the tilt step's guard, so no ``NaN`` conviction can scale the BL view.
+
+    This scalar feeds ``loadings_to_tilt_views`` as the dimensionless ``confidence``
+    that the UNCHANGED ``views_to_bl`` uses for ``Q = tilt·conviction/252`` (R3.2);
+    it NEVER feeds the tilt itself and carries no return semantics (R3.4).
+    """
+    axes = MACRO_AXES
+    sq_sum = 0.0
+    for axis in axes:
+        value = loadings.loadings.get(axis)
+        if value is None:
+            continue
+        v = _finite_or_zero(float(value))
+        sq_sum += v * v
+    norm = math.sqrt(sq_sum)
+    max_norm = math.sqrt(len(axes)) if axes else 1.0
+    if max_norm <= 0.0:
+        return 0.0
+    conviction = norm / max_norm
+    # Defensive clip — the construction already bounds this to [0, 1].
+    return min(1.0, max(0.0, conviction))
+
+
+@dataclass(frozen=True)
+class FactorDecision:
+    """The outcome of one factor rebalance decision (R3.1–R3.3, R4.3).
+
+    Frozen so a decision is a stable value the (later) nb13 decision log can
+    persist verbatim. It carries the UNCHANGED ``views_to_bl`` output
+    (``P``/``Q``, ``(None, None)`` when the loadings failed to parse so the
+    caller's ``combine`` falls back to the base allocation), the honesty-adjusted
+    ``views`` handed to ``views_to_bl`` (``[]`` on the parse-fail path), the
+    parsed ``loadings`` (``None`` on parse fail), the measured ``p_memorized``
+    (``None`` on the weak / no-scorer / scoring-failure path — R4.3), a
+    ``parse_ok`` flag, and a ``steered`` flag that is ``True`` only when a
+    measured score actually drove the honesty adjustment.
+
+    Attributes:
+        P, Q: the ``views_to_bl`` BL view pair, or ``(None, None)`` when no view
+            survived (parse fail) — the caller's ``combine`` then falls back to
+            the base allocation, exactly as Track A (R3.2).
+        views: the (honesty-adjusted or unadjusted) exposure-tilt views handed to
+            ``views_to_bl``; ``[]`` on the parse-fail path.
+        loadings: the parsed :class:`RegimeLoadings`, or ``None`` on parse fail.
+        p_memorized: the measured contamination score in ``[0, 1]`` for this
+            rebalance, or ``None`` when scoring was unavailable / weak / failed
+            (R4.3) — the honesty adjustment then passes through (unadjusted).
+        parse_ok: whether the loadings reply yielded the full factor vector.
+        steered: ``True`` iff ``p_memorized is not None`` — a measured score
+            actually drove the honesty discount; ``False`` on every fallback.
+    """
+
+    P: pd.DataFrame | None
+    Q: pd.DataFrame | None
+    views: list[MacroView]
+    loadings: RegimeLoadings | None
+    p_memorized: float | None
+    parse_ok: bool
+    steered: bool
+
+
+def factor_rebalance(
+    *,
+    generate_loadings: Callable[[str], str],
+    scorer: object | None,
+    agent: object,
+    macro_state: dict[str, float],
+    asset_snapshot: list[dict[str, object]],
+    real_symbols: list[str],
+    as_of: Any | None = None,
+    raw_levels: dict[str, float] | None = None,
+    honesty_config: HonestyConfig = HonestyConfig(),
+) -> FactorDecision:
+    """Compose one factor rebalance decision (design "Factor rebalance" flow).
+
+    Wires the finished pieces — :func:`render_regime_loadings_prompt` (2.1),
+    :func:`parse_loadings` (2.2), :meth:`FactorScorer.score` (2.4),
+    :func:`loadings_to_tilt_views` (2.6), :func:`honesty_adjust` (2.7) — plus the
+    agent's UNCHANGED ``views_to_bl`` into one network-free step. The composition
+    owns NEITHER the LLM call (injected ``generate_loadings``) NOR the HRP/BL
+    blend (the caller's ``combine``), so it is unit-testable with mocks and stays
+    agent-type-agnostic (``agent`` need only expose ``views_to_bl`` + ``asset_map``).
+
+    Steps:
+
+    1. ``prompt = render_regime_loadings_prompt(macro_state, asset_snapshot)`` —
+       the anonymized, point-in-time renderer (no date / no real ticker; R1.4).
+    2. ``reply = generate_loadings(prompt)`` — the injected loadings-producing
+       callable (the live agent / a replay); the composition does NOT own it.
+    3. ``loadings = parse_loadings(reply, as_of)``; on ``None`` (a parse failure)
+       return a decision with ``P=Q=None``, ``parse_ok=False``, ``steered=False``
+       so the caller's ``combine`` falls back to the base allocation (R3.2).
+    4. ``p_memorized = None``; only when ``scorer is not None and not
+       scorer.is_weak`` is the SAME anonymized prompt scored
+       (``scorer.score(prompt).p_memorized`` — ``None`` on a scoring failure).
+       The weak / no-scorer / failure cases keep ``p_memorized = None`` so the
+       honesty step passes through (unadjusted exposures; R4.3).
+    5. ``conviction`` is the dimensionless clipped-L2 norm of the loadings
+       (``[0, 1]``, non-return-bearing); ``views = loadings_to_tilt_views(...)``.
+    6. ``adjusted = honesty_adjust(views, p_memorized, honesty_config)`` — a
+       passthrough when ``p_memorized`` is ``None`` (R4.3); otherwise the tilt is
+       discounted by ``(1 − p_memorized)`` (R4.1).
+    7. ``P, Q = agent.views_to_bl(adjusted, real_symbols)`` — the UNCHANGED method.
+    8. ``steered = p_memorized is not None``.
+
+    No directional ``signal`` is ever read and no return objective is introduced
+    (R3.4): the tilt is a pure exposure characterization and the conversion is the
+    existing one reused verbatim (R3.3).
+
+    Args:
+        generate_loadings: injected callable mapping the rendered prompt to a
+            loadings reply (the LLM / agent / replay).
+        scorer: the calibrated :class:`FactorScorer` (or any object exposing
+            ``is_weak`` + ``score``); ``None`` disables scoring (passthrough).
+        agent: any object exposing the UNCHANGED ``views_to_bl`` + ``asset_map``.
+        macro_state: the z-scored macro state for this rebalance (PIT).
+        asset_snapshot: the anonymized asset snapshot for this rebalance.
+        real_symbols: the real tickers ``views_to_bl`` keys ``P``/``Q`` on.
+        as_of: the rebalance date used to key the parsed :class:`RegimeLoadings`
+            (carried into the artifact; the anonymized prompt discloses no date).
+        raw_levels: accepted for signature parity with the renderer's identifying
+            form; unused on the anonymized PIT path (kept ``None``).
+        honesty_config: the honesty (contamination-discount) configuration.
+
+    Returns:
+        A :class:`FactorDecision` carrying the (possibly ``(None, None)``) BL view
+        pair, the adjusted views, the parsed loadings, ``p_memorized``,
+        ``parse_ok`` and ``steered``.
+    """
+    # 1. The anonymized, point-in-time renderer (no date / no real ticker; R1.4).
+    prompt = render_regime_loadings_prompt(macro_state, asset_snapshot)
+
+    # 2. The injected loadings-producing callable (the composition does not own it).
+    reply = generate_loadings(prompt)
+
+    # 3. Parse; a parse failure falls back to (None, None) so combine → base (R3.2).
+    loadings = parse_loadings(reply, as_of)
+    if loadings is None:
+        return FactorDecision(
+            P=None,
+            Q=None,
+            views=[],
+            loadings=None,
+            p_memorized=None,
+            parse_ok=False,
+            steered=False,
+        )
+
+    # 4. Measure p_memorized on the SAME anonymized prompt, but only when a scorer
+    #    is present and the calibrator is not weak. Each gate degrades to the
+    #    unadjusted (p_memorized=None) path so the factor exposure stays honest
+    #    rather than carrying an unvalidated discount (R4.3 / R1.6).
+    p_memorized: float | None = None
+    if scorer is not None and not scorer.is_weak:
+        score = scorer.score(prompt)
+        # None on a scoring failure ⇒ honesty_adjust passes through (R4.3).
+        p_memorized = score.p_memorized
+
+    # 5. Dimensionless conviction (clipped L2 norm) → per-asset exposure tilts.
+    conviction = _conviction_from_loadings(loadings)
+    views = loadings_to_tilt_views(loadings, asset_snapshot, agent.asset_map, conviction)
+
+    # 6. Down-weight the exposure by the measured contamination (passthrough on None).
+    adjusted = honesty_adjust(views, p_memorized, honesty_config)
+
+    # 7. The UNCHANGED views_to_bl conversion (Q = tilt·conviction/252).
+    P, Q = agent.views_to_bl(adjusted, real_symbols)
+
+    # 8. Steered iff a measured score actually drove the honesty adjustment.
+    steered = p_memorized is not None
+
+    return FactorDecision(
+        P=P,
+        Q=Q,
+        views=list(adjusted),
+        loadings=loadings,
+        p_memorized=p_memorized,
+        parse_ok=True,
+        steered=steered,
+    )
+
+
+def make_factor_weight_fn(
+    *,
+    generate_loadings: Callable[[str], str],
+    scorer: object | None,
+    agent: object,
+    build_inputs: Callable[[dict], tuple[dict[str, float], list[dict[str, object]], Any, dict[str, float] | None]],
+    combine: Callable[[dict, pd.DataFrame | None, pd.DataFrame | None], pd.Series],
+    honesty_config: HonestyConfig = HonestyConfig(),
+) -> Callable[[dict], pd.Series]:
+    """Adapt :func:`factor_rebalance` into a ``walk_forward`` ``weight_fn(ctx) -> pd.Series``.
+
+    Returns a closure holding ONE agent instance and the scorer, so the same agent
+    runs the UNCHANGED ``views_to_bl`` for each rebalance. nb09's HRP / BL / blend
+    math is INJECTED via ``combine`` rather than owned here (R3.3 / R6.1) and the
+    LLM/replay is injected via ``generate_loadings`` — keeping the composition
+    agent-type-agnostic. Mirrors the SHAPE of the predecessor
+    ``steering.make_steered_weight_fn`` (read for the pattern; steering.py is never
+    imported or edited).
+
+    The weight_fn:
+
+    * sources ``real_symbols`` from ``list(ctx["prices"].columns)`` (the real
+      tickers, exactly as the Track A weight_fn in nb09);
+    * derives ``(macro_state, asset_snapshot, as_of, raw_levels)`` from the
+      injected ``build_inputs(ctx)`` (the PIT-sliced ctx → renderer inputs);
+    * calls :func:`factor_rebalance`;
+    * returns ``combine(ctx, dec.P, dec.Q)`` — the injected blend, which falls
+      back to the base allocation on the ``(None, None)`` parse-fail path (R3.2).
+
+    Args:
+        generate_loadings: injected callable mapping the rendered prompt to a
+            loadings reply (the LLM / agent / replay).
+        scorer: the calibrated :class:`FactorScorer` (or ``None`` to disable
+            scoring — the honesty passthrough path, R4.3).
+        agent: the agent instance reused across rebalances (only ``views_to_bl``
+            + ``asset_map`` are used).
+        build_inputs: injected; maps a walk-forward ctx to
+            ``(macro_state, asset_snapshot, as_of, raw_levels)``.
+        combine: injected; maps ``(ctx, P, Q)`` to a target-weight ``pd.Series``
+            (owns the BL / base blend; falls back to base on ``(None, None)``).
+        honesty_config: the honesty configuration shared across rebalances.
+
+    Returns:
+        A ``walk_forward``-compatible ``weight_fn(ctx) -> pd.Series``.
+    """
+
+    def weight_fn(ctx: dict) -> pd.Series:
+        # Source the real tickers exactly as the Track A weight_fn does (R3.3).
+        real_symbols = list(ctx["prices"].columns)
+        macro_state, asset_snapshot, as_of, raw_levels = build_inputs(ctx)
+        dec = factor_rebalance(
+            generate_loadings=generate_loadings,
+            scorer=scorer,
+            agent=agent,
+            macro_state=macro_state,
+            asset_snapshot=asset_snapshot,
+            real_symbols=real_symbols,
+            as_of=as_of,
+            raw_levels=raw_levels,
+            honesty_config=honesty_config,
+        )
+        return combine(ctx, dec.P, dec.Q)
+
+    return weight_fn

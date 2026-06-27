@@ -2243,3 +2243,433 @@ def test_run_contrast_is_deterministic() -> None:
     second = _build()
     assert first == second
     assert first.contamination_premium() == second.contamination_premium()
+
+
+# --------------------------------------------------------------------------- #
+# Task 3.1 — Integration: steered factor weight-fn composition for walk-forward #
+# (Requirements 1.4, 3.1, 3.2, 3.3, 4.3)                                       #
+#                                                                              #
+# Compose the finished pieces — render_regime_loadings_prompt (2.1),            #
+# parse_loadings (2.2), FactorScorer.score (2.4), loadings_to_tilt_views (2.6), #
+# honesty_adjust (2.7) — plus the agent's UNCHANGED views_to_bl, into a         #
+# walk-forward-compatible factor decision step. Mocked agent + scorer; no       #
+# network. The injected build_inputs / combine stand in for nb09's HRP/BL/blend #
+# (never duplicated here).                                                      #
+# --------------------------------------------------------------------------- #
+
+
+def _factor_well_formed_reply() -> str:
+    """A loadings reply that parse_loadings resolves to the full five-axis vector."""
+    return (
+        'Regime characterization: {"inflation": 0.5, "growth": -0.4, '
+        '"credit_stress": 0.8, "policy": 0.2, "risk_appetite": -0.6}'
+    )
+
+
+class _FactorFakeScore:
+    """A stand-in FactorScore (only ``p_memorized`` is read by the composition)."""
+
+    def __init__(self, p_memorized: float | None) -> None:
+        self.p_memorized = p_memorized
+        self.parse_ok = p_memorized is not None
+        self.fail_reason = None if p_memorized is not None else "fake"
+
+
+class _FactorFakeScorer:
+    """A mocked FactorScorer: only ``is_weak`` and ``score(prompt)`` are used."""
+
+    def __init__(
+        self, *, p_memorized: float | None = 0.5, is_weak: bool = False
+    ) -> None:
+        self._p = p_memorized
+        self.is_weak = is_weak
+        self.scored_prompts: list[str] = []
+
+    def score(self, prompt: str) -> object:
+        self.scored_prompts.append(prompt)
+        return _FactorFakeScore(self._p)
+
+
+class _FactorFakeAgent:
+    """A mocked agent: agent-type-agnostic, exposes views_to_bl + asset_map.
+
+    ``views_to_bl`` delegates to the REAL LlmMacroAgent conversion (the unchanged
+    method, task boundary) so the composition exercises the genuine field
+    reinterpretation Q = tilt·conviction/252 end-to-end; the fake only records the
+    views it received so the honesty discount can be asserted.
+    """
+
+    def __init__(self) -> None:
+        from macro_framework.llm_agent import LlmMacroAgent
+
+        self._inner = LlmMacroAgent()
+        self.asset_map = self._inner.asset_map
+        self.seen_views: list[object] = []
+
+    def views_to_bl(self, views, real_symbols):  # type: ignore[no-untyped-def]
+        self.seen_views = list(views)
+        return self._inner.views_to_bl(views, real_symbols)
+
+
+def _factor_ctx() -> dict:
+    """A tiny walk-forward-style ctx with a prices frame over the real tickers."""
+    cols = _all_real_symbols()
+    prices = pd.DataFrame(
+        [[100.0, 50.0, 30.0, 20.0], [101.0, 51.0, 29.0, 20.1]],
+        index=pd.to_datetime(["2022-06-28", "2022-06-29"]),
+        columns=cols,
+    )
+    return {
+        "rebalance_date": pd.Timestamp("2022-06-30"),
+        "prices": prices,
+        "returns": prices.pct_change().dropna(how="any"),
+        "macro_panel": pd.DataFrame(),
+    }
+
+
+def _factor_build_inputs(reply: str):  # type: ignore[no-untyped-def]
+    """An injected build_inputs returning (macro_state, asset_snapshot, as_of, raw_levels).
+
+    Closes over the loadings ``reply`` only to keep the fake generate_loadings and
+    build_inputs consistent in a single fixture; build_inputs itself yields the
+    renderer inputs the composition needs.
+    """
+
+    def _build(ctx: dict):  # type: ignore[no-untyped-def]
+        macro_state = {"cpi_yoy_z": 0.5, "t10y2y_z": -0.2, "hy_oas_z": 0.8}
+        asset_snapshot = AssetMap.default().pseudo_assets()
+        as_of = ctx["rebalance_date"]
+        raw_levels = {"cpi_yoy": 8.5, "t10y2y": -0.1, "hy_oas": 5.2}
+        return macro_state, asset_snapshot, as_of, raw_levels
+
+    return _build
+
+
+def _factor_combine_with_base(base_row: pd.Series):  # type: ignore[no-untyped-def]
+    """An injected combine standing in for nb09 HRP/BL/blend.
+
+    Returns the (recorded) P/Q on the steered path; falls back to ``base_row`` when
+    P/Q are None (the parse-fail / no-view fallback, exactly as Track A). It does
+    NOT implement the real blend — the composition must not own it (R3.3 / R6.1);
+    this stub only proves the (P, Q) vs (None, None) routing.
+    """
+    captured: dict[str, object] = {}
+
+    def _combine(ctx, P, Q):  # type: ignore[no-untyped-def]
+        captured["P"] = P
+        captured["Q"] = Q
+        cols = list(ctx["prices"].columns)
+        if P is None or Q is None:
+            return base_row.reindex(cols).fillna(0.0)
+        # A trivial valid target row that DEPENDS on P/Q having been produced.
+        w = pd.Series(1.0 / len(cols), index=cols)
+        return w
+
+    return _combine, captured
+
+
+def test_factor_decision_is_frozen_with_spec_fields() -> None:
+    """FactorDecision is a frozen dataclass carrying the spec-required fields."""
+    import dataclasses
+
+    from macro_framework.factor_scoring import FactorDecision
+
+    fields = {f.name for f in dataclasses.fields(FactorDecision)}
+    for required in (
+        "P",
+        "Q",
+        "views",
+        "loadings",
+        "p_memorized",
+        "parse_ok",
+        "steered",
+    ):
+        assert required in fields, f"FactorDecision missing field {required!r}"
+
+    dec = FactorDecision(
+        P=None,
+        Q=None,
+        views=[],
+        loadings=None,
+        p_memorized=None,
+        parse_ok=False,
+        steered=False,
+    )
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        dec.steered = True  # type: ignore[misc]
+
+
+def test_factor_rebalance_end_to_end_steered_with_honesty_discount() -> None:
+    """End-to-end: render→score→parse→tilt→honesty→unchanged views_to_bl (R3.1–R3.3, R4.3).
+
+    A well-formed loadings reply + a present scorer (not weak, p_memorized=0.5)
+    runs to a valid (P, Q); dec.steered=True; the honesty discount (1−0.5) is
+    applied to the tilt that reaches the UNCHANGED views_to_bl (R4.1/R4.3).
+    """
+    from macro_framework.factor_scoring import (
+        REGIME_ASSET_EXPOSURE,
+        factor_rebalance,
+        parse_loadings,
+    )
+
+    reply = _factor_well_formed_reply()
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.5, is_weak=False)
+    macro_state = {"cpi_yoy_z": 0.5, "t10y2y_z": -0.2, "hy_oas_z": 0.8}
+    asset_snapshot = AssetMap.default().pseudo_assets()
+
+    dec = factor_rebalance(
+        generate_loadings=lambda prompt: reply,
+        scorer=scorer,
+        agent=agent,
+        macro_state=macro_state,
+        asset_snapshot=asset_snapshot,
+        real_symbols=_all_real_symbols(),
+        as_of=pd.Timestamp("2022-06-30"),
+        raw_levels={"cpi_yoy": 8.5},
+    )
+
+    # Parsed, scored, steered.
+    assert dec.parse_ok is True
+    assert dec.p_memorized == pytest.approx(0.5)
+    assert dec.steered is True
+    assert dec.loadings is not None and dec.loadings.parse_ok
+
+    # The UNCHANGED views_to_bl produced a real BL pair.
+    assert dec.P is not None and dec.Q is not None
+    assert len(dec.Q) >= 1
+
+    # The honesty discount (1 − 0.5) reached the tilt fed to views_to_bl: the
+    # view magnitude equals the raw dot-product tilt times the discount.
+    loadings = parse_loadings(reply, pd.Timestamp("2022-06-30"))
+    assert loadings is not None
+    by_long = {v.asset_long: v for v in dec.views}
+    for pseudo, category in agent.asset_map.categories.items():
+        raw_tilt = sum(
+            loadings.loadings[axis] * REGIME_ASSET_EXPOSURE[category][axis]
+            for axis in loadings.loadings
+        )
+        assert by_long[pseudo].expected_excess_annualized == pytest.approx(
+            raw_tilt * (1.0 - 0.5)
+        )
+
+
+def test_factor_rebalance_parse_fail_returns_none_pq_unsteered() -> None:
+    """A loadings parse failure ⇒ (None, None), parse_ok=False, steered=False (R3.2)."""
+    from macro_framework.factor_scoring import factor_rebalance
+
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.5, is_weak=False)
+
+    dec = factor_rebalance(
+        generate_loadings=lambda prompt: "not loadings at all — garbage",
+        scorer=scorer,
+        agent=agent,
+        macro_state={"cpi_yoy_z": 0.1},
+        asset_snapshot=AssetMap.default().pseudo_assets(),
+        real_symbols=_all_real_symbols(),
+    )
+
+    assert dec.parse_ok is False
+    assert dec.P is None and dec.Q is None
+    assert dec.steered is False
+    assert dec.views == []
+    assert dec.loadings is None
+
+
+def test_factor_rebalance_weak_scorer_unadjusted_unsteered() -> None:
+    """A weak calibrator ⇒ p_memorized never read, unadjusted views, steered=False (R4.3)."""
+    from macro_framework.factor_scoring import (
+        REGIME_ASSET_EXPOSURE,
+        factor_rebalance,
+        parse_loadings,
+    )
+
+    reply = _factor_well_formed_reply()
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.9, is_weak=True)
+
+    dec = factor_rebalance(
+        generate_loadings=lambda prompt: reply,
+        scorer=scorer,
+        agent=agent,
+        macro_state={"cpi_yoy_z": 0.5},
+        asset_snapshot=AssetMap.default().pseudo_assets(),
+        real_symbols=_all_real_symbols(),
+    )
+
+    # Weak ⇒ p_memorized is not measured and the scorer is never queried.
+    assert dec.p_memorized is None
+    assert dec.steered is False
+    assert scorer.scored_prompts == []
+    # P/Q are still produced from the raw (unadjusted) tilt.
+    assert dec.P is not None and dec.Q is not None
+
+    loadings = parse_loadings(reply, pd.Timestamp("2022-06-30"))
+    assert loadings is not None
+    by_long = {v.asset_long: v for v in dec.views}
+    for pseudo, category in agent.asset_map.categories.items():
+        raw_tilt = sum(
+            loadings.loadings[axis] * REGIME_ASSET_EXPOSURE[category][axis]
+            for axis in loadings.loadings
+        )
+        # Unadjusted: equals the raw tilt (no discount applied).
+        assert by_long[pseudo].expected_excess_annualized == pytest.approx(raw_tilt)
+
+
+def test_factor_rebalance_score_failure_unadjusted_unsteered() -> None:
+    """scorer.score → p_memorized None ⇒ unadjusted views, steered=False (R4.3)."""
+    from macro_framework.factor_scoring import factor_rebalance
+
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=None, is_weak=False)
+
+    dec = factor_rebalance(
+        generate_loadings=lambda prompt: _factor_well_formed_reply(),
+        scorer=scorer,
+        agent=agent,
+        macro_state={"cpi_yoy_z": 0.5},
+        asset_snapshot=AssetMap.default().pseudo_assets(),
+        real_symbols=_all_real_symbols(),
+    )
+
+    assert scorer.scored_prompts, "a non-weak scorer must be queried"
+    assert dec.p_memorized is None
+    assert dec.steered is False
+    assert dec.P is not None and dec.Q is not None
+
+
+def test_factor_rebalance_no_scorer_unadjusted_unsteered() -> None:
+    """scorer is None ⇒ unadjusted views, steered=False, still produces P/Q (R4.3)."""
+    from macro_framework.factor_scoring import factor_rebalance
+
+    agent = _FactorFakeAgent()
+
+    dec = factor_rebalance(
+        generate_loadings=lambda prompt: _factor_well_formed_reply(),
+        scorer=None,
+        agent=agent,
+        macro_state={"cpi_yoy_z": 0.5},
+        asset_snapshot=AssetMap.default().pseudo_assets(),
+        real_symbols=_all_real_symbols(),
+    )
+
+    assert dec.p_memorized is None
+    assert dec.steered is False
+    assert dec.P is not None and dec.Q is not None
+
+
+def test_factor_rebalance_prompt_is_anonymized_pit() -> None:
+    """The scored prompt is the anonymized PIT renderer output (R1.4): no date/ticker."""
+    from macro_framework.factor_scoring import factor_rebalance
+
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.3, is_weak=False)
+    captured_prompt: dict[str, str] = {}
+
+    def _gen(prompt: str) -> str:
+        captured_prompt["prompt"] = prompt
+        return _factor_well_formed_reply()
+
+    factor_rebalance(
+        generate_loadings=_gen,
+        scorer=scorer,
+        agent=agent,
+        macro_state={"cpi_yoy_z": 0.5, "t10y2y_z": -0.2, "hy_oas_z": 0.8},
+        asset_snapshot=AssetMap.default().pseudo_assets(),
+        real_symbols=_all_real_symbols(),
+        as_of=pd.Timestamp("2022-06-30"),
+        raw_levels={"cpi_yoy": 8.5},
+    )
+
+    prompt = captured_prompt["prompt"]
+    # The same anonymized prompt is generated and scored (one source of truth).
+    assert prompt == scorer.scored_prompts[0]
+    # PIT/anonymized: no calendar year and no real ticker leaks (R1.4).
+    assert "2022" not in prompt
+    for ticker in ("SWDA.L", "XLK", "IAU", "BIL"):
+        assert ticker not in prompt
+
+
+def test_make_factor_weight_fn_end_to_end_valid_target_row() -> None:
+    """The weight_fn runs ctx → a valid target row over the price columns (R3.1–R3.3)."""
+    from macro_framework.factor_scoring import make_factor_weight_fn
+
+    ctx = _factor_ctx()
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.5, is_weak=False)
+    base_row = pd.Series(0.25, index=_all_real_symbols())
+    combine, captured = _factor_combine_with_base(base_row)
+
+    weight_fn = make_factor_weight_fn(
+        generate_loadings=lambda prompt: _factor_well_formed_reply(),
+        scorer=scorer,
+        agent=agent,
+        build_inputs=_factor_build_inputs(_factor_well_formed_reply()),
+        combine=combine,
+    )
+
+    row = weight_fn(ctx)
+
+    # A valid target row over the price columns (the combine output).
+    assert isinstance(row, pd.Series)
+    assert list(row.index) == list(ctx["prices"].columns)
+    assert row.notna().all()
+    # The steered path produced a real (P, Q) that reached combine.
+    assert captured["P"] is not None and captured["Q"] is not None
+
+
+def test_make_factor_weight_fn_sources_real_symbols_from_prices_columns() -> None:
+    """real_symbols is sourced from ctx['prices'].columns inside the weight_fn (R3.3)."""
+    from macro_framework.factor_scoring import make_factor_weight_fn
+
+    ctx = _factor_ctx()
+    seen_symbols: dict[str, list[str]] = {}
+
+    class _SymbolSpyAgent(_FactorFakeAgent):
+        def views_to_bl(self, views, real_symbols):  # type: ignore[no-untyped-def]
+            seen_symbols["real_symbols"] = list(real_symbols)
+            return super().views_to_bl(views, real_symbols)
+
+    agent = _SymbolSpyAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.5, is_weak=False)
+    combine, _ = _factor_combine_with_base(pd.Series(0.25, index=_all_real_symbols()))
+
+    weight_fn = make_factor_weight_fn(
+        generate_loadings=lambda prompt: _factor_well_formed_reply(),
+        scorer=scorer,
+        agent=agent,
+        build_inputs=_factor_build_inputs(_factor_well_formed_reply()),
+        combine=combine,
+    )
+    weight_fn(ctx)
+
+    assert seen_symbols["real_symbols"] == list(ctx["prices"].columns)
+
+
+def test_make_factor_weight_fn_parse_fail_returns_base_row() -> None:
+    """A parse failure inside the weight_fn ⇒ combine returns the base row (R3.2)."""
+    from macro_framework.factor_scoring import make_factor_weight_fn
+
+    ctx = _factor_ctx()
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.5, is_weak=False)
+    base_row = pd.Series(
+        [0.4, 0.3, 0.2, 0.1], index=_all_real_symbols()
+    )
+    combine, captured = _factor_combine_with_base(base_row)
+
+    weight_fn = make_factor_weight_fn(
+        generate_loadings=lambda prompt: "garbage, no loadings",
+        scorer=scorer,
+        agent=agent,
+        build_inputs=_factor_build_inputs("garbage, no loadings"),
+        combine=combine,
+    )
+    row = weight_fn(ctx)
+
+    # combine received (None, None) and fell back to the base row.
+    assert captured["P"] is None and captured["Q"] is None
+    pd.testing.assert_series_equal(
+        row, base_row.reindex(list(ctx["prices"].columns)).fillna(0.0)
+    )

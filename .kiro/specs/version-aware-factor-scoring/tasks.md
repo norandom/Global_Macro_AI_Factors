@@ -63,7 +63,7 @@
   - _Requirements: 7.2, 7.3, 7.5_
 
 - [ ] 3. Integration
-- [ ] 3.1 Steered factor weight-fn composition for walk-forward
+- [x] 3.1 Steered factor weight-fn composition for walk-forward
   - Compose renderer → score → parse → tilt-as-exposure → honesty-adjust → the existing unchanged view-to-input conversion into a walk-forward-compatible factor decision step, holding the agent instance, sourcing real symbols from the sliced price columns, and injecting the existing base-allocation/blend math (not duplicating it); keep the composition agent-type-agnostic
   - Apply gating fallbacks so a parse failure, an unavailable memorization probability, or a weak calibrator yields the base/unadjusted behavior for that date
   - Observable: an integration test on a small fixture (mocked agent + mocked scorer) runs end-to-end through the unchanged conversion to a valid target row, and separately exercises the parse-fail / weak / missing fallback to base
