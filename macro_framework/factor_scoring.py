@@ -31,6 +31,7 @@ from recall_guard.mia.mcs import train
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import date
+    from pathlib import Path
 
     import pandas as pd
 
@@ -568,6 +569,14 @@ def _pd():  # type: ignore[no-untyped-def]
     return pd
 
 
+# Persisted-artifact filenames (task 2.5). The directory written by
+# ``FactorScorer.save`` holds the pickled calibrator + the JSON baseline/stats;
+# the api_key / NvidiaLM are never among them (the credential is supplied at load).
+_CALIBRATOR_FILE = "calibrator.joblib"
+_BASELINE_FILE = "baseline.json"
+_STATS_FILE = "stats.json"
+
+
 class FactorScorer:
     """Number-native, version-aware contamination scorer (R1.1, R1.5, R1.6, R6.5).
 
@@ -705,6 +714,126 @@ class FactorScorer:
     def stats(self) -> CalibrationStats:
         """The recorded calibration statistics."""
         return self._stats
+
+    # -- persistence (task 2.5) ------------------------------------------------ #
+
+    def save(self, path: Path) -> None:
+        """Persist the trained scorer to a directory — never the credential (R1.6).
+
+        The number-native calibration is a one-time cost (~135 NIM calls); this
+        writes the trained components so they are reused across notebooks without
+        a rebuild. Three artifacts are written under ``path`` (created if absent):
+
+          - ``calibrator.joblib`` — the pickled :class:`MCSCalibrator`, which
+            carries the fitted sklearn ``LogisticRegression`` **and** its
+            ``feature_order`` (so ``predict_proba`` can never be fed a permuted
+            vector). joblib round-trips the estimator exactly.
+          - ``baseline.json`` — the :class:`ControlBaseline` standardisation
+            stats (``feature_means`` / ``feature_stds`` plus ``model`` /
+            ``n_valid`` / ``is_calibrated`` / ``min_valid``). These are the only
+            fields :meth:`predict_proba` needs to standardise features, so the
+            baseline reconstructs from them faithfully.
+          - ``stats.json`` — the :class:`CalibrationStats`.
+
+        The ``api_key`` and the live ``NvidiaLM`` are NEVER persisted — the model
+        id is recorded inside ``baseline.json`` (``model``) and :meth:`load`
+        re-attaches a fresh ``NvidiaLM(api_key, model)`` from a caller-supplied
+        key. No secret is ever written to disk.
+
+        Args:
+            path: the destination directory (created with parents if needed).
+        """
+        import joblib
+
+        path.mkdir(parents=True, exist_ok=True)
+
+        joblib.dump(self._calibrator, path / _CALIBRATOR_FILE)
+
+        baseline_payload = {
+            "model": self._baseline.model,
+            "n_valid": int(self._baseline.n_valid),
+            "feature_means": dict(self._baseline.feature_means),
+            "feature_stds": dict(self._baseline.feature_stds),
+            "is_calibrated": bool(self._baseline.is_calibrated),
+            "min_valid": int(self._baseline.min_valid),
+        }
+        (path / _BASELINE_FILE).write_text(
+            json.dumps(baseline_payload, indent=2, sort_keys=True), encoding="utf-8"
+        )
+
+        stats_payload = {
+            "holdout_auc": float(self._stats.holdout_auc),
+            "is_weak": bool(self._stats.is_weak),
+            "n_is": int(self._stats.n_is),
+            "n_oos": int(self._stats.n_oos),
+        }
+        (path / _STATS_FILE).write_text(
+            json.dumps(stats_payload, indent=2, sort_keys=True), encoding="utf-8"
+        )
+
+    @classmethod
+    def load(cls, path: Path, *, api_key: str) -> FactorScorer:
+        """Reconstruct a fully usable scorer from a saved directory (R1.6).
+
+        Reads the joblib-pickled :class:`MCSCalibrator`, reconstructs the
+        :class:`ControlBaseline` from ``baseline.json``, reads the
+        :class:`CalibrationStats`, and re-attaches a FRESH
+        ``NvidiaLM(api_key, model)`` — the credential is supplied here, never
+        loaded from disk. A loaded scorer produces identical
+        ``predict_proba`` / scores to the original for the same inputs.
+
+        Args:
+            path: the directory previously written by :meth:`save`.
+            api_key: the NIM scoring credential to attach to the fresh
+                ``NvidiaLM`` (non-empty).
+
+        Returns:
+            A fully usable :class:`FactorScorer`.
+
+        Raises:
+            ConfigurationError: when ``api_key`` is empty (R1.5; the loaded
+                scorer would have no usable scoring credential).
+        """
+        # R1.5: fail fast on a missing credential BEFORE NvidiaLM construction
+        # (NvidiaLM itself would raise a bare ValueError — we own the contract).
+        if not api_key:
+            raise ConfigurationError(
+                "FactorScorer.load: a non-empty NIM api_key is required "
+                "(the scoring credential is never persisted; supply it at load)."
+            )
+
+        import joblib
+
+        from recall_guard.mia.control import ControlBaseline
+
+        calibrator: MCSCalibrator = joblib.load(path / _CALIBRATOR_FILE)
+
+        baseline_payload = json.loads(
+            (path / _BASELINE_FILE).read_text(encoding="utf-8")
+        )
+        baseline = ControlBaseline(
+            model=baseline_payload["model"],
+            n_valid=int(baseline_payload["n_valid"]),
+            feature_means=dict(baseline_payload["feature_means"]),
+            feature_stds=dict(baseline_payload["feature_stds"]),
+            is_calibrated=bool(baseline_payload["is_calibrated"]),
+            min_valid=int(baseline_payload["min_valid"]),
+        )
+
+        stats_payload = json.loads(
+            (path / _STATS_FILE).read_text(encoding="utf-8")
+        )
+        stats = CalibrationStats(
+            holdout_auc=float(stats_payload["holdout_auc"]),
+            is_weak=bool(stats_payload["is_weak"]),
+            n_is=int(stats_payload["n_is"]),
+            n_oos=int(stats_payload["n_oos"]),
+        )
+
+        # Re-attach a fresh NvidiaLM with the caller's key on the persisted model.
+        lm = NvidiaLM(api_key=api_key, model=baseline.model)
+
+        return cls(calibrator=calibrator, baseline=baseline, lm=lm, stats=stats)
 
     # -- number-native scoring (task 2.4) -------------------------------------- #
 

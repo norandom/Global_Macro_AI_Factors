@@ -1010,3 +1010,217 @@ def test_score_many_auth_error_raises_module_configuration_error() -> None:
 
     with pytest.raises(fs.ConfigurationError):
         scorer.score_many(["good", "bad"])
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.5 — FactorScorer persistence (save / load) (Requirement 1.6)          #
+#                                                                             #
+# A trained scorer is persisted so the one-time number-native calibration      #
+# (~135 NIM calls) is reused across notebooks. save writes a directory: the     #
+# pickled MCSCalibrator (carrying the LogisticRegression + feature_order) via   #
+# joblib, the ControlBaseline standardisation stats as JSON, and the           #
+# CalibrationStats. The api_key / NvidiaLM are NEVER persisted; load           #
+# re-attaches a fresh NvidiaLM(api_key, model). A loaded scorer must produce    #
+# byte-identical predict_proba / scores for the same inputs (round-trip).       #
+# These tests build a REAL MCSCalibrator + ControlBaseline from synthetic       #
+# feature data (no network) so the round-trip fidelity is verified directly.    #
+# --------------------------------------------------------------------------- #
+
+
+from recall_guard import NvidiaLM  # noqa: E402
+from recall_guard.mia.control import ControlBaseline as _RealControlBaseline  # noqa: E402
+from recall_guard.mia.features import MiaFeatures as _RealMiaFeatures  # noqa: E402
+from recall_guard.mia.mcs import MCSCalibrator as _RealMCSCalibrator  # noqa: E402
+
+_PERSIST_MODEL = "meta/llama-4-maverick-17b-128e-instruct"
+_PERSIST_DUMMY_KEY = "nvapi-DUMMY-SECRET-do-not-persist-1234567890"
+
+
+def _real_baseline() -> _RealControlBaseline:
+    """A real ControlBaseline with synthetic per-feature means/stds (no network).
+
+    Mirrors what build_baseline produces with ref_lm=None: the four core
+    features are populated and ref_delta is None (so feature_order excludes it,
+    matching the calibration contract).
+    """
+    return _RealControlBaseline(
+        model=_PERSIST_MODEL,
+        n_valid=20,
+        feature_means={
+            "loss": 1.5,
+            "min_k": -2.0,
+            "min_k_pp": 0.25,
+            "zlib_ratio": 0.8,
+            "ref_delta": None,
+        },
+        feature_stds={
+            "loss": 0.5,
+            "min_k": 0.75,
+            "min_k_pp": 0.1,
+            "zlib_ratio": 0.2,
+            "ref_delta": None,
+        },
+        is_calibrated=True,
+        min_valid=2,
+    )
+
+
+def _real_calibrator() -> _RealMCSCalibrator:
+    """A real MCSCalibrator: a tiny fitted LogisticRegression + feature_order.
+
+    Fits sklearn's LogisticRegression on synthetic standardised vectors (the
+    four core features, ref_delta excluded — the ref_lm=None contract) so the
+    classifier round-trips through joblib exactly like the calibrated one.
+    """
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+
+    feature_order = ["loss", "min_k", "min_k_pp", "zlib_ratio"]
+    rng = np.random.default_rng(0)
+    x_oos = rng.normal(0.0, 1.0, size=(12, 4))
+    x_is = rng.normal(1.5, 1.0, size=(12, 4))
+    x = np.vstack([x_oos, x_is])
+    y = np.array([0] * 12 + [1] * 12)
+    clf = LogisticRegression(
+        class_weight="balanced", solver="liblinear", random_state=0
+    )
+    clf.fit(x, y)
+    return _RealMCSCalibrator(
+        model=_PERSIST_MODEL,
+        classifier=clf,
+        feature_order=feature_order,
+        holdout_auc=0.93,
+        is_weak=False,
+    )
+
+
+def _real_features() -> _RealMiaFeatures:
+    """A fixed real MiaFeatures vector (deterministic; no network)."""
+    return _RealMiaFeatures(
+        loss=2.1, min_k=-1.4, min_k_pp=0.35, zlib_ratio=0.9, ref_delta=None
+    )
+
+
+def _real_scorer():
+    """A FactorScorer holding REAL recall_guard components (offline)."""
+    from macro_framework import factor_scoring as fs
+
+    calibrator = _real_calibrator()
+    baseline = _real_baseline()
+    # NvidiaLM construction is offline (no network at init); a dummy key is fine.
+    lm = NvidiaLM(api_key=_PERSIST_DUMMY_KEY, model=_PERSIST_MODEL)
+    stats = fs.CalibrationStats(
+        holdout_auc=0.93, is_weak=False, n_is=12, n_oos=12
+    )
+    return fs.FactorScorer(
+        calibrator=calibrator, baseline=baseline, lm=lm, stats=stats
+    )
+
+
+def test_save_then_load_round_trips_predict_proba_identically(tmp_path) -> None:
+    """save -> load yields a scorer with IDENTICAL predict_proba (R1.6, persistence).
+
+    The loaded calibrator + baseline must reproduce the original's calibrated
+    p_memorized bit-for-bit for the same fixed MiaFeatures — the round-trip
+    fidelity guarantee. Deterministic, needs no network.
+    """
+    scorer = _real_scorer()
+    features = _real_features()
+
+    original_p = scorer._calibrator.predict_proba(features, scorer._baseline)
+
+    out = tmp_path / "scorer_artifact"
+    scorer.save(out)
+
+    loaded = type(scorer).load(out, api_key=_PERSIST_DUMMY_KEY)
+    loaded_p = loaded._calibrator.predict_proba(features, loaded._baseline)
+
+    assert loaded_p == original_p
+
+
+def test_loaded_baseline_reconstructs_real_control_baseline_fields(tmp_path) -> None:
+    """load reconstructs a ControlBaseline with the saved standardisation fields."""
+    scorer = _real_scorer()
+    out = tmp_path / "scorer_artifact"
+    scorer.save(out)
+
+    loaded = type(scorer).load(out, api_key=_PERSIST_DUMMY_KEY)
+
+    assert isinstance(loaded._baseline, _RealControlBaseline)
+    assert loaded._baseline.model == scorer._baseline.model
+    assert loaded._baseline.n_valid == scorer._baseline.n_valid
+    assert loaded._baseline.is_calibrated == scorer._baseline.is_calibrated
+    assert loaded._baseline.min_valid == scorer._baseline.min_valid
+    assert loaded._baseline.feature_means == scorer._baseline.feature_means
+    assert loaded._baseline.feature_stds == scorer._baseline.feature_stds
+
+
+def test_persisted_artifact_contains_no_api_key(tmp_path) -> None:
+    """The dummy api key is absent from EVERY persisted file (no secret on disk).
+
+    R1.5/persistence invariant: the API key is never written; load re-attaches a
+    fresh NvidiaLM(api_key, model). Grep every saved file's raw bytes.
+    """
+    scorer = _real_scorer()
+    out = tmp_path / "scorer_artifact"
+    scorer.save(out)
+
+    key_bytes = _PERSIST_DUMMY_KEY.encode("utf-8")
+    files = [p for p in out.rglob("*") if p.is_file()]
+    assert files, "save wrote no files"
+    for path in files:
+        assert key_bytes not in path.read_bytes(), (
+            f"api key leaked into persisted artifact {path}"
+        )
+
+
+def test_loaded_scorer_reports_same_is_weak_and_holdout_auc(tmp_path) -> None:
+    """The reloaded scorer reports the same is_weak / holdout_auc (R1.6)."""
+    scorer = _real_scorer()
+    out = tmp_path / "scorer_artifact"
+    scorer.save(out)
+
+    loaded = type(scorer).load(out, api_key=_PERSIST_DUMMY_KEY)
+
+    assert loaded.is_weak == scorer.is_weak
+    assert loaded.holdout_auc == scorer.holdout_auc
+    assert loaded.stats == scorer.stats
+
+
+def test_load_reattaches_fresh_nvidia_lm_with_given_key_and_model(tmp_path) -> None:
+    """load re-attaches a fresh NvidiaLM(api_key, model) — key supplied at load."""
+    scorer = _real_scorer()
+    out = tmp_path / "scorer_artifact"
+    scorer.save(out)
+
+    new_key = "nvapi-A-DIFFERENT-KEY-supplied-at-load"
+    loaded = type(scorer).load(out, api_key=new_key)
+
+    assert isinstance(loaded._lm, NvidiaLM)
+    assert loaded._lm.api_key == new_key
+    assert loaded._lm.model == _PERSIST_MODEL
+
+
+def test_save_then_load_round_trips_scores_identically(tmp_path) -> None:
+    """A loaded scorer produces identical FactorScore.p_memorized via score (R1.1).
+
+    Drives both the original and loaded scorer through the public score path with
+    a fake LM (offline) so the only varying component is the persisted
+    calibrator + baseline; the scores must be identical.
+    """
+    scorer = _real_scorer()
+    out = tmp_path / "scorer_artifact"
+    scorer.save(out)
+    loaded = type(scorer).load(out, api_key=_PERSIST_DUMMY_KEY)
+
+    # Swap in a deterministic offline LM on BOTH so score() makes no network call.
+    fake_lm = _ScoreFakeLM()
+    scorer._lm = fake_lm
+    loaded._lm = _ScoreFakeLM()
+
+    prompt = "Characterize the regime as loadings on the named axes."
+    before = scorer.score(prompt)
+    after = loaded.score(prompt)
+
+    assert before.parse_ok and after.parse_ok
+    assert before.p_memorized == after.p_memorized

@@ -36,7 +36,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.5, 6.5_
   - _Depends: 2.3_
 
-- [ ] 2.5 Factor scorer — persistence
+- [x] 2.5 Factor scorer — persistence
   - Persist and reload the trained calibrator and baseline standardisation statistics (and the calibration stats) without the credential; reload re-attaches a fresh inference client from a supplied credential
   - Observable: a save/load round-trip reproduces identical scores for the same inputs, the persisted artifact contains no credential, and the reloaded scorer reports the same separation score / weak flag
   - _Requirements: 1.6_
