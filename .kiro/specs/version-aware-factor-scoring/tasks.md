@@ -70,7 +70,7 @@
   - _Requirements: 1.4, 3.1, 3.2, 3.3, 4.3_
   - _Depends: 2.1, 2.2, 2.4, 2.6, 2.7_
 
-- [ ] 3.2 Live number-native calibration build and persistence
+- [x] 3.2 Live number-native calibration build and persistence
   - Run the one-time number-native calibration end-to-end against the live inference endpoint (identifying recall corpus vs anonymized honest corpus on the factor task, from the macro panel; reuse the validated scoring model and its cutoff) and persist the calibrator + baseline + stats; record the held-out separation and weak flag
   - Append the calibration outcome (separation score, weak flag) as a new dated research-log entry
   - Observable: the persisted calibrator artifact exists (no credential in it), reloads and scores, and the separation score / weak flag are recorded; a new research-log entry documents the outcome without altering earlier entries

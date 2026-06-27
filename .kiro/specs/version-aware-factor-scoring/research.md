@@ -192,3 +192,47 @@ technical adversary)._
   gains `n_pairs` + a paired effect size (R7 over the full stream, not a noisy point estimate);
   persisted calibrator = joblib + JSON.
 - Phase → `design-generated`; requirements auto-approved (`-y`).
+
+---
+
+## 2026-06-27 — Task 3.2 result: live calibration is WEAK under the controlled renderer (key finding)
+
+_Ran `scripts/calibrate_factor_scorer.py` live: `FactorScorer.calibrate` (number-native, identifying IS
+vs anonymized OOS on the factor task, n=60/class) for `meta/llama-4-maverick-17b-128e-instruct` @ cutoff
+2024-08-01. Result: **holdout_auc = 0.338, is_weak = True** (below the 0.6 gate). Persisted; smoke score
+of an anonymized factor prompt: parse_ok=True, p_memorized≈0.49._
+
+### Why this differs from the gap-analysis probe (0.96 → 0.34)
+- The 2026-06-26 number-native probe scored **0.96**, but its identifying form used a *different prose
+  framing* ("As of <date>: US CPI YoY=… Assets: SWDA.L …") that differs from the anonymized form by MORE
+  than the identity/date/levels — so part of that separation was **prose-style confound** (which the gap
+  analysis explicitly warned about).
+- The PRODUCTION renderer (task 2.1) enforces **R7.6**: the identifying form is **token-identical to the
+  anonymized form except the appended date/ticker/raw-level blocks**. Under this *rigorously controlled*
+  contrast, appending those blocks barely changes llama-4-maverick's response, so the MIA features for IS
+  (identifying) vs OOS (anonymized) do not separate → **weak calibrator**.
+
+### Interpretation (honest, thesis-consistent)
+- Under a properly controlled contrast, the model's macro-factor reasoning shows **no separable
+  period-recall** via the MIA features. That is the project thesis stated rigorously: **controlled
+  contamination is (here) undetectable — "inference, not recall."** The probe's strong signal was
+  partly an artifact of an uncontrolled prompt difference.
+- There is a genuine tension between **R7.6 controlledness** (clean attribution, but weak signal) and a
+  **stronger but confounded** identifying framing (strong signal, but the delta is partly prose). This is
+  a real research result about measuring LLM contamination on numeric factor reasoning.
+
+### Consequence (spec-compliant graceful degradation)
+- `is_weak=True` ⇒ by design (R1.6 surface; R4.3 fallback) the **honesty adjustment is skipped** and the
+  factor variant runs **UNSTEERED** (raw exposures). nb13/nb14 will report the weak calibrator and the
+  per-prompt `p_memorized` distribution (version-aware scoring still differentiates prompts, ~0.05–0.49)
+  but will NOT steer on the unvalidated score. The factor pipeline (regime-loadings → tilt → BL) is
+  unaffected.
+- 3.2 is COMPLETE: it calibrated, **surfaced is_weak (R1.6)**, persisted (no credential), and recorded
+  this entry (R6.3). The persisted calibrator dir is gitignored (regenerable via the runner; weak/env-
+  specific); the runner + this finding are committed.
+
+### Follow-up options (user decision)
+- (a) **Accept** — the controlled-contamination-undetectable result is the desired/honest outcome; run
+  nb13/nb14 unsteered and document it.
+- (b) **Recover separation** — relax the identifying form (a stronger, less-controlled framing) to get a
+  validated calibrator, trading R7.6 controlledness for signal; would re-open the 2.1 renderer.
