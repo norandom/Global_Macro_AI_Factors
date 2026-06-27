@@ -659,3 +659,354 @@ def test_factor_score_and_calibration_stats_dataclass_shapes() -> None:
     }
     with pytest.raises(dataclasses.FrozenInstanceError):
         stats.holdout_auc = 0.1  # type: ignore[misc]
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.4 — FactorScorer: number-native scoring path                          #
+# (Requirements 1.1, 1.2, 1.3, 1.5, 6.5)                                       #
+#                                                                              #
+# These tests build a FactorScorer around a FAKE NvidiaLM + a fake calibrator  #
+# + a fake baseline (no NIM, no FMP). The score path must be number-native:    #
+#   generate -> compute_mia_features(content, logprobs, None)                  #
+#            -> calibrator.predict_proba(features, baseline) -> FactorScore.    #
+# It NEVER parses a buy/sell direction or reads a directional signal (R1.3),    #
+# distinct prompts can yield distinct p_memorized (R1.2), an auth-class         #
+# RuntimeError from generate raises the module's OWN ConfigurationError (R1.5), #
+# and other failures degrade to FactorScore(p_memorized=None, parse_ok=False). #
+# --------------------------------------------------------------------------- #
+
+
+class _FakeTokenLogprob:
+    """A minimal per-token logprob stand-in (only the attrs the path reads)."""
+
+    def __init__(self, token: str, logprob: float) -> None:
+        self.token = token
+        self.logprob = logprob
+        self.top_logprobs = [{"logprob": logprob}]
+
+
+class _FakeCompletion:
+    """A stand-in CompletionResult carrying content + logprobs."""
+
+    def __init__(self, content: str, logprobs: list[object]) -> None:
+        self.content = content
+        self.logprobs = logprobs
+        self.raw_temperature_observed = 0.0
+
+
+def _logprobs_for(seed: float) -> list[object]:
+    """Build a small distinct logprob list driven by ``seed`` (R1.2 driver)."""
+    return [_FakeTokenLogprob(f"t{i}", -(0.1 + seed) * (i + 1)) for i in range(4)]
+
+
+class _ScoreFakeLM:
+    """Fake LM whose ``generate`` returns distinct logprobs per prompt.
+
+    Distinct prompts -> distinct logprobs -> distinct features -> distinct
+    p_memorized (the version-aware property, R1.2). A prompt may be configured
+    to raise (auth/timeout/non-auth/empty-logprobs) to exercise the fail paths.
+    """
+
+    def __init__(self, *, behavior: dict[str, object] | None = None) -> None:
+        self.model = "fake-model"
+        self.api_key = "test-key"
+        self._behavior = behavior or {}
+        self.calls: list[str] = []
+
+    def generate(self, prompt: str, *args: object, **kwargs: object) -> object:
+        self.calls.append(prompt)
+        action = self._behavior.get(prompt)
+        if isinstance(action, BaseException):
+            raise action
+        if action == "empty_logprobs":
+            return _FakeCompletion(content="reply", logprobs=[])
+        # default: distinct logprobs derived from the prompt length (stable + distinct)
+        return _FakeCompletion(
+            content=f"reply::{prompt}", logprobs=_logprobs_for(len(prompt) * 0.01)
+        )
+
+
+class _ScoreFakeBaseline:
+    """A stand-in ControlBaseline; only identity matters (passed through)."""
+
+    def __init__(self) -> None:
+        self.n_valid = 10
+        self.is_calibrated = True
+        self.model = "fake-model"
+
+
+class _ScoreFakeCalibrator:
+    """A fake MCSCalibrator whose predict_proba maps features -> a known p.
+
+    Records every (features, baseline) pair so a test can assert the score
+    path fed it the MIA features (NOT a parsed direction). The probability is
+    derived from the features' ``loss`` so distinct features -> distinct p.
+    """
+
+    def __init__(self, *, is_weak: bool = False, holdout_auc: float = 0.96) -> None:
+        self.is_weak = is_weak
+        self.holdout_auc = holdout_auc
+        self.model = "fake-model"
+        self.calls: list[tuple[object, object]] = []
+
+    def predict_proba(self, features: object, baseline: object) -> float:
+        self.calls.append((features, baseline))
+        # Map the MIA loss feature into (0, 1) deterministically; distinct
+        # features (from distinct logprobs) therefore yield distinct p.
+        loss = float(getattr(features, "loss"))
+        return 1.0 / (1.0 + pow(2.718281828, -loss))
+
+
+def _make_scorer(
+    *,
+    lm: object | None = None,
+    calibrator: object | None = None,
+    is_weak: bool = False,
+):
+    """Construct a FactorScorer directly around fakes (no calibrate / no NIM)."""
+    from macro_framework import factor_scoring as fs
+
+    return fs.FactorScorer(
+        calibrator=calibrator or _ScoreFakeCalibrator(is_weak=is_weak),
+        baseline=_ScoreFakeBaseline(),
+        lm=lm or _ScoreFakeLM(),
+        stats=fs.CalibrationStats(
+            holdout_auc=0.96, is_weak=is_weak, n_is=5, n_oos=5
+        ),
+    )
+
+
+def test_score_uses_feature_path_not_direction_parse() -> None:
+    """score computes p_memorized via compute_mia_features -> predict_proba (R1.1, R1.3).
+
+    The result must come from the MIA feature path, never from a buy/sell
+    direction parse. We assert both primitives ran (the calibrator recorded a
+    MiaFeatures object) and that the returned p matches predict_proba's output.
+    """
+    from recall_guard.mia.features import MiaFeatures
+
+    calibrator = _ScoreFakeCalibrator()
+    scorer = _make_scorer(calibrator=calibrator)
+
+    result = scorer.score("Characterize the regime as loadings.")
+
+    assert result.parse_ok is True
+    assert result.fail_reason is None
+    assert result.p_memorized is not None
+    assert 0.0 <= result.p_memorized <= 1.0
+
+    # predict_proba ran exactly once and was fed real MiaFeatures (the feature
+    # path), not a parsed direction/confidence.
+    assert len(calibrator.calls) == 1
+    features, _baseline = calibrator.calls[0]
+    assert isinstance(features, MiaFeatures)
+
+
+def test_score_passes_none_ref_logprobs_to_compute_features(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The score path calls compute_mia_features(content, logprobs, None) (R1.1).
+
+    No reference run on the score path: ref_logprobs is fixed at None (mirrors
+    the ref_lm=None calibration contract). We patch compute_mia_features as
+    bound in the module and assert the third positional arg is None.
+    """
+    from macro_framework import factor_scoring as fs
+
+    captured: dict[str, object] = {}
+    real = fs.compute_mia_features
+
+    def _spy(content, logprobs, ref_logprobs, *args, **kwargs):  # type: ignore[no-untyped-def]
+        captured["content"] = content
+        captured["logprobs"] = logprobs
+        captured["ref_logprobs"] = ref_logprobs
+        return real(content, logprobs, ref_logprobs, *args, **kwargs)
+
+    monkeypatch.setattr(fs, "compute_mia_features", _spy)
+
+    scorer = _make_scorer()
+    result = scorer.score("a prompt")
+
+    assert result.p_memorized is not None
+    assert captured["ref_logprobs"] is None
+    assert captured["content"] == "reply::a prompt"
+    assert captured["logprobs"], "the model's logprobs must reach compute_mia_features"
+
+
+def test_score_distinct_prompts_yield_distinct_p_memorized() -> None:
+    """Distinct prompts -> distinct logprobs -> distinct p_memorized (R1.2).
+
+    This is the version-aware property: two different prompt versions over the
+    same state can score differently, driven by the model's distinct logprobs.
+    """
+    scorer = _make_scorer()
+
+    a = scorer.score("version one prompt is short")
+    b = scorer.score("version two prompt is considerably longer than the first one")
+
+    assert a.p_memorized is not None
+    assert b.p_memorized is not None
+    assert a.p_memorized != b.p_memorized
+
+
+def test_score_never_reads_a_directional_signal() -> None:
+    """The FactorScore carries no direction/confidence/signal field (R1.3, R6.5).
+
+    The number-native path bypasses the directional facade entirely; its result
+    is a contamination score only — no buy/sell signal is ever read or returned.
+    """
+    import dataclasses
+
+    from macro_framework.factor_scoring import FactorScore
+
+    scorer = _make_scorer()
+    result = scorer.score("any prompt")
+
+    field_names = {f.name for f in dataclasses.fields(FactorScore)}
+    assert "signal" not in field_names
+    assert "direction" not in field_names
+    assert "raw_confidence" not in field_names
+    assert isinstance(result, FactorScore)
+
+
+def test_score_auth_runtime_error_raises_module_configuration_error() -> None:
+    """An auth-class RuntimeError from generate -> factor_scoring.ConfigurationError (R1.5).
+
+    HTTP 401/403/unauthorized/forbidden markers in the RuntimeError message are
+    a rejected credential; the module surfaces its OWN ConfigurationError rather
+    than a silent failure record.
+    """
+    from macro_framework import factor_scoring as fs
+
+    for msg in (
+        "Model X request failed: 401 Client Error: Unauthorized",
+        "Model X request failed: 403 Client Error: Forbidden",
+        "authentication failed for the api key",
+        "invalid api key supplied",
+    ):
+        lm = _ScoreFakeLM(behavior={"p": RuntimeError(msg)})
+        scorer = _make_scorer(lm=lm)
+        with pytest.raises(fs.ConfigurationError):
+            scorer.score("p")
+
+
+def test_score_non_auth_runtime_error_returns_unscored() -> None:
+    """A non-auth RuntimeError degrades to p_memorized=None (R1.5, graceful)."""
+    lm = _ScoreFakeLM(
+        behavior={"p": RuntimeError("Model X request failed after 3 attempt(s): 500")}
+    )
+    scorer = _make_scorer(lm=lm)
+
+    result = scorer.score("p")
+
+    assert result.p_memorized is None
+    assert result.parse_ok is False
+    assert result.fail_reason is not None
+
+
+def test_score_timeout_returns_unscored() -> None:
+    """A TimeoutError degrades to p_memorized=None, never crashes (R1.5, graceful)."""
+    lm = _ScoreFakeLM(behavior={"p": TimeoutError("Model X timed out")})
+    scorer = _make_scorer(lm=lm)
+
+    result = scorer.score("p")
+
+    assert result.p_memorized is None
+    assert result.parse_ok is False
+    assert result.fail_reason is not None
+
+
+def test_score_empty_logprobs_returns_unscored() -> None:
+    """Empty logprobs (no per-token data) degrade to p_memorized=None (R1.5)."""
+    lm = _ScoreFakeLM(behavior={"p": "empty_logprobs"})
+    scorer = _make_scorer(lm=lm)
+
+    result = scorer.score("p")
+
+    assert result.p_memorized is None
+    assert result.parse_ok is False
+    assert result.fail_reason is not None
+
+
+def test_score_feature_failure_returns_unscored(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A compute_mia_features failure degrades to p_memorized=None (R1.5)."""
+    from macro_framework import factor_scoring as fs
+
+    def _boom(*args: object, **kwargs: object) -> object:
+        raise ValueError("bad logprobs")
+
+    monkeypatch.setattr(fs, "compute_mia_features", _boom)
+
+    scorer = _make_scorer()
+    result = scorer.score("p")
+
+    assert result.p_memorized is None
+    assert result.parse_ok is False
+    assert result.fail_reason is not None
+
+
+def test_score_predict_failure_returns_unscored() -> None:
+    """A predict_proba failure degrades to p_memorized=None (R1.5)."""
+
+    class _BoomCalibrator(_ScoreFakeCalibrator):
+        def predict_proba(self, features: object, baseline: object) -> float:
+            raise ValueError("standardisation produced None")
+
+    scorer = _make_scorer(calibrator=_BoomCalibrator())
+    result = scorer.score("p")
+
+    assert result.p_memorized is None
+    assert result.parse_ok is False
+    assert result.fail_reason is not None
+
+
+def test_score_many_preserves_order_one_result_per_prompt() -> None:
+    """score_many is order-preserving with one FactorScore per prompt (R1.1)."""
+    scorer = _make_scorer()
+    prompts = [
+        "alpha prompt",
+        "a much longer beta prompt with more tokens than alpha",
+        "g",
+    ]
+
+    results = scorer.score_many(prompts, max_workers=2)
+
+    assert len(results) == len(prompts)
+    # Each entry is a FactorScore with a usable p_memorized for these good prompts.
+    for r in results:
+        assert r.p_memorized is not None
+        assert r.parse_ok is True
+
+    # Order-preserving + version-aware: distinct prompts -> distinct scores, and
+    # scoring the same prompts singly yields the SAME per-prompt p_memorized.
+    singles = [scorer.score(p).p_memorized for p in prompts]
+    assert [r.p_memorized for r in results] == singles
+
+
+def test_score_many_mixed_success_and_failure_is_per_prompt() -> None:
+    """score_many degrades per prompt: good ones score, bad ones return None (R1.5)."""
+    lm = _ScoreFakeLM(
+        behavior={"bad": RuntimeError("500 server error after 3 attempt(s)")}
+    )
+    scorer = _make_scorer(lm=lm)
+    prompts = ["good one", "bad", "another good one"]
+
+    results = scorer.score_many(prompts)
+
+    assert len(results) == 3
+    assert results[0].p_memorized is not None and results[0].parse_ok is True
+    assert results[1].p_memorized is None and results[1].parse_ok is False
+    assert results[2].p_memorized is not None and results[2].parse_ok is True
+
+
+def test_score_many_auth_error_raises_module_configuration_error() -> None:
+    """An auth-class RuntimeError in a batch raises ConfigurationError (R1.5)."""
+    from macro_framework import factor_scoring as fs
+
+    lm = _ScoreFakeLM(behavior={"bad": RuntimeError("401 Unauthorized")})
+    scorer = _make_scorer(lm=lm)
+
+    with pytest.raises(fs.ConfigurationError):
+        scorer.score_many(["good", "bad"])

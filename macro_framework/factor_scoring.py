@@ -23,11 +23,13 @@ from typing import TYPE_CHECKING, Any
 # module's namespace and can be patched as `macro_framework.factor_scoring.<name>`
 # in tests (the calibration path is mocked there — no NIM/FMP calls). The
 # directional MemoryGuardedScorer facade is deliberately NOT imported (R6.5).
-from recall_guard import NvidiaLM, build_baseline
+from recall_guard import NvidiaLM, build_baseline, compute_mia_features
 from recall_guard.core.loader import EvalRow
+from recall_guard.core.nvidia_lm import generate_many
 from recall_guard.mia.mcs import train
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from datetime import date
 
     import pandas as pd
@@ -391,6 +393,32 @@ class ConfigurationError(RuntimeError):
     """
 
 
+# Substrings that mark an authentication/authorisation failure in a ``RuntimeError``
+# message raised by ``NvidiaLM.generate``. A small, module-local re-implementation of
+# the marker idea used by recall_guard's bypassed directional façade — re-stated here
+# (NOT imported, R6.5) so the number-native scoring path can map a rejected credential
+# to THIS module's own ``ConfigurationError`` (R1.5) rather than a silent fail record.
+_AUTH_MARKERS: tuple[str, ...] = (
+    "401",
+    "403",
+    "unauthorized",
+    "forbidden",
+    "authentication",
+    "invalid api key",
+    "invalid_api_key",
+)
+
+
+def _is_auth_error(exc: BaseException) -> bool:
+    """Return True iff ``exc``'s message looks like a NIM auth/authorisation failure.
+
+    HTTP 401/403, ``unauthorized``/``forbidden``, or an ``invalid api key`` marker
+    signals a rejected scoring credential — the R1.5 fail-fast configuration case.
+    """
+    message = str(exc).lower()
+    return any(marker in message for marker in _AUTH_MARKERS)
+
+
 @dataclass(frozen=True)
 class FactorScore:
     """The version-aware contamination score for one scored factor prompt (R1.1).
@@ -677,3 +705,138 @@ class FactorScorer:
     def stats(self) -> CalibrationStats:
         """The recorded calibration statistics."""
         return self._stats
+
+    # -- number-native scoring (task 2.4) -------------------------------------- #
+
+    def score(self, prompt: str) -> FactorScore:
+        """Score one factor prompt for ``p_memorized`` number-natively (R1.1, R1.3).
+
+        The version-aware contamination score for THIS prompt and the model's
+        emitted factor reasoning, via the released library's public MIA
+        primitives — never the directional façade (R6.5):
+
+            ``self._lm.generate(prompt)`` (content + per-token logprobs)
+            -> ``compute_mia_features(content, logprobs, None)``  (ref_logprobs
+               is fixed at ``None`` — no reference run on the score path, mirroring
+               the ``ref_lm=None`` calibration contract; ``ref_delta`` is inert)
+            -> ``self._calibrator.predict_proba(features, self._baseline)``
+            -> ``FactorScore(p_memorized=<float>, parse_ok=True, fail_reason=None)``.
+
+        No buy/sell ``direction``/``confidence`` parse is performed and no
+        directional ``signal`` is ever read (R1.3): the features come from the
+        logprobs, so distinct prompts produce distinct features and hence
+        distinct ``p_memorized`` (the version-aware property, R1.2).
+
+        Failure handling (R1.5):
+          - an **auth-class** ``RuntimeError`` from ``generate`` (HTTP
+            401/403/unauthorized/forbidden) ⇒ raise this module's own
+            :class:`ConfigurationError` (a rejected credential is a
+            configuration fault, not a per-prompt data failure);
+          - every other failure (timeout, non-auth ``RuntimeError``, empty
+            logprobs, feature computation failure, ``predict_proba`` failure)
+            ⇒ ``FactorScore(p_memorized=None, parse_ok=False, fail_reason=…)``
+            so the rebalance can fall back to an unadjusted exposure rather
+            than crash.
+
+        Args:
+            prompt: the factor prompt to score.
+
+        Returns:
+            A :class:`FactorScore` for this prompt.
+
+        Raises:
+            ConfigurationError: when ``generate`` raises an auth-class
+                ``RuntimeError`` (the scoring credential was rejected).
+        """
+        try:
+            completion = self._lm.generate(prompt)
+        except TimeoutError:
+            return FactorScore(p_memorized=None, parse_ok=False, fail_reason="timeout")
+        except RuntimeError as exc:
+            if _is_auth_error(exc):
+                raise ConfigurationError(
+                    "FactorScorer.score: the NIM endpoint rejected the scoring "
+                    f"credential while scoring model {self._lm.model!r}: {exc}"
+                ) from exc
+            return FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
+
+        return self._score_completion(completion)
+
+    def score_many(
+        self, prompts: Sequence[str], *, max_workers: int = 8
+    ) -> list[FactorScore]:
+        """Score many factor prompts; order-preserving, one result per prompt (R1.1).
+
+        Fans the per-prompt ``generate`` calls out via the library's
+        ``generate_many`` (parallel, input-order-preserving), then builds one
+        :class:`FactorScore` per prompt through the SAME number-native path as
+        :meth:`score`. Per-prompt failures degrade to
+        ``p_memorized=None`` independently (R1.5); an auth-class ``RuntimeError``
+        from any prompt raises :class:`ConfigurationError` (a rejected credential
+        affects the whole batch, not one row).
+
+        Args:
+            prompts: the factor prompts to score.
+            max_workers: parallelism for the LM calls.
+
+        Returns:
+            A list of :class:`FactorScore`, one per input prompt, in input order.
+
+        Raises:
+            ConfigurationError: when any ``generate`` raises an auth-class
+                ``RuntimeError`` (the scoring credential was rejected).
+        """
+        results = generate_many(self._lm, list(prompts), max_workers=max_workers)
+        scores: list[FactorScore] = []
+        for completion in results:
+            if isinstance(completion, TimeoutError):
+                scores.append(
+                    FactorScore(p_memorized=None, parse_ok=False, fail_reason="timeout")
+                )
+                continue
+            if isinstance(completion, RuntimeError):
+                if _is_auth_error(completion):
+                    raise ConfigurationError(
+                        "FactorScorer.score_many: the NIM endpoint rejected the "
+                        f"scoring credential while scoring model {self._lm.model!r}: "
+                        f"{completion}"
+                    ) from completion
+                scores.append(
+                    FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
+                )
+                continue
+            if isinstance(completion, BaseException):
+                scores.append(
+                    FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
+                )
+                continue
+            scores.append(self._score_completion(completion))
+        return scores
+
+    def _score_completion(self, completion: Any) -> FactorScore:
+        """Turn a successful ``generate`` result into a :class:`FactorScore`.
+
+        The shared tail of :meth:`score` / :meth:`score_many`:
+        ``compute_mia_features(content, logprobs, None)`` ->
+        ``predict_proba(features, baseline)``. An empty-logprobs reply, a feature
+        computation failure, or a ``predict_proba`` failure all degrade to
+        ``p_memorized=None`` (R1.5) — never a crash, never a direction parse.
+        """
+        logprobs = getattr(completion, "logprobs", None)
+        if not logprobs:
+            return FactorScore(
+                p_memorized=None, parse_ok=False, fail_reason="no_logprobs"
+            )
+
+        content = getattr(completion, "content", "")
+        try:
+            features = compute_mia_features(content, logprobs, None)
+        except (ValueError, RuntimeError):
+            return FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
+
+        try:
+            p_memorized = float(self._calibrator.predict_proba(features, self._baseline))
+        except (ValueError, RuntimeError):
+            return FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
+
+        return FactorScore(p_memorized=p_memorized, parse_ok=True, fail_reason=None)

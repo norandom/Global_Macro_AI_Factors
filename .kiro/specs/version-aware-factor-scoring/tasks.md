@@ -29,7 +29,7 @@
   - Observable: with the inference client and calibration primitives mocked, calibration builds the identifying/anonymized corpora and returns a scorer exposing the separation score and weak flag; an empty credential and a zero-usable-row baseline each raise the module's configuration error; tests assert the reference run is disabled
   - _Requirements: 1.1, 1.5, 1.6, 6.5_
 
-- [ ] 2.4 Factor scorer — number-native scoring path
+- [x] 2.4 Factor scorer — number-native scoring path
   - Score any prompt for memorization via the public primitives (inference client logprobs → MIA features → calibrated probability), with no buy/sell direction parse; return a typed score carrying the memorization probability and a failure reason, and never read a directional signal
   - Surface the module's configuration error if the credential is rejected while scoring; return an unscored result (memorization probability absent) on a logprob/feature failure without crashing
   - Observable: with primitives mocked, scoring returns a probability computed via the feature path (not a direction parse) and differs across distinct prompts; a rejected credential raises the configuration error; a logprob failure yields an absent probability with a reason
