@@ -18,7 +18,7 @@
   - Observable: unit tests confirm the anonymized form contains no date/ticker, the identifying form adds exactly the identity/date/raw-level tokens (otherwise token-identical), the prompt requests `[-1,1]` loadings on the named axes, contains no expected-return/forecast ask, and is deterministic for equal inputs
   - _Requirements: 1.4, 2.1, 2.2, 2.3, 2.5, 7.1, 7.6_
 
-- [ ] 2.2 Loadings parser
+- [x] 2.2 Loadings parser
   - Parse a model reply into a per-axis loadings vector clipped to `[-1, +1]`, returning a typed result that flags parse failure rather than fabricating values
   - Observable: unit tests parse a well-formed reply into bounded loadings and return a not-parsed result on malformed output; the parsed result is keyed by rebalance date
   - _Requirements: 2.1, 2.4_
@@ -100,3 +100,4 @@
 - Carried forward from track-a-macro-steering: `recall_guard@v0.1.0` + pytest/pytest-mock are installed; run tests with `uv run pytest -q`. Offline core tasks mock `NvidiaLM`/the MIA primitives (no network). Reviewers must never `git checkout`/`reset` uncommitted task work.
 - Number-native calibration uses the validated model `meta/llama-4-maverick-17b-128e-instruct` @ cutoff `2024-08-01` (research.md 2026-06-26: holdout_auc≈0.96, is_weak=False). The calibrator is trained on the FRED panel (identifying IS vs anonymized OOS on the factor task) — no news/FMP.
 - Live tasks (3.2 calibration build, 4.1 nb13, 4.2 nb14) need `NVIDIA_API_KEY` (+ `OPENROUTER_KEY` for the agent). The Postgres price DB is absent → notebooks fetch yfinance prices in-cell; price-dependent equity/targets + any variant LLM caches are gitignored (regenerable). Persist the trained calibrator (joblib + JSON, no API key) so nb13/nb14 don't rebuild (~135 NIM calls).
+- 2.2: `parse_loadings` clips to [-1,1] and returns None on malformed (no fabrication). Edge: non-standard JSON `NaN`/`Infinity` bypass the clip (NaN compares False); the tilt step (2.6) and any loadings consumer should guard non-finite values.

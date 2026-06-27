@@ -13,7 +13,13 @@ control) — the single source of truth for the factor task.
 
 from __future__ import annotations
 
-from typing import Any
+import json
+import re
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 # Named macro axes for the regime-as-loadings factor (locked decision, 2026-06-26):
 # inflation pressure, growth/cycle, credit/liquidity stress, policy stance, risk
@@ -176,3 +182,147 @@ def _default_asset_identities() -> dict[str, str]:
     from .anonymize import AssetMap
 
     return dict(AssetMap.default().real_to_pseudo)
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.2 — LoadingsParser: RegimeLoadings dataclass + parse_loadings         #
+# (Requirements 2.1, 2.4)                                                      #
+#                                                                              #
+# Scoring needs NO parse (the MIA features come from logprobs); only factor    #
+# *consumption* of the loadings parses the model reply. The parser is pure and #
+# deterministic: it extracts one loading per MACRO_AXES axis, clips each to     #
+# [-1, +1], and returns the not-parsed result when the reply does not yield     #
+# the full five-axis vector — it never fabricates missing axes.                 #
+# --------------------------------------------------------------------------- #
+
+
+@dataclass(frozen=True)
+class RegimeLoadings:
+    """A parsed regime-loadings factor vector keyed by its rebalance date (R2.4).
+
+    The per-rebalance consumable artifact: one continuous loading per named
+    ``MACRO_AXES`` axis, each bounded in ``[-1, +1]``. It is a characterization
+    of the regime, never a direction or a return (R2.1, R2.2). Frozen so a stream
+    of these can be safely indexed by ``rebalance_date``.
+
+    Attributes:
+        rebalance_date: the date this vector characterizes (the artifact key).
+        loadings: axis name -> loading in ``[-1, +1]``. On a successful parse this
+            holds exactly one entry per ``MACRO_AXES`` axis; on a not-parsed
+            result it carries no fabricated full vector.
+        parse_ok: whether the model reply yielded the full five-axis vector.
+    """
+
+    rebalance_date: pd.Timestamp
+    loadings: dict[str, float]
+    parse_ok: bool
+
+
+def _clip_unit(value: float) -> float:
+    """Clip a loading to the closed ``[-1, +1]`` interval (R2.1)."""
+    if value < -1.0:
+        return -1.0
+    if value > 1.0:
+        return 1.0
+    return value
+
+
+# An axis name followed by a number, e.g. ``inflation: 0.6``, ``"growth" = -0.2``,
+# ``credit_stress -> 1.4``. Tolerant of JSON-ish, labeled-list, and "key value"
+# formats; the axis name is matched literally so only MACRO_AXES axes are read.
+_NUMBER = r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?"
+
+
+def _extract_axis_value(text: str, axis: str) -> float | None:
+    """Find the first numeric loading associated with ``axis`` in ``text``.
+
+    Matches the axis name (optionally quoted) followed by a separator
+    (``:``, ``=``, ``->``) and a number. Returns ``None`` when the axis is not
+    present with an associated number (so the caller never fabricates it).
+    """
+    pattern = re.compile(
+        rf'["\']?{re.escape(axis)}["\']?\s*(?::|=|->)\s*({_NUMBER})',
+        re.IGNORECASE,
+    )
+    match = pattern.search(text)
+    if match is None:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:  # pragma: no cover - regex guarantees a numeric group
+        return None
+
+
+def _loadings_from_json(text: str) -> dict[str, float] | None:
+    """Try to read a JSON object (possibly embedded in prose) into axis floats.
+
+    Returns the subset of ``MACRO_AXES`` present with numeric values, or ``None``
+    if no JSON object can be located/decoded. Used as a first, exact pass before
+    the tolerant regex fallback.
+    """
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        obj = json.loads(text[start : end + 1])
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(obj, dict):
+        return None
+    out: dict[str, float] = {}
+    for axis in MACRO_AXES:
+        if axis in obj:
+            raw = obj[axis]
+            if isinstance(raw, bool):  # bool is an int subclass; reject it
+                continue
+            if isinstance(raw, (int, float)):
+                out[axis] = float(raw)
+    return out
+
+
+def parse_loadings(text: str, rebalance_date: pd.Timestamp) -> RegimeLoadings | None:
+    """Parse a model reply into a ``RegimeLoadings`` factor vector (R2.1, R2.4).
+
+    Extracts one loading per ``MACRO_AXES`` axis from a model reply and clips each
+    to ``[-1, +1]``. Tolerant of reasonable reply shapes — a JSON object (even
+    embedded in prose) or a labeled list (``inflation: 0.6``). Pure and
+    deterministic: equal inputs yield equal results.
+
+    When the reply does NOT yield the full five-axis vector (missing axes,
+    garbage), returns ``None`` rather than fabricating the missing axes — the
+    caller falls back to the base allocation, exactly as Track A does on empty
+    views. Missing axes are never zero-filled.
+
+    Args:
+        text: the model's reply text.
+        rebalance_date: the date this vector characterizes (the artifact key).
+
+    Returns:
+        A ``RegimeLoadings`` with ``parse_ok=True`` and one clipped loading per
+        axis when the full vector is present; otherwise ``None``.
+    """
+    values: dict[str, float] = {}
+
+    # First pass: exact JSON decode (the prompt requests a JSON object).
+    json_values = _loadings_from_json(text)
+    if json_values:
+        values.update(json_values)
+
+    # Second pass: tolerant per-axis regex for any axis JSON did not yield (so a
+    # labeled-list or mixed reply still resolves the full vector).
+    for axis in MACRO_AXES:
+        if axis in values:
+            continue
+        found = _extract_axis_value(text, axis)
+        if found is not None:
+            values[axis] = found
+
+    # Not-parsed unless every named axis was found — never fabricate the rest.
+    if len(values) != len(MACRO_AXES):
+        return None
+
+    loadings = {axis: _clip_unit(values[axis]) for axis in MACRO_AXES}
+    return RegimeLoadings(
+        rebalance_date=rebalance_date, loadings=loadings, parse_ok=True
+    )
