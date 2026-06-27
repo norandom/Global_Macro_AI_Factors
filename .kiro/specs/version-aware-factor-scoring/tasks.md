@@ -57,7 +57,7 @@
   - Observable: a unit test over a crafted loadings stream returns the expected per-axis variability summary
   - _Requirements: 5.2_
 
-- [ ] 2.9 PIT-vs-non-PIT contrast computation
+- [x] 2.9 PIT-vs-non-PIT contrast computation
   - Compute the contrast result from two variants' memorization values and head-to-head metrics: per-variant distributions and the non-PIT-minus-PIT contamination premium plus a paired effect size over the stream length (not a single-date point estimate)
   - Observable: a unit test over synthetic per-variant inputs returns the correct premium deltas, the paired effect size, and the backing stream length
   - _Requirements: 7.2, 7.3, 7.5_

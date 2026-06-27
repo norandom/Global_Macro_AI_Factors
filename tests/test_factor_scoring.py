@@ -1873,3 +1873,373 @@ def test_factor_stability_orders_by_date_not_dict_insertion() -> None:
     shuffled = {k: ordered[k] for k in reversed(keys)}
 
     assert factor_stability(shuffled) == factor_stability(ordered)
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.9 — ContrastHarness: ContrastResult + run_pit_vs_nonpit_contrast       #
+# (Requirements 7.2, 7.3, 7.5)                                                 #
+#                                                                              #
+# The OFFLINE PIT-vs-non-PIT contrast computation. ContrastResult holds the    #
+# paired per-variant p_memorized streams + the head-to-head metrics for each    #
+# variant; contamination_premium() reports the non-PIT − PIT deltas (per        #
+# p_memorized stat + per metric) WITH a paired effect size over n_pairs (not a  #
+# single-date point estimate — research.md: n=3 was noisy with a reversal).     #
+# run_pit_vs_nonpit_contrast scores the supplied PIT / non-PIT prompts via the  #
+# injected scorer.score_many, pairs the per-variant p_memorized by index        #
+# (dropping a pair only if either side is None, keeping pairing intact), and     #
+# attaches the caller-supplied head-to-head metrics. These tests use MOCKS only #
+# (a fake scorer whose score_many returns fixed FactorScore lists) — no network. #
+# --------------------------------------------------------------------------- #
+
+
+def _make_contrast_result(
+    *,
+    pit_p: list[float],
+    nonpit_p: list[float],
+    pit_metrics: dict[str, float],
+    nonpit_metrics: dict[str, float],
+):
+    """Build a ContrastResult directly; n_pairs is the (equal) stream length."""
+    from macro_framework.factor_scoring import ContrastResult
+
+    assert len(pit_p) == len(nonpit_p)
+    return ContrastResult(
+        pit_p_memorized=list(pit_p),
+        nonpit_p_memorized=list(nonpit_p),
+        pit_metrics=dict(pit_metrics),
+        nonpit_metrics=dict(nonpit_metrics),
+        n_pairs=len(pit_p),
+    )
+
+
+def test_contrast_result_is_frozen_dataclass_with_spec_fields() -> None:
+    """ContrastResult is a frozen dataclass with the design-mandated fields (7.2, 7.3)."""
+    import dataclasses
+
+    from macro_framework.factor_scoring import ContrastResult
+
+    assert dataclasses.is_dataclass(ContrastResult)
+    field_names = {f.name for f in dataclasses.fields(ContrastResult)}
+    assert field_names == {
+        "pit_p_memorized",
+        "nonpit_p_memorized",
+        "pit_metrics",
+        "nonpit_metrics",
+        "n_pairs",
+    }
+
+    result = _make_contrast_result(
+        pit_p=[0.1, 0.2],
+        nonpit_p=[0.3, 0.4],
+        pit_metrics={"sharpe": 1.0},
+        nonpit_metrics={"sharpe": 1.2},
+    )
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        result.n_pairs = 99  # type: ignore[misc]
+
+
+def test_contamination_premium_deltas_and_paired_effect_size() -> None:
+    """contamination_premium reports non-PIT − PIT deltas + a paired effect size (7.2, 7.5).
+
+    Crafted paired p_memorized streams with hand-computable statistics:
+
+      PIT    = [0.10, 0.20, 0.30, 0.40]   (mean 0.25, median 0.25)
+      nonPIT = [0.30, 0.50, 0.30, 0.60]   (mean 0.425, median 0.40)
+
+    Per-stat deltas (non-PIT − PIT):
+      mean delta   = 0.425 - 0.25  = 0.175
+      median delta = 0.40  - 0.25  = 0.15
+
+    Paired deltas d_i = nonPIT_i − PIT_i = [0.20, 0.30, 0.00, 0.20]
+      mean(d)            = 0.70 / 4 = 0.175
+      population std(d)  : deviations from 0.175 = [0.025, 0.125, -0.175, 0.025]
+                           var = (0.000625 + 0.015625 + 0.030625 + 0.000625)/4
+                               = 0.0475 / 4 = 0.011875
+                           std = sqrt(0.011875) ≈ 0.10897247358851686
+      paired Cohen's d   = mean(d) / std(d) = 0.175 / 0.108972... ≈ 1.6058...
+    """
+    result = _make_contrast_result(
+        pit_p=[0.10, 0.20, 0.30, 0.40],
+        nonpit_p=[0.30, 0.50, 0.30, 0.60],
+        pit_metrics={"sharpe": 1.00, "max_dd": -0.20},
+        nonpit_metrics={"sharpe": 1.40, "max_dd": -0.10},
+    )
+
+    premium = result.contamination_premium()
+
+    # n_pairs surfaced in the premium so the reader sees the backing stream size.
+    assert premium["n_pairs"] == 4
+
+    # Per-p_memorized-stat deltas (non-PIT − PIT).
+    assert premium["p_memorized_mean_delta"] == pytest.approx(0.175)
+    assert premium["p_memorized_median_delta"] == pytest.approx(0.15)
+
+    # Per-metric deltas (non-PIT − PIT), keyed by "<metric>_delta".
+    assert premium["sharpe_delta"] == pytest.approx(0.40)
+    assert premium["max_dd_delta"] == pytest.approx(0.10)
+
+    # Paired effect size (Cohen's d for paired samples = mean(d)/std(d)),
+    # hand-computed above. This is the OVER-THE-STREAM premium, not a point.
+    import math
+
+    expected_std = math.sqrt(0.011875)
+    expected_d = 0.175 / expected_std
+    assert premium["p_memorized_paired_d"] == pytest.approx(expected_d)
+    assert premium["p_memorized_paired_d"] == pytest.approx(1.6058, abs=1e-3)
+
+
+def test_contamination_premium_zero_pairs_no_crash() -> None:
+    """n_pairs == 0 degrades to a well-defined all-zero premium (no NaN / ZeroDivision)."""
+    import math
+
+    result = _make_contrast_result(
+        pit_p=[],
+        nonpit_p=[],
+        pit_metrics={"sharpe": 1.0},
+        nonpit_metrics={"sharpe": 1.5},
+    )
+
+    premium = result.contamination_premium()
+
+    assert premium["n_pairs"] == 0
+    assert premium["p_memorized_mean_delta"] == pytest.approx(0.0)
+    assert premium["p_memorized_median_delta"] == pytest.approx(0.0)
+    assert premium["p_memorized_paired_d"] == pytest.approx(0.0)
+    # Per-metric deltas are still well-defined from the supplied metric dicts.
+    assert premium["sharpe_delta"] == pytest.approx(0.5)
+    for value in premium.values():
+        assert math.isfinite(value), "zero-pair premium must not emit NaN/Inf"
+
+
+def test_contamination_premium_single_pair_no_crash() -> None:
+    """n_pairs == 1 has no defined paired variance ⇒ effect size degrades to 0.0."""
+    import math
+
+    result = _make_contrast_result(
+        pit_p=[0.2],
+        nonpit_p=[0.5],
+        pit_metrics={"sharpe": 1.0},
+        nonpit_metrics={"sharpe": 1.0},
+    )
+
+    premium = result.contamination_premium()
+
+    assert premium["n_pairs"] == 1
+    # The single paired delta is 0.3 -> mean/median delta 0.3, but with one
+    # point the paired std is undefined; the effect size degrades to 0.0.
+    assert premium["p_memorized_mean_delta"] == pytest.approx(0.3)
+    assert premium["p_memorized_median_delta"] == pytest.approx(0.3)
+    assert premium["p_memorized_paired_d"] == pytest.approx(0.0)
+    assert premium["sharpe_delta"] == pytest.approx(0.0)
+    for value in premium.values():
+        assert math.isfinite(value), "single-pair premium must not emit NaN/Inf"
+
+
+def test_contamination_premium_zero_variance_paired_deltas_no_crash() -> None:
+    """A constant paired delta (zero variance) ⇒ effect size degrades to 0.0, no div-by-zero."""
+    import math
+
+    # Every paired delta is exactly +0.2 -> mean 0.2, population std 0.0.
+    result = _make_contrast_result(
+        pit_p=[0.10, 0.20, 0.30],
+        nonpit_p=[0.30, 0.40, 0.50],
+        pit_metrics={"sharpe": 1.0},
+        nonpit_metrics={"sharpe": 1.0},
+    )
+
+    premium = result.contamination_premium()
+
+    assert premium["n_pairs"] == 3
+    assert premium["p_memorized_mean_delta"] == pytest.approx(0.2)
+    # mean(d)/std(d) with std == 0 must NOT raise / NaN; degrade to 0.0.
+    assert premium["p_memorized_paired_d"] == pytest.approx(0.0)
+    for value in premium.values():
+        assert math.isfinite(value), "zero-variance premium must not emit NaN/Inf"
+
+
+class _FakeScoreManyScorer:
+    """A fake FactorScorer exposing only score_many, returning fixed FactorScore lists.
+
+    score_many is keyed on the EXACT prompt-list identity passed in: the contrast
+    supplies the PIT prompts and the non-PIT prompts separately, so this fake maps
+    each list to its pre-built FactorScore stream. No network, deterministic.
+    """
+
+    def __init__(
+        self,
+        *,
+        pit_prompts: list[str],
+        nonpit_prompts: list[str],
+        pit_scores: list[object],
+        nonpit_scores: list[object],
+    ) -> None:
+        self._pit_prompts = list(pit_prompts)
+        self._nonpit_prompts = list(nonpit_prompts)
+        self._pit_scores = list(pit_scores)
+        self._nonpit_scores = list(nonpit_scores)
+        self.calls: list[list[str]] = []
+
+    def score_many(self, prompts, *, max_workers: int = 8):  # type: ignore[no-untyped-def]
+        prompts = list(prompts)
+        self.calls.append(prompts)
+        if prompts == self._pit_prompts:
+            return list(self._pit_scores)
+        if prompts == self._nonpit_prompts:
+            return list(self._nonpit_scores)
+        raise AssertionError(f"unexpected prompt batch: {prompts!r}")
+
+
+def _fscore(p):  # type: ignore[no-untyped-def]
+    """Build a FactorScore with the given p_memorized (None -> failed score)."""
+    from macro_framework.factor_scoring import FactorScore
+
+    if p is None:
+        return FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
+    return FactorScore(p_memorized=float(p), parse_ok=True, fail_reason=None)
+
+
+def test_run_contrast_builds_result_with_paired_p_memorized_and_metrics() -> None:
+    """run_pit_vs_nonpit_contrast scores both variants and attaches the metrics (7.2, 7.3).
+
+    The PIT prompts and non-PIT prompts (from the SAME renderer in nb14, supplied
+    here) are scored via scorer.score_many; the per-variant p_memorized are paired
+    by index and the supplied head-to-head metrics are attached verbatim.
+    """
+    from macro_framework.factor_scoring import run_pit_vs_nonpit_contrast
+
+    pit_prompts = ["pit-A", "pit-B", "pit-C"]
+    nonpit_prompts = ["nonpit-A", "nonpit-B", "nonpit-C"]
+    pit_scores = [_fscore(0.10), _fscore(0.20), _fscore(0.30)]
+    nonpit_scores = [_fscore(0.30), _fscore(0.40), _fscore(0.50)]
+
+    scorer = _FakeScoreManyScorer(
+        pit_prompts=pit_prompts,
+        nonpit_prompts=nonpit_prompts,
+        pit_scores=pit_scores,
+        nonpit_scores=nonpit_scores,
+    )
+    pit_metrics = {"sharpe": 1.0, "max_dd": -0.2}
+    nonpit_metrics = {"sharpe": 1.3, "max_dd": -0.1}
+
+    result = run_pit_vs_nonpit_contrast(
+        scorer,
+        pit_prompts,
+        nonpit_prompts,
+        pit_metrics=pit_metrics,
+        nonpit_metrics=nonpit_metrics,
+    )
+
+    assert result.pit_p_memorized == [0.10, 0.20, 0.30]
+    assert result.nonpit_p_memorized == [0.30, 0.40, 0.50]
+    assert result.n_pairs == 3
+    assert result.pit_metrics == pit_metrics
+    assert result.nonpit_metrics == nonpit_metrics
+
+    # Both variants were scored exactly once, each with its own prompt batch.
+    assert scorer.calls == [pit_prompts, nonpit_prompts]
+
+    # The premium reads cleanly over this 3-pair stream.
+    premium = result.contamination_premium()
+    assert premium["n_pairs"] == 3
+    assert premium["p_memorized_mean_delta"] == pytest.approx(0.2)
+    assert premium["sharpe_delta"] == pytest.approx(0.3)
+
+
+def test_run_contrast_drops_pair_when_either_side_none_preserving_pairing() -> None:
+    """A None on either side drops THAT pair while keeping the rest index-paired (7.2).
+
+    PIT    p_memorized = [0.10, None, 0.30, 0.40]
+    nonPIT p_memorized = [0.30, 0.50, None, 0.60]
+
+    Index 1 (PIT None) and index 2 (non-PIT None) are dropped; the surviving,
+    correctly-paired stream is PIT=[0.10, 0.40], nonPIT=[0.30, 0.60] (n_pairs=2).
+    """
+    from macro_framework.factor_scoring import run_pit_vs_nonpit_contrast
+
+    pit_prompts = ["p0", "p1", "p2", "p3"]
+    nonpit_prompts = ["n0", "n1", "n2", "n3"]
+    pit_scores = [_fscore(0.10), _fscore(None), _fscore(0.30), _fscore(0.40)]
+    nonpit_scores = [_fscore(0.30), _fscore(0.50), _fscore(None), _fscore(0.60)]
+
+    scorer = _FakeScoreManyScorer(
+        pit_prompts=pit_prompts,
+        nonpit_prompts=nonpit_prompts,
+        pit_scores=pit_scores,
+        nonpit_scores=nonpit_scores,
+    )
+
+    result = run_pit_vs_nonpit_contrast(
+        scorer,
+        pit_prompts,
+        nonpit_prompts,
+        pit_metrics={"sharpe": 1.0},
+        nonpit_metrics={"sharpe": 1.0},
+    )
+
+    # Only the two fully-valid pairs survive, still index-paired (0 with 0, 3 with 3).
+    assert result.pit_p_memorized == [0.10, 0.40]
+    assert result.nonpit_p_memorized == [0.30, 0.60]
+    assert result.n_pairs == 2
+
+
+def test_run_contrast_all_pairs_dropped_yields_zero_pairs() -> None:
+    """If every pair has a None on some side, n_pairs == 0 and the premium is well-defined."""
+    from macro_framework.factor_scoring import run_pit_vs_nonpit_contrast
+
+    pit_prompts = ["p0", "p1"]
+    nonpit_prompts = ["n0", "n1"]
+    pit_scores = [_fscore(None), _fscore(0.30)]
+    nonpit_scores = [_fscore(0.30), _fscore(None)]
+
+    scorer = _FakeScoreManyScorer(
+        pit_prompts=pit_prompts,
+        nonpit_prompts=nonpit_prompts,
+        pit_scores=pit_scores,
+        nonpit_scores=nonpit_scores,
+    )
+
+    result = run_pit_vs_nonpit_contrast(
+        scorer,
+        pit_prompts,
+        nonpit_prompts,
+        pit_metrics={"sharpe": 1.0},
+        nonpit_metrics={"sharpe": 2.0},
+    )
+
+    assert result.pit_p_memorized == []
+    assert result.nonpit_p_memorized == []
+    assert result.n_pairs == 0
+
+    premium = result.contamination_premium()
+    assert premium["n_pairs"] == 0
+    assert premium["p_memorized_paired_d"] == pytest.approx(0.0)
+    # Metric deltas are still defined from the supplied dicts.
+    assert premium["sharpe_delta"] == pytest.approx(1.0)
+
+
+def test_run_contrast_is_deterministic() -> None:
+    """Determinism: equal inputs ⇒ equal ContrastResult (no randomness, no I/O)."""
+    from macro_framework.factor_scoring import run_pit_vs_nonpit_contrast
+
+    pit_prompts = ["a", "b"]
+    nonpit_prompts = ["x", "y"]
+
+    def _build():  # type: ignore[no-untyped-def]
+        scorer = _FakeScoreManyScorer(
+            pit_prompts=pit_prompts,
+            nonpit_prompts=nonpit_prompts,
+            pit_scores=[_fscore(0.1), _fscore(0.2)],
+            nonpit_scores=[_fscore(0.3), _fscore(0.4)],
+        )
+        return run_pit_vs_nonpit_contrast(
+            scorer,
+            pit_prompts,
+            nonpit_prompts,
+            pit_metrics={"sharpe": 1.0},
+            nonpit_metrics={"sharpe": 1.5},
+        )
+
+    first = _build()
+    second = _build()
+    assert first == second
+    assert first.contamination_premium() == second.contamination_premium()

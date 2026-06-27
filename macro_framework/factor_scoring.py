@@ -1387,3 +1387,226 @@ def factor_stability(
     summary["mean_mac"] = sum(per_axis_mac) / n_axes if n_axes else 0.0
 
     return summary
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.9 — ContrastHarness: ContrastResult + run_pit_vs_nonpit_contrast       #
+# (Requirements 7.2, 7.3, 7.5)                                                 #
+#                                                                              #
+# The OFFLINE PIT-vs-non-PIT contrast computation (the LIVE full-stream run is  #
+# nb14, task 4.2). ContrastResult holds the paired per-variant p_memorized      #
+# streams + the per-variant head-to-head metrics; contamination_premium()       #
+# reports the non-PIT − PIT gap — per p_memorized stat AND per metric — WITH a   #
+# paired effect size over n_pairs (R7.5: the contamination premium read over     #
+# the stream, NOT a single-date point estimate; research.md: n=3 was noisy with  #
+# a reversal, so the premium MUST be a distributional/paired summary).           #
+#                                                                              #
+# run_pit_vs_nonpit_contrast delegates scoring to the injected scorer's          #
+# score_many for the supplied PIT and non-PIT prompts (which come from the SAME  #
+# renderer in both modes — R7.6 — supplied by nb14; this function does not       #
+# render), pairs the per-variant p_memorized BY INDEX, drops a pair only when    #
+# either side is None (keeping the remaining pairing intact), and attaches the   #
+# caller-supplied head-to-head metrics. Pure aside from the delegated scoring;   #
+# no direct network.                                                            #
+# --------------------------------------------------------------------------- #
+
+
+def _median(values: list[float]) -> float:
+    """Median of ``values`` (0.0 for an empty list).
+
+    Deterministic; no I/O. An empty stream has no defined median, so it degrades
+    to a well-defined ``0.0`` rather than raising — the zero-``n_pairs`` premium
+    case (research.md: the premium is reported over the stream, never a point).
+    """
+    n = len(values)
+    if n == 0:
+        return 0.0
+    ordered = sorted(values)
+    mid = n // 2
+    if n % 2 == 1:
+        return float(ordered[mid])
+    return (float(ordered[mid - 1]) + float(ordered[mid])) / 2.0
+
+
+def _paired_cohens_d(deltas: list[float]) -> float:
+    """Cohen's d for paired samples: ``mean(deltas) / population_std(deltas)``.
+
+    The standardized paired effect size of the non-PIT − PIT gap OVER the stream
+    (R7.5) — so the contamination premium is read distributionally, not as a
+    single-date point estimate (research.md: n=3 was noisy with a reversal).
+
+    Degrades to a well-defined ``0.0`` (never ``NaN`` / ``ZeroDivisionError``)
+    when fewer than two pairs back the deltas OR the paired deltas have zero
+    variance (a constant gap has no standardized magnitude to report).
+    """
+    if len(deltas) < 2:
+        return 0.0
+    std = _population_std(deltas)
+    # A tolerance guard (not an exact == 0.0): a constant gap can leave a tiny
+    # float-residual std, which would otherwise blow the ratio up to ~1e16.
+    if std <= 1e-12:
+        return 0.0
+    mean = sum(deltas) / len(deltas)
+    return mean / std
+
+
+@dataclass(frozen=True)
+class ContrastResult:
+    """The offline PIT-vs-non-PIT contrast result (R7.2, R7.3, R7.5).
+
+    Holds the two paired per-variant ``p_memorized`` streams and the per-variant
+    head-to-head metrics so the non-PIT − PIT gap can be reported as the
+    contamination premium OVER the rebalance stream (not a single-date point
+    estimate; research.md: n=3 was noisy with a reversal). Frozen so a computed
+    contrast can be safely logged/serialized.
+
+    Attributes:
+        pit_p_memorized: the point-in-time variant's per-pair ``p_memorized``
+            (anonymized / z-scored / dateless framing).
+        nonpit_p_memorized: the non-point-in-time variant's per-pair
+            ``p_memorized``, index-aligned with ``pit_p_memorized`` (the
+            recall-enabling framing: real tickers + date + raw levels).
+        pit_metrics: the PIT variant's head-to-head metrics (caller-supplied).
+        nonpit_metrics: the non-PIT variant's head-to-head metrics
+            (caller-supplied), keyed identically to ``pit_metrics``.
+        n_pairs: the number of valid index-paired ``p_memorized`` pairs backing
+            the premium (the stream length the paired effect size is read over).
+    """
+
+    pit_p_memorized: list[float]
+    nonpit_p_memorized: list[float]
+    pit_metrics: dict[str, float]
+    nonpit_metrics: dict[str, float]
+    n_pairs: int
+
+    def contamination_premium(self) -> dict[str, float]:
+        """Report the non-PIT − PIT gap as the contamination premium (R7.2, R7.3, R7.5).
+
+        Frames the non-PIT − PIT difference as lookahead/recall bias — NOT
+        attainable skill (R7.5) — and reports it OVER the stream rather than as a
+        single-date point estimate (research.md: n=3 was noisy with a reversal).
+        The returned flat ``dict[str, float]`` carries:
+
+        - ``n_pairs`` — the number of valid index-paired ``p_memorized`` pairs.
+        - ``p_memorized_mean_delta`` / ``p_memorized_median_delta`` — the
+          per-``p_memorized``-stat gap (non-PIT − PIT) (R7.2).
+        - ``p_memorized_paired_d`` — Cohen's d for paired samples
+          (``mean(non-PIT − PIT) / std(non-PIT − PIT)`` over ``n_pairs``): the
+          standardized paired effect size, so the premium is read over the
+          stream, not a single point (R7.5).
+        - ``<metric>_delta`` for every metric present in BOTH ``pit_metrics`` and
+          ``nonpit_metrics`` — the per-metric head-to-head gap (non-PIT − PIT)
+          (R7.3).
+
+        Small / zero ``n_pairs`` and zero-variance paired deltas degrade to a
+        well-defined output (mean/median/effect size ``0.0``) — never ``NaN`` or
+        a ``ZeroDivisionError`` crash. Pure and deterministic; no I/O.
+
+        Returns:
+            The contamination-premium summary as a flat ``dict[str, float]``.
+        """
+        # Pair p_memorized by index over whatever valid pairs survived (the
+        # construction already dropped any pair with a None on either side).
+        n = min(len(self.pit_p_memorized), len(self.nonpit_p_memorized))
+        paired_deltas = [
+            float(self.nonpit_p_memorized[i]) - float(self.pit_p_memorized[i])
+            for i in range(n)
+        ]
+
+        # Per-p_memorized-stat gap (non-PIT − PIT). Empty streams -> 0.0 (R7.5:
+        # reported over the stream; a no-pair stream carries no premium).
+        pit_mean = (
+            sum(self.pit_p_memorized) / len(self.pit_p_memorized)
+            if self.pit_p_memorized
+            else 0.0
+        )
+        nonpit_mean = (
+            sum(self.nonpit_p_memorized) / len(self.nonpit_p_memorized)
+            if self.nonpit_p_memorized
+            else 0.0
+        )
+        premium: dict[str, float] = {
+            "n_pairs": float(self.n_pairs),
+            "p_memorized_mean_delta": nonpit_mean - pit_mean,
+            "p_memorized_median_delta": _median(list(self.nonpit_p_memorized))
+            - _median(list(self.pit_p_memorized)),
+            # Paired effect size OVER the stream (0.0 for <2 pairs / zero variance).
+            "p_memorized_paired_d": _paired_cohens_d(paired_deltas),
+        }
+
+        # Per-metric head-to-head gap (non-PIT − PIT), keyed "<metric>_delta",
+        # for every metric reported by BOTH variants (R7.3).
+        for metric in sorted(set(self.pit_metrics) & set(self.nonpit_metrics)):
+            premium[f"{metric}_delta"] = float(self.nonpit_metrics[metric]) - float(
+                self.pit_metrics[metric]
+            )
+
+        return premium
+
+
+def run_pit_vs_nonpit_contrast(
+    scorer: FactorScorer,
+    pit_prompts: Sequence[str],
+    nonpit_prompts: Sequence[str],
+    *,
+    pit_metrics: dict[str, float],
+    nonpit_metrics: dict[str, float],
+) -> ContrastResult:
+    """Compute the offline PIT-vs-non-PIT contrast (R7.2, R7.3, R7.5).
+
+    Scores the supplied point-in-time and non-point-in-time prompts via the
+    injected ``scorer.score_many`` and pairs the per-variant ``p_memorized`` BY
+    INDEX so the resulting :class:`ContrastResult` can report the non-PIT − PIT
+    gap as the contamination premium over the stream. The PIT and non-PIT prompts
+    come from the SAME renderer in both modes (the identifying flag — R7.6,
+    "hold all else equal") and are supplied by the caller (nb14); this function
+    does NOT render.
+
+    A pair is dropped ONLY when either side's ``p_memorized`` is ``None`` (a
+    failed score on that date); the surviving pairs keep their index pairing
+    intact (PIT_i is always matched with non-PIT_i). ``n_pairs`` is the number of
+    valid pairs that backs the paired effect size.
+
+    The provided head-to-head ``pit_metrics`` / ``nonpit_metrics`` (computed
+    elsewhere — the non-PIT variant is a diagnostic control, never the deployed
+    portfolio, R7.4) are attached verbatim for the per-metric premium (R7.3).
+
+    Pure aside from delegating scoring to the injected ``scorer``; no direct
+    network. Deterministic for a deterministic scorer.
+
+    Args:
+        scorer: the (already-calibrated) :class:`FactorScorer`; only its
+            ``score_many`` is used here.
+        pit_prompts: the point-in-time (anonymized / z-scored / dateless) prompts.
+        nonpit_prompts: the non-point-in-time (recall-enabling) prompts,
+            index-aligned with ``pit_prompts``.
+        pit_metrics: the PIT variant's head-to-head metrics.
+        nonpit_metrics: the non-PIT variant's head-to-head metrics.
+
+    Returns:
+        A :class:`ContrastResult` with the paired ``p_memorized`` streams,
+        ``n_pairs``, and the attached head-to-head metrics.
+    """
+    pit_scores = scorer.score_many(list(pit_prompts))
+    nonpit_scores = scorer.score_many(list(nonpit_prompts))
+
+    # Pair p_memorized by index; drop a pair only when EITHER side is None (a
+    # failed score), keeping the rest of the pairing intact (R7.2).
+    pit_p: list[float] = []
+    nonpit_p: list[float] = []
+    n = min(len(pit_scores), len(nonpit_scores))
+    for i in range(n):
+        pit_pm = pit_scores[i].p_memorized
+        nonpit_pm = nonpit_scores[i].p_memorized
+        if pit_pm is None or nonpit_pm is None:
+            continue
+        pit_p.append(float(pit_pm))
+        nonpit_p.append(float(nonpit_pm))
+
+    return ContrastResult(
+        pit_p_memorized=pit_p,
+        nonpit_p_memorized=nonpit_p,
+        pit_metrics=dict(pit_metrics),
+        nonpit_metrics=dict(nonpit_metrics),
+        n_pairs=len(pit_p),
+    )
