@@ -18,8 +18,24 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+# Number-native MIA calibration/scoring primitives from the released library.
+# These are imported AT MODULE LEVEL (not lazily) so they are bound on this
+# module's namespace and can be patched as `macro_framework.factor_scoring.<name>`
+# in tests (the calibration path is mocked there — no NIM/FMP calls). The
+# directional MemoryGuardedScorer facade is deliberately NOT imported (R6.5).
+from recall_guard import NvidiaLM, build_baseline
+from recall_guard.core.loader import EvalRow
+from recall_guard.mia.mcs import train
+
 if TYPE_CHECKING:
+    from datetime import date
+
     import pandas as pd
+
+    from recall_guard.mia.control import ControlBaseline
+    from recall_guard.mia.mcs import MCSCalibrator
+
+    from .anonymize import AssetMap
 
 # Named macro axes for the regime-as-loadings factor (locked decision, 2026-06-26):
 # inflation pressure, growth/cycle, credit/liquidity stress, policy stance, risk
@@ -326,3 +342,338 @@ def parse_loadings(text: str, rebalance_date: pd.Timestamp) -> RegimeLoadings | 
     return RegimeLoadings(
         rebalance_date=rebalance_date, loadings=loadings, parse_ok=True
     )
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.3 — FactorScorer: number-native calibration + configuration errors     #
+# (Requirements 1.1, 1.5, 1.6, 6.5)                                            #
+#                                                                              #
+# The version-aware contamination scorer. It is NUMBER-NATIVE: the calibrator   #
+# is trained on the macro numbers themselves on the regime-loadings factor task #
+# (validated 2026-06-26: holdout_auc ~= 0.96, is_weak=False — see research.md).  #
+#                                                                              #
+#   - recall class (IS)   = pre-cutoff macro states presented IDENTIFYINGLY     #
+#                           (real date + raw levels + real tickers).            #
+#   - honest class (OOS)  = the SAME states presented ANONYMIZED                #
+#                           (z-scores, no date, Asset_A-D).                     #
+#                                                                              #
+# The only difference between the two corpora is the identifying-vs-anonymized  #
+# framing on one shared factor task (R7.6 — hold all else equal); that is the   #
+# axis the calibrator learns. Calibration uses the released library's PUBLIC    #
+# MIA primitives (build_baseline / train), never the directional facade (R6.5). #
+#                                                                              #
+# This task defines the calibration surface only: ConfigurationError, the       #
+# FactorScore / CalibrationStats dataclasses, and FactorScorer.calibrate with   #
+# its is_weak / holdout_auc properties. score / score_many (2.4) and            #
+# save / load (2.5) are intentionally NOT implemented here.                     #
+# --------------------------------------------------------------------------- #
+
+
+class ConfigurationError(RuntimeError):
+    """The factor-scoring layer's own fail-fast configuration error (R1.5).
+
+    The released ``recall_guard`` library raises a ``ConfigurationError`` only
+    from its directional ``MemoryGuardedScorer`` facade — and this module
+    deliberately BYPASSES that facade (R6.5), using the lower-level public MIA
+    primitives instead. The primitive path therefore never raises one. So this
+    module DEFINES and OWNS the R1.5 contract: a clear configuration error is
+    surfaced rather than returning an unscored or silently invalid result.
+
+    Raised on:
+      - an empty ``api_key`` (guarded BEFORE constructing ``NvidiaLM``, which
+        would otherwise raise a bare ``ValueError``);
+      - ``baseline.n_valid == 0`` after ``build_baseline`` (no control corpus to
+        standardise against — scoring would be invalid).
+
+    Subclasses ``RuntimeError`` so callers that already catch the library's
+    runtime errors keep working, while ``ConfigurationError`` callers get the
+    specific, intent-revealing type.
+    """
+
+
+@dataclass(frozen=True)
+class FactorScore:
+    """The version-aware contamination score for one scored factor prompt (R1.1).
+
+    Produced per call by ``FactorScorer.score`` (task 2.4). Defined here so the
+    calibration surface and the scoring surface share one contract.
+
+    Attributes:
+        p_memorized: the calibrated probability of memorization in ``[0, 1]``,
+            or ``None`` when scoring failed for this prompt (e.g. a logprob /
+            feature-computation failure) so the rebalance can fall back to an
+            unadjusted exposure rather than crash.
+        parse_ok: whether the model's reply was usable for scoring. (Scoring
+            itself needs NO loadings parse — the MIA features come from the
+            logprobs — so this reflects the scoring path's own success.)
+        fail_reason: a short human-readable reason when ``p_memorized is None``;
+            ``None`` on success.
+    """
+
+    p_memorized: float | None
+    parse_ok: bool
+    fail_reason: str | None
+
+
+@dataclass(frozen=True)
+class CalibrationStats:
+    """Recorded statistics of a trained number-native calibrator (R1.6).
+
+    Surfaced so a weak/uncalibrated calibrator is reported rather than reporting
+    a contamination value as if validated. ``is_weak`` is ``True`` iff the
+    held-out AUC fell below the configured ``min_auc`` at train time.
+
+    Attributes:
+        holdout_auc: ROC-AUC of the trained classifier on the held-out portion
+            of the identifying-IS vs anonymized-OOS corpus.
+        is_weak: ``True`` iff ``holdout_auc < min_auc`` — the fallback signal.
+        n_is: number of identifying (recall-class) prompts built for calibration.
+        n_oos: number of anonymized (honest-class) prompts built for calibration.
+    """
+
+    holdout_auc: float
+    is_weak: bool
+    n_is: int
+    n_oos: int
+
+
+# Raw macro level -> z-scored column name in the FRED macro panel. The renderer
+# reads the z-scored state for the anonymized (PIT) framing and the raw levels
+# for the identifying (recall-enabling) additions; both come from the same panel
+# row, so revealing the period in the numbers is the only difference.
+_RAW_TO_Z: dict[str, str] = {
+    "cpi_yoy": "cpi_yoy_z",
+    "t10y2y": "t10y2y_z",
+    "hy_oas": "hy_oas_z",
+}
+
+
+def _asset_snapshot_from_map(asset_map: AssetMap) -> list[dict[str, object]]:
+    """Build the anonymized asset descriptors (letter id + category) from the map.
+
+    Identical content for the IS and OOS framings — the ticker reveal is a
+    SEPARATE block added by the renderer's identifying form — so the calibration
+    corpora differ ONLY by the identifying additions (R7.6).
+    """
+    snapshot: list[dict[str, object]] = []
+    for pseudo, category in sorted(asset_map.categories.items()):
+        snapshot.append({"id": pseudo, "category": category})
+    return snapshot
+
+
+def _build_corpus(
+    *,
+    cutoff_date: date,
+    macro_panel: pd.DataFrame,
+    asset_map: AssetMap,
+    n_per_class: int,
+) -> tuple[list[EvalRow], list[EvalRow]]:
+    """Build the number-native calibration corpora from pre-cutoff macro rows.
+
+    Selects up to ``n_per_class`` evenly-spaced pre-cutoff (``< cutoff_date``)
+    rows from the macro panel and renders, for each, the SAME regime-loadings
+    factor task in two framings:
+
+      - **identifying IS** (``identifying=True``, ``as_of=<date>``,
+        ``raw_levels=<raw>``) — the recall-enabled class;
+      - **anonymized OOS** (``identifying=False``) — the honest, recall-disabled
+        class.
+
+    Returns ``(is_rows, oos_rows)`` as ``EvalRow`` lists. The two corpora are
+    token-identical except the identifying additions (R7.6), so the calibrator
+    learns the identifying-vs-anonymized boundary alone.
+    """
+    cutoff_ts = _pd().Timestamp(cutoff_date)
+    pre = macro_panel.loc[macro_panel.index < cutoff_ts]
+    if pre.empty:
+        return [], []
+
+    # Evenly-spaced sample so the corpus spans the pre-cutoff history rather than
+    # clustering at one end; deterministic (no RNG) for reproducible calibration.
+    n = min(int(n_per_class), len(pre))
+    if n <= 0:
+        return [], []
+    if n >= len(pre):
+        rows = pre
+    else:
+        positions = [round(i * (len(pre) - 1) / (n - 1)) for i in range(n)] if n > 1 else [0]
+        rows = pre.iloc[sorted(set(positions))]
+
+    asset_snapshot = _asset_snapshot_from_map(asset_map)
+
+    is_rows: list[EvalRow] = []
+    oos_rows: list[EvalRow] = []
+    for as_of, row in rows.iterrows():
+        macro_state = {
+            z_col: float(row[z_col]) for z_col in _RAW_TO_Z.values() if z_col in row
+        }
+        raw_levels = {
+            raw_col: float(row[raw_col]) for raw_col in _RAW_TO_Z if raw_col in row
+        }
+
+        oos_prompt = render_regime_loadings_prompt(
+            macro_state, asset_snapshot, identifying=False
+        )
+        is_prompt = render_regime_loadings_prompt(
+            macro_state,
+            asset_snapshot,
+            identifying=True,
+            as_of=_pd().Timestamp(as_of).date().isoformat(),
+            raw_levels=raw_levels,
+        )
+
+        date_tag = _pd().Timestamp(as_of).date().isoformat()
+        oos_rows.append(
+            EvalRow(prompt=oos_prompt, target_direction=0, metadata={"as_of": date_tag})
+        )
+        is_rows.append(
+            EvalRow(prompt=is_prompt, target_direction=0, metadata={"as_of": date_tag})
+        )
+
+    return is_rows, oos_rows
+
+
+def _pd():  # type: ignore[no-untyped-def]
+    """Lazy ``pandas`` import (keeps it off the module-import hot path)."""
+    import pandas as pd
+
+    return pd
+
+
+class FactorScorer:
+    """Number-native, version-aware contamination scorer (R1.1, R1.5, R1.6, R6.5).
+
+    Holds a trained ``MCSCalibrator`` + its ``ControlBaseline`` + the live
+    ``NvidiaLM`` so any factor prompt can later be scored for ``p_memorized``
+    via the public MIA primitives (``score`` / ``score_many`` are task 2.4).
+    The calibrator is trained number-natively on the macro numbers themselves
+    (identifying IS vs anonymized OOS on the regime-loadings task).
+
+    Construct via :meth:`calibrate`; direct construction holds the three trained
+    components. Persistence (``save`` / ``load``) is task 2.5.
+    """
+
+    def __init__(
+        self,
+        *,
+        calibrator: MCSCalibrator,
+        baseline: ControlBaseline,
+        lm: NvidiaLM,
+        stats: CalibrationStats,
+    ) -> None:
+        self._calibrator = calibrator
+        self._baseline = baseline
+        self._lm = lm
+        self._stats = stats
+
+    @classmethod
+    def calibrate(
+        cls,
+        *,
+        nim_model: str,
+        cutoff_date: date,
+        macro_panel: pd.DataFrame,
+        asset_map: AssetMap,
+        api_key: str,
+        n_per_class: int = 60,
+        min_auc: float = 0.6,
+        max_workers: int = 8,
+    ) -> FactorScorer:
+        """Calibrate a number-native contamination scorer on the macro numbers.
+
+        Builds the identifying-IS + anonymized-OOS corpora from the pre-cutoff
+        (``< cutoff_date``) macro-panel rows on the shared regime-loadings task,
+        builds the control baseline from the OOS corpus, and trains the
+        ``MCSCalibrator`` to separate the two framings. ``ref_lm`` is fixed at
+        ``None`` so the ``ref_delta`` feature stays inert and ``feature_order``
+        excludes it (a locked, deterministic choice).
+
+        Args:
+            nim_model: the logprob-bearing NIM model id (its cutoff defines the
+                pre-cutoff IS window).
+            cutoff_date: the model's training cutoff; only rows before it are used.
+            macro_panel: the FRED macro panel with raw + z-scored columns,
+                indexed by date.
+            asset_map: the identifying <-> anonymized asset map.
+            api_key: the NIM scoring credential (non-empty).
+            n_per_class: target number of prompts per class (IS and OOS).
+            min_auc: weak-calibrator threshold (``is_weak`` iff below it).
+            max_workers: parallelism for the baseline + train LM calls.
+
+        Returns:
+            A calibrated ``FactorScorer``.
+
+        Raises:
+            ConfigurationError: when ``api_key`` is empty (R1.5, surfaced BEFORE
+                constructing ``NvidiaLM`` so the caller gets the intent-revealing
+                type rather than a bare ``ValueError``); or when the control
+                baseline has ``n_valid == 0`` (no corpus to standardise against).
+        """
+        # R1.5: fail fast on a missing credential BEFORE NvidiaLM construction
+        # (NvidiaLM itself would raise a bare ValueError — we own the contract).
+        if not api_key:
+            raise ConfigurationError(
+                "FactorScorer.calibrate: a non-empty NIM api_key is required "
+                "(the scoring credential is missing)."
+            )
+
+        is_rows, oos_rows = _build_corpus(
+            cutoff_date=cutoff_date,
+            macro_panel=macro_panel,
+            asset_map=asset_map,
+            n_per_class=n_per_class,
+        )
+
+        lm = NvidiaLM(api_key=api_key, model=nim_model)
+
+        baseline = build_baseline(
+            lm,
+            oos_rows,
+            None,  # ref_lm=None -> ref_delta inert, feature_order excludes it
+            min_valid=min(len(oos_rows), 2),
+            max_workers=max_workers,
+        )
+        if baseline.n_valid == 0:
+            raise ConfigurationError(
+                "FactorScorer.calibrate: the control baseline has no valid rows "
+                "(baseline.n_valid == 0); cannot standardise MIA features. "
+                "Check the NIM credential/endpoint and that the panel yielded a "
+                "non-empty pre-cutoff OOS corpus."
+            )
+
+        calibrator = train(
+            model_lm=lm,
+            is_memorized=is_rows,
+            oos_control=oos_rows,
+            baseline=baseline,
+            ref_lm=None,  # ref_delta inert; feature_order excludes it (locked)
+            min_auc=min_auc,
+            max_workers=max_workers,
+        )
+
+        stats = CalibrationStats(
+            holdout_auc=float(calibrator.holdout_auc),
+            is_weak=bool(calibrator.is_weak),
+            n_is=len(is_rows),
+            n_oos=len(oos_rows),
+        )
+        return cls(calibrator=calibrator, baseline=baseline, lm=lm, stats=stats)
+
+    @property
+    def is_weak(self) -> bool:
+        """Whether the trained calibrator is weak (``holdout_auc < min_auc``) (R1.6).
+
+        The fallback signal: when weak, the honesty adjustment leaves exposures
+        unadjusted rather than applying an unvalidated discount.
+        """
+        return bool(self._calibrator.is_weak)
+
+    @property
+    def holdout_auc(self) -> float:
+        """The trained calibrator's held-out AUC (R1.6)."""
+        return float(self._calibrator.holdout_auc)
+
+    @property
+    def stats(self) -> CalibrationStats:
+        """The recorded calibration statistics."""
+        return self._stats

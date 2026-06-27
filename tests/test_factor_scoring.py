@@ -382,3 +382,280 @@ def test_parse_loadings_is_deterministic() -> None:
     assert r1.loadings == r2.loadings
     assert r1.parse_ok == r2.parse_ok
     assert r1.rebalance_date == r2.rebalance_date
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.3 — FactorScorer: number-native calibration + configuration errors    #
+# (Requirements 1.1, 1.5, 1.6, 6.5)                                            #
+#                                                                              #
+# These tests MOCK the recall_guard calls AS BOUND IN macro_framework.         #
+# factor_scoring (build_baseline / train / NvidiaLM) so nothing hits NIM/FMP.  #
+# They cover: the number-native corpus construction (identifying IS vs          #
+# anonymized OOS on the SAME factor task), the ref_lm=None contract, the        #
+# is_weak / holdout_auc passthrough, and the module's OWN ConfigurationError.   #
+# --------------------------------------------------------------------------- #
+
+from datetime import date  # noqa: E402
+
+from macro_framework.anonymize import AssetMap  # noqa: E402
+
+
+def _synthetic_panel() -> pd.DataFrame:
+    """A small synthetic macro panel with raw + z columns (R1 calibration input).
+
+    Mirrors the real ``data/macro_panel_monthly.parquet`` shape: a DatetimeIndex
+    of month-ends and the raw (``cpi_yoy``, ``t10y2y``, ``hy_oas``) + z-scored
+    (``*_z``) columns the renderer reads. All rows are pre-2024-08-01 so the
+    ``< cutoff_date`` slice keeps them.
+    """
+    idx = pd.date_range("2015-01-31", periods=24, freq="ME")
+    n = len(idx)
+    return pd.DataFrame(
+        {
+            "cpi_yoy": [0.02 + 0.001 * i for i in range(n)],
+            "t10y2y": [0.5 - 0.02 * i for i in range(n)],
+            "hy_oas": [3.0 + 0.05 * i for i in range(n)],
+            "cpi_yoy_z": [(-1.0 + 0.08 * i) for i in range(n)],
+            "t10y2y_z": [(1.0 - 0.07 * i) for i in range(n)],
+            "hy_oas_z": [(-0.5 + 0.04 * i) for i in range(n)],
+        },
+        index=idx,
+    )
+
+
+class _FakeBaseline:
+    """A stand-in ControlBaseline carrying only the attributes calibrate reads."""
+
+    def __init__(self, n_valid: int) -> None:
+        self.n_valid = n_valid
+        self.model = "fake-model"
+        self.is_calibrated = n_valid > 0
+        self.min_valid = 1
+
+
+class _FakeCalibrator:
+    """A stand-in MCSCalibrator exposing the holdout_auc / is_weak surface."""
+
+    def __init__(self, holdout_auc: float, is_weak: bool) -> None:
+        self.holdout_auc = holdout_auc
+        self.is_weak = is_weak
+        self.model = "fake-model"
+
+
+def _patch_recall_guard(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    baseline_n_valid: int = 50,
+    holdout_auc: float = 0.96,
+    is_weak: bool = False,
+) -> dict[str, object]:
+    """Patch build_baseline / train / NvidiaLM as bound in factor_scoring.
+
+    Returns a dict capturing the calls so assertions can inspect what the
+    corpus builder fed to the primitives (the IS/OOS prompts and the ref_lm
+    kwarg). Nothing here issues a network call.
+    """
+    from macro_framework import factor_scoring as fs
+
+    captured: dict[str, object] = {}
+
+    class _FakeLM:
+        def __init__(self, api_key: str, model: str, **kwargs: object) -> None:
+            # Mirror NvidiaLM's own guard so an empty key would ValueError here
+            # IF the module ever forgot its own ConfigurationError guard.
+            if not api_key:
+                raise ValueError("api_key must be a non-empty string")
+            self.api_key = api_key
+            self.model = model
+            captured["lm"] = self
+
+    def _fake_build_baseline(lm, oos_rows, ref_lm, *args, **kwargs):  # type: ignore[no-untyped-def]
+        captured["build_baseline_oos_rows"] = list(oos_rows)
+        captured["build_baseline_ref_lm"] = ref_lm
+        return _FakeBaseline(baseline_n_valid)
+
+    def _fake_train(*args, **kwargs):  # type: ignore[no-untyped-def]
+        captured["train_args"] = args
+        captured["train_kwargs"] = kwargs
+        return _FakeCalibrator(holdout_auc=holdout_auc, is_weak=is_weak)
+
+    monkeypatch.setattr(fs, "NvidiaLM", _FakeLM)
+    monkeypatch.setattr(fs, "build_baseline", _fake_build_baseline)
+    monkeypatch.setattr(fs, "train", _fake_train)
+    return captured
+
+
+def _prompt_of(row: object) -> str:
+    """Extract the prompt string from an EvalRow (or a raw string)."""
+    return getattr(row, "prompt", row)  # type: ignore[return-value]
+
+
+def test_calibrate_builds_identifying_is_and_anonymized_oos_corpus(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """calibrate builds an identifying IS corpus and an anonymized OOS corpus (R1.1).
+
+    The number-native split is framing-only on the SAME factor task: the IS
+    prompts carry the recall-enabling tokens (real tickers + an ISO date), the
+    OOS prompts carry none of them. Both come from render_regime_loadings_prompt.
+    """
+    from macro_framework import factor_scoring as fs
+
+    captured = _patch_recall_guard(monkeypatch)
+
+    scorer = fs.FactorScorer.calibrate(
+        nim_model="meta/llama-4-maverick-17b-128e-instruct",
+        cutoff_date=date(2024, 8, 1),
+        macro_panel=_synthetic_panel(),
+        asset_map=AssetMap.default(),
+        api_key="test-key",
+        n_per_class=5,
+        max_workers=2,
+    )
+    assert isinstance(scorer, fs.FactorScorer)
+
+    # OOS corpus reached build_baseline; IS corpus reached train (label-1 arg).
+    oos_rows = captured["build_baseline_oos_rows"]
+    assert oos_rows, "OOS corpus must be non-empty"
+    oos_prompts = [_prompt_of(r) for r in oos_rows]  # type: ignore[union-attr]
+
+    # The IS corpus is the train call's is_memorized argument. train was called
+    # with keyword args per the design's pinned signature.
+    train_kwargs = captured["train_kwargs"]
+    is_rows = train_kwargs["is_memorized"]
+    assert is_rows, "IS corpus must be non-empty"
+    is_prompts = [_prompt_of(r) for r in is_rows]
+
+    # SAME factor task: every prompt asks for the regime loadings on the axes.
+    for p in oos_prompts + is_prompts:
+        assert "loading" in p.lower()
+        for axis in fs.MACRO_AXES:
+            assert axis in p
+
+    # Anonymized OOS: NO real ticker, NO ISO date (recall-disabled framing).
+    for p in oos_prompts:
+        for ticker in _REAL_TICKERS:
+            assert ticker not in p, f"OOS leaked real ticker {ticker!r}"
+        assert re.search(r"\b\d{4}-\d{2}-\d{2}\b", p) is None
+
+    # Identifying IS: contains the recall-enabling tokens (real ticker + date).
+    assert any("SWDA.L" in p for p in is_prompts), "IS must reveal a real ticker"
+    assert any(re.search(r"\b\d{4}-\d{2}-\d{2}\b", p) for p in is_prompts), (
+        "IS must reveal an as-of date"
+    )
+
+
+def test_calibrate_passes_ref_lm_none_to_train_and_build_baseline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """ref_lm=None on both build_baseline and train (ref_delta inert, locked)."""
+    from macro_framework import factor_scoring as fs
+
+    captured = _patch_recall_guard(monkeypatch)
+
+    fs.FactorScorer.calibrate(
+        nim_model="meta/llama-4-maverick-17b-128e-instruct",
+        cutoff_date=date(2024, 8, 1),
+        macro_panel=_synthetic_panel(),
+        asset_map=AssetMap.default(),
+        api_key="test-key",
+        n_per_class=5,
+    )
+
+    assert captured["build_baseline_ref_lm"] is None
+    assert captured["train_kwargs"]["ref_lm"] is None
+
+
+def test_calibrate_exposes_holdout_auc_and_is_weak(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The returned scorer delegates holdout_auc / is_weak to the calibrator (R1.6)."""
+    from macro_framework import factor_scoring as fs
+
+    _patch_recall_guard(monkeypatch, holdout_auc=0.42, is_weak=True)
+
+    scorer = fs.FactorScorer.calibrate(
+        nim_model="meta/llama-4-maverick-17b-128e-instruct",
+        cutoff_date=date(2024, 8, 1),
+        macro_panel=_synthetic_panel(),
+        asset_map=AssetMap.default(),
+        api_key="test-key",
+        n_per_class=5,
+    )
+
+    assert scorer.holdout_auc == 0.42
+    assert scorer.is_weak is True
+
+
+def test_calibrate_empty_api_key_raises_module_configuration_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An empty api_key raises factor_scoring.ConfigurationError BEFORE NvidiaLM (R1.5).
+
+    The module defines its OWN ConfigurationError (the bypassed recall_guard
+    facade is the only place recall_guard raises one). The guard fires before
+    NvidiaLM construction, which would otherwise raise a bare ValueError.
+    """
+    from macro_framework import factor_scoring as fs
+
+    _patch_recall_guard(monkeypatch)
+
+    assert issubclass(fs.ConfigurationError, RuntimeError)
+
+    with pytest.raises(fs.ConfigurationError):
+        fs.FactorScorer.calibrate(
+            nim_model="meta/llama-4-maverick-17b-128e-instruct",
+            cutoff_date=date(2024, 8, 1),
+            macro_panel=_synthetic_panel(),
+            asset_map=AssetMap.default(),
+            api_key="",
+            n_per_class=5,
+        )
+
+
+def test_calibrate_zero_valid_baseline_raises_module_configuration_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A baseline with n_valid == 0 raises factor_scoring.ConfigurationError (R1.5)."""
+    from macro_framework import factor_scoring as fs
+
+    _patch_recall_guard(monkeypatch, baseline_n_valid=0)
+
+    with pytest.raises(fs.ConfigurationError):
+        fs.FactorScorer.calibrate(
+            nim_model="meta/llama-4-maverick-17b-128e-instruct",
+            cutoff_date=date(2024, 8, 1),
+            macro_panel=_synthetic_panel(),
+            asset_map=AssetMap.default(),
+            api_key="test-key",
+            n_per_class=5,
+        )
+
+
+def test_factor_score_and_calibration_stats_dataclass_shapes() -> None:
+    """FactorScore + CalibrationStats are frozen dataclasses with the spec fields."""
+    import dataclasses
+
+    from macro_framework.factor_scoring import CalibrationStats, FactorScore
+
+    assert dataclasses.is_dataclass(FactorScore)
+    assert dataclasses.is_dataclass(CalibrationStats)
+
+    fscore = FactorScore(p_memorized=0.3, parse_ok=True, fail_reason=None)
+    assert {f.name for f in dataclasses.fields(FactorScore)} == {
+        "p_memorized",
+        "parse_ok",
+        "fail_reason",
+    }
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        fscore.p_memorized = 0.9  # type: ignore[misc]
+
+    stats = CalibrationStats(holdout_auc=0.96, is_weak=False, n_is=60, n_oos=60)
+    assert {f.name for f in dataclasses.fields(CalibrationStats)} == {
+        "holdout_auc",
+        "is_weak",
+        "n_is",
+        "n_oos",
+    }
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        stats.holdout_auc = 0.1  # type: ignore[misc]

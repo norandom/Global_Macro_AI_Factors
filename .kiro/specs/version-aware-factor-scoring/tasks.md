@@ -23,7 +23,7 @@
   - Observable: unit tests parse a well-formed reply into bounded loadings and return a not-parsed result on malformed output; the parsed result is keyed by rebalance date
   - _Requirements: 2.1, 2.4_
 
-- [ ] 2.3 Factor scorer — number-native calibration + configuration errors
+- [x] 2.3 Factor scorer — number-native calibration + configuration errors
   - Build the number-native calibrator from the macro panel on the factor task: an identifying recall corpus and an anonymized honest corpus (same task, framing-only difference), then the control baseline and the contamination calibrator, holding the calibrator + baseline + inference client; the reference run is disabled (so the reference-delta feature is inert)
   - Define and raise the module's own configuration error on an empty credential, on a zero-usable-row baseline, and on an authentication-class failure from the inference client (the bypassed façade does not provide one); expose the held-out separation and weak-calibrator flag
   - Observable: with the inference client and calibration primitives mocked, calibration builds the identifying/anonymized corpora and returns a scorer exposing the separation score and weak flag; an empty credential and a zero-usable-row baseline each raise the module's configuration error; tests assert the reference run is disabled
