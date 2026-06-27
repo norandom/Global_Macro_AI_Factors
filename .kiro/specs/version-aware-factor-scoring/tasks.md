@@ -42,7 +42,7 @@
   - _Requirements: 1.6_
   - _Depends: 2.3_
 
-- [ ] 2.6 Tilt-as-exposure
+- [x] 2.6 Tilt-as-exposure
   - Map a regime-loadings vector to per-asset dimensionless exposure tilts via a documented, non-predictive axis→category exposure table, packed so the existing unchanged Black-Litterman view-to-input conversion yields a magnitude of tilt times a dimensionless, non-return-bearing conviction
   - Observable: unit tests show each view carries a dimensionless tilt and conviction (no expected return), the existing conversion produces the expected `tilt × conviction` magnitude, and no predictive-return objective is introduced
   - _Requirements: 3.1, 3.2, 3.3, 3.4_

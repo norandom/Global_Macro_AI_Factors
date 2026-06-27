@@ -14,6 +14,7 @@ control) — the single source of truth for the factor task.
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -27,6 +28,13 @@ from recall_guard import NvidiaLM, build_baseline, compute_mia_features
 from recall_guard.core.loader import EvalRow
 from recall_guard.core.nvidia_lm import generate_many
 from recall_guard.mia.mcs import train
+
+# Read-only import of the existing agent's view dataclass (R3): the tilt-as-exposure
+# builder PACKS regime exposures into MacroView so the UNCHANGED views_to_bl
+# conversion yields Q = tilt·conviction/252. MacroView is a lightweight dataclass
+# (the heavy DSPy wiring in LlmMacroAgent stays lazy), so this stays off the hot
+# path while making the symbol patchable in tests. llm_agent is never edited.
+from .llm_agent import MacroView
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -969,3 +977,185 @@ class FactorScorer:
             return FactorScore(p_memorized=None, parse_ok=False, fail_reason="error")
 
         return FactorScore(p_memorized=p_memorized, parse_ok=True, fail_reason=None)
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.6 — TiltExposure: REGIME_ASSET_EXPOSURE + loadings_to_tilt_views       #
+# (Requirements 3.1, 3.2, 3.3, 3.4)                                            #
+#                                                                              #
+# Map a parsed regime-loadings vector to per-asset DIMENSIONLESS exposure       #
+# tilts via a documented, NON-PREDICTIVE axis->category exposure table, then     #
+# pack them into MacroView so the UNCHANGED LlmMacroAgent.views_to_bl yields     #
+# Q = tilt·conviction/252 (field reinterpretation, no edit to views_to_bl):      #
+#                                                                              #
+#   tilt(asset) = Σ_axis loadings[axis] · REGIME_ASSET_EXPOSURE[category][axis]  #
+#   MacroView(expected_excess_annualized := tilt, confidence := conviction)      #
+#   views_to_bl: Q = expected_excess_annualized · clip(confidence,0,1) / 252     #
+#              =  tilt · conviction / 252                                        #
+#                                                                              #
+# The tilt is a dimensionless characterization of the regime's exposure, NOT a   #
+# forecast return; conviction is a dimensionless, non-return-bearing scalar      #
+# supplied by the caller (it never feeds the tilt itself). No predictive-return  #
+# objective and no direction is introduced (R3.4).                              #
+# --------------------------------------------------------------------------- #
+
+
+# Documented, NON-PREDICTIVE heuristic exposure profile: for each anonymized
+# asset category, a dimensionless loading on each of the five MACRO_AXES. This is
+# a deliberate, hand-specified exposure map (how a category's risk *sits on* each
+# macro axis) — NOT a fitted return model and NOT a forecast. The signs encode the
+# economic rationale below; the magnitudes are a coarse, bounded heuristic in
+# [-1, +1] (a "strong" exposure is ±1.0, a "moderate" one ±0.5, a "mild" one
+# ±0.3). Tuning these to any return/eval window is explicitly out of scope (R3.4).
+#
+# Rationale (per category):
+#   - world_equity (broad equity beta): +growth (pro-cyclical risk asset that
+#     benefits from expansion); −credit_stress and −inflation (drawdowns when
+#     liquidity tightens / inflation erodes real earnings); +risk_appetite
+#     (rallies with risk-on); slightly −policy (tighter policy is a headwind).
+#   - tech_sector (long-duration growth equity): +growth (high-beta to the cycle);
+#     −inflation (long-duration cash flows discount harder under inflation —
+#     the "inflation-sensitivity" leg); −credit_stress and −policy (most exposed
+#     to tightening / liquidity); +risk_appetite (the high-beta risk-on play).
+#   - gold_commodity (real-asset / hedge): +inflation (classic inflation hedge);
+#     +credit_stress (a flight-to-safety / systemic-stress hedge); −growth (less
+#     attractive when the cycle is strong); −risk_appetite (a risk-off asset);
+#     mildly +policy-neutral (small).
+#   - short_treasury_cash (defensive cash-like): +policy (rewarded when policy is
+#     tight / rates are high); +credit_stress (the defensive safe leg in stress);
+#     −growth and −risk_appetite (gives up upside in expansions / risk-on); a
+#     mild +inflation carry term (short cash rolls with higher nominal rates).
+#
+# All values are dimensionless. Each profile names exactly the five MACRO_AXES.
+REGIME_ASSET_EXPOSURE: dict[str, dict[str, float]] = {
+    "world_equity": {
+        "inflation": -0.3,
+        "growth": 1.0,
+        "credit_stress": -0.8,
+        "policy": -0.3,
+        "risk_appetite": 0.6,
+    },
+    "tech_sector": {
+        "inflation": -0.6,
+        "growth": 1.0,
+        "credit_stress": -0.7,
+        "policy": -0.5,
+        "risk_appetite": 0.8,
+    },
+    "gold_commodity": {
+        "inflation": 0.8,
+        "growth": -0.4,
+        "credit_stress": 0.7,
+        "policy": 0.1,
+        "risk_appetite": -0.5,
+    },
+    "short_treasury_cash": {
+        "inflation": 0.3,
+        "growth": -0.6,
+        "credit_stress": 0.6,
+        "policy": 0.8,
+        "risk_appetite": -0.6,
+    },
+}
+
+
+def _finite_or_zero(value: float) -> float:
+    """Return ``value`` if finite, else ``0.0`` (guard non-finite loadings).
+
+    Per the tasks.md 2.2 note, non-standard JSON ``NaN``/``Infinity`` can bypass
+    the parser's clip. Treating a non-finite loading as ``0`` keeps it inert in
+    the dot-product so no ``NaN``/``Inf`` tilt propagates into the unchanged
+    Black-Litterman conversion (R3.1).
+    """
+    return float(value) if math.isfinite(value) else 0.0
+
+
+def loadings_to_tilt_views(
+    loadings: RegimeLoadings,
+    asset_snapshot: list[dict[str, object]],
+    asset_map: AssetMap,
+    conviction: float,
+) -> list[MacroView]:
+    """Map regime loadings to per-asset dimensionless exposure tilt views (R3.1–R3.4).
+
+    For each asset in ``asset_snapshot``, computes the dimensionless tilt
+
+        ``tilt = Σ_axis loadings[axis] · REGIME_ASSET_EXPOSURE[category][axis]``
+
+    over the named ``MACRO_AXES`` (the documented, non-predictive exposure table),
+    and packs it into a :class:`MacroView` by FIELD REINTERPRETATION so the
+    UNCHANGED :meth:`LlmMacroAgent.views_to_bl` yields ``Q = tilt·conviction/252``:
+
+      - ``expected_excess_annualized := tilt`` — a dimensionless exposure tilt,
+        NOT a forecast return (R3.1);
+      - ``confidence := conviction`` — the dimensionless, non-return-bearing
+        conviction supplied by the caller; it scales the BL view magnitude via
+        the unchanged conversion but NEVER feeds the tilt itself (R3.2);
+      - ``asset_short = None`` — a single-leg exposure, no direction (R3.4).
+
+    Non-finite axis loadings (``NaN``/``Inf``, which can slip past the parser's
+    clip via non-standard JSON) are treated as ``0`` so no ``NaN`` tilt reaches
+    BL (tasks.md 2.2 note). An asset whose category is absent from
+    ``REGIME_ASSET_EXPOSURE`` or unmapped to a pseudo id is skipped (no view).
+
+    No predictive-return objective is introduced: the tilt is a pure
+    characterization of the regime's exposure (R3.4), and the conversion is the
+    existing one reused verbatim (R3.3).
+
+    Args:
+        loadings: the parsed regime-loadings vector (axis -> loading).
+        asset_snapshot: anonymized asset descriptors (``id`` pseudo letter +
+            ``category``), e.g. ``AssetMap.pseudo_assets()``.
+        asset_map: the identifying <-> anonymized asset map (used to confirm the
+            pseudo id is mapped; ``views_to_bl`` resolves it to a real ticker).
+        conviction: a dimensionless, non-return-bearing conviction in ``[0, 1]``
+            packed as each view's ``confidence``.
+
+    Returns:
+        One :class:`MacroView` per mapped asset, in ``asset_snapshot`` order.
+    """
+    views: list[MacroView] = []
+    for asset in asset_snapshot:
+        pseudo = asset.get("id")
+        category = asset.get("category")
+        if category is None:
+            category = asset_map.categories.get(str(pseudo)) if pseudo is not None else None
+        if category is None or category not in REGIME_ASSET_EXPOSURE:
+            continue
+        if pseudo is None or str(pseudo) not in asset_map.pseudo_to_real:
+            continue
+
+        exposure = REGIME_ASSET_EXPOSURE[category]
+        tilt = 0.0
+        contributing: list[str] = []
+        for axis, raw_loading in loadings.loadings.items():
+            axis_exposure = exposure.get(axis)
+            if axis_exposure is None:
+                continue
+            loading = _finite_or_zero(float(raw_loading))
+            contribution = loading * float(axis_exposure)
+            tilt += contribution
+            if abs(contribution) > 1e-9:
+                contributing.append(axis)
+
+        # Guard once more: an all-non-finite vector would already be 0 above, but
+        # keep the tilt finite under any arithmetic edge (e.g. 0·inf upstream).
+        tilt = _finite_or_zero(tilt)
+
+        axes_text = ", ".join(contributing) if contributing else "the macro axes"
+        rationale = (
+            f"Dimensionless exposure tilt for {pseudo} ({category}) from the "
+            f"regime loadings on {axes_text} via the documented "
+            f"REGIME_ASSET_EXPOSURE table; not a return forecast."
+        )
+
+        views.append(
+            MacroView(
+                asset_long=str(pseudo),
+                asset_short=None,
+                expected_excess_annualized=tilt,
+                confidence=float(conviction),
+                rationale=rationale,
+            )
+        )
+    return views

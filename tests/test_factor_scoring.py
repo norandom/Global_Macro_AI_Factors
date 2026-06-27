@@ -1224,3 +1224,236 @@ def test_save_then_load_round_trips_scores_identically(tmp_path) -> None:
 
     assert before.parse_ok and after.parse_ok
     assert before.p_memorized == after.p_memorized
+
+
+# --------------------------------------------------------------------------- #
+# Task 2.6 — TiltExposure: REGIME_ASSET_EXPOSURE + loadings_to_tilt_views      #
+# (Requirements 3.1, 3.2, 3.3, 3.4)                                           #
+#                                                                             #
+# Map a parsed regime-loadings vector to per-asset DIMENSIONLESS exposure      #
+# tilts via a documented, NON-PREDICTIVE axis->category exposure table, packed #
+# into MacroView so the UNCHANGED views_to_bl yields Q = tilt·conviction/252.  #
+# These tests use the REAL MacroView + a real LlmMacroAgent.views_to_bl        #
+# (offline — views_to_bl is pure arithmetic, no network).                     #
+# --------------------------------------------------------------------------- #
+
+
+from macro_framework.llm_agent import LlmMacroAgent, MacroView  # noqa: E402
+
+
+def _all_real_symbols() -> list[str]:
+    """The four real tickers backing the default AssetMap (BL column order)."""
+    return ["SWDA.L", "XLK", "IAU", "BIL"]
+
+
+def _crafted_loadings() -> "object":
+    """A crafted RegimeLoadings vector with a known per-axis value (no clipping).
+
+    Chosen so the documented dot-product tilt for each category is exact and
+    hand-verifiable in the assertions below.
+    """
+    from macro_framework.factor_scoring import RegimeLoadings
+
+    return RegimeLoadings(
+        rebalance_date=pd.Timestamp("2022-06-30"),
+        loadings={
+            "inflation": 0.5,
+            "growth": -0.4,
+            "credit_stress": 0.8,
+            "policy": 0.2,
+            "risk_appetite": -0.6,
+        },
+        parse_ok=True,
+    )
+
+
+def test_regime_asset_exposure_is_documented_non_predictive_table() -> None:
+    """REGIME_ASSET_EXPOSURE maps each anonymized category to a per-axis exposure (3.1).
+
+    It is a heuristic exposure profile (dimensionless), not a fitted return
+    model: each of the four asset categories carries one loading per MACRO_AXES
+    axis. The values must be finite, dimensionless numbers in a small bounded
+    range (a heuristic profile, never a forecast return).
+    """
+    import math
+
+    from macro_framework.factor_scoring import MACRO_AXES, REGIME_ASSET_EXPOSURE
+
+    categories = {"world_equity", "tech_sector", "gold_commodity", "short_treasury_cash"}
+    assert set(REGIME_ASSET_EXPOSURE) == categories
+
+    for category, profile in REGIME_ASSET_EXPOSURE.items():
+        # One exposure per named axis, no extras / no missing.
+        assert set(profile) == set(MACRO_AXES), f"{category} profile axes mismatch"
+        for axis, exposure in profile.items():
+            assert isinstance(exposure, (int, float)) and not isinstance(exposure, bool)
+            assert math.isfinite(exposure), f"{category}.{axis} not finite"
+            # A heuristic profile — small, dimensionless, bounded magnitude.
+            assert -1.0 <= float(exposure) <= 1.0
+
+
+def test_views_carry_tilt_as_expected_excess_and_conviction_as_confidence() -> None:
+    """Each view packs tilt=expected_excess_annualized, conviction=confidence (3.1, 3.2).
+
+    No expected-return semantics: the field is a dimensionless tilt, and the
+    confidence field is the dimensionless conviction passed in by the caller.
+    The tilt equals the documented dot-product Σ_axis loadings·exposure.
+    """
+    from macro_framework.factor_scoring import (
+        REGIME_ASSET_EXPOSURE,
+        loadings_to_tilt_views,
+    )
+
+    asset_map = AssetMap.default()
+    loadings = _crafted_loadings()
+    asset_snapshot = asset_map.pseudo_assets()
+    conviction = 0.5
+
+    views = loadings_to_tilt_views(loadings, asset_snapshot, asset_map, conviction)
+
+    assert views, "expected one view per mapped asset"
+    assert all(isinstance(v, MacroView) for v in views)
+
+    # category -> pseudo id (Asset_A..D), so we can recompute the expected tilt.
+    pseudo_to_category = asset_map.categories
+    by_long = {v.asset_long: v for v in views}
+
+    for pseudo, category in pseudo_to_category.items():
+        assert pseudo in by_long, f"no view emitted for {pseudo} ({category})"
+        view = by_long[pseudo]
+
+        expected_tilt = sum(
+            loadings.loadings[axis] * REGIME_ASSET_EXPOSURE[category][axis]
+            for axis in loadings.loadings
+        )
+
+        # The tilt is packed as expected_excess_annualized (field reinterpretation).
+        assert view.expected_excess_annualized == pytest.approx(expected_tilt)
+        # Conviction is packed as confidence (dimensionless, caller-supplied).
+        assert view.confidence == pytest.approx(conviction)
+        # Long-only single-leg exposure (no short, no direction).
+        assert view.asset_short is None
+        # The rationale is axis-grounded (mentions a macro axis), not a return.
+        assert any(axis in view.rationale for axis in loadings.loadings)
+
+
+def test_unchanged_views_to_bl_yields_q_equals_tilt_times_conviction_over_252() -> None:
+    """The UNCHANGED views_to_bl produces Q = tilt·conviction/252 (3.2, 3.3).
+
+    This is the core field-reinterpretation contract: loadings_to_tilt_views
+    packs tilt into expected_excess_annualized and conviction into confidence,
+    and the real LlmMacroAgent.views_to_bl (reused without modification) then
+    yields Q = expected_excess_annualized · clip(confidence,0,1) / 252.
+    """
+    from macro_framework.factor_scoring import (
+        REGIME_ASSET_EXPOSURE,
+        loadings_to_tilt_views,
+    )
+
+    asset_map = AssetMap.default()
+    loadings = _crafted_loadings()
+    asset_snapshot = asset_map.pseudo_assets()
+    conviction = 0.5
+    real_symbols = _all_real_symbols()
+
+    views = loadings_to_tilt_views(loadings, asset_snapshot, asset_map, conviction)
+
+    # The agent that owns the UNCHANGED views_to_bl conversion.
+    agent = LlmMacroAgent(asset_map=asset_map)
+    P, Q = agent.views_to_bl(views, real_symbols)
+
+    assert P is not None and Q is not None
+    assert len(Q) == len(views)
+
+    # Recompute the expected Q per view = tilt · conviction / 252 and match it to
+    # the BL output row for that view's long leg (P has a single +1 there).
+    pseudo_to_real = asset_map.pseudo_to_real
+    for row_idx, view in enumerate(views):
+        long_real = pseudo_to_real[view.asset_long]
+        col = real_symbols.index(long_real)
+        # P row marks the long leg.
+        assert P.iloc[row_idx, col] == 1.0
+
+        category = asset_map.categories[view.asset_long]
+        tilt = sum(
+            loadings.loadings[axis] * REGIME_ASSET_EXPOSURE[category][axis]
+            for axis in loadings.loadings
+        )
+        expected_q = (tilt * conviction) / 252.0
+        assert Q.iloc[row_idx, 0] == pytest.approx(expected_q)
+
+
+def test_non_finite_loadings_do_not_produce_nan_tilts() -> None:
+    """NaN/Inf axis loadings are guarded so no NaN tilt propagates into BL (2.2 note, 3.1).
+
+    Per the tasks.md 2.2 implementation note, non-standard JSON NaN/Infinity can
+    bypass the parser's clip. The tilt step must treat a non-finite loading as 0
+    (or skip the asset) so no NaN/Inf tilt reaches the unchanged views_to_bl.
+    """
+    import math
+
+    from macro_framework.factor_scoring import RegimeLoadings, loadings_to_tilt_views
+
+    asset_map = AssetMap.default()
+    asset_snapshot = asset_map.pseudo_assets()
+
+    loadings = RegimeLoadings(
+        rebalance_date=pd.Timestamp("2022-06-30"),
+        loadings={
+            "inflation": float("nan"),
+            "growth": float("inf"),
+            "credit_stress": -float("inf"),
+            "policy": 0.2,
+            "risk_appetite": -0.6,
+        },
+        parse_ok=True,
+    )
+
+    views = loadings_to_tilt_views(loadings, asset_snapshot, asset_map, conviction=0.5)
+
+    # Every emitted view carries a finite tilt (non-finite loadings treated as 0).
+    for view in views:
+        assert math.isfinite(view.expected_excess_annualized), (
+            f"non-finite tilt for {view.asset_long}: {view.expected_excess_annualized}"
+        )
+
+    # And the unchanged views_to_bl produces a finite Q (no NaN into BL).
+    agent = LlmMacroAgent(asset_map=asset_map)
+    P, Q = agent.views_to_bl(views, _all_real_symbols())
+    if Q is not None:
+        for q in Q.iloc[:, 0].tolist():
+            assert math.isfinite(q), f"NaN/Inf Q reached BL: {q}"
+
+
+def test_loadings_to_tilt_views_introduces_no_predictive_objective() -> None:
+    """No predictive-return objective: tilt is a pure dot-product, no direction (3.4).
+
+    Structural check: the produced views carry only the dimensionless tilt
+    (as expected_excess_annualized), the caller-supplied conviction (as
+    confidence), and no short leg / direction. The tilt is NOT derived from any
+    return target — it is the documented loadings·exposure dot-product, which is
+    invariant to scaling conviction (conviction never feeds the tilt itself).
+    """
+    from macro_framework.factor_scoring import loadings_to_tilt_views
+
+    asset_map = AssetMap.default()
+    asset_snapshot = asset_map.pseudo_assets()
+    loadings = _crafted_loadings()
+
+    views_a = loadings_to_tilt_views(loadings, asset_snapshot, asset_map, conviction=0.2)
+    views_b = loadings_to_tilt_views(loadings, asset_snapshot, asset_map, conviction=0.9)
+
+    # The tilt (expected_excess_annualized) is independent of conviction — it is a
+    # characterization of the regime exposure, never a forecast scaled by belief.
+    by_long_a = {v.asset_long: v for v in views_a}
+    by_long_b = {v.asset_long: v for v in views_b}
+    assert set(by_long_a) == set(by_long_b)
+    for pseudo in by_long_a:
+        assert by_long_a[pseudo].expected_excess_annualized == pytest.approx(
+            by_long_b[pseudo].expected_excess_annualized
+        )
+        # Only conviction (confidence) changed.
+        assert by_long_a[pseudo].confidence == pytest.approx(0.2)
+        assert by_long_b[pseudo].confidence == pytest.approx(0.9)
+        # No short leg / directional bet.
+        assert by_long_a[pseudo].asset_short is None
