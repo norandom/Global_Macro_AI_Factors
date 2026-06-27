@@ -1,7 +1,7 @@
 # Implementation Plan
 
 - [ ] 1. Foundation: confirm the public primitive surface
-- [ ] 1.1 Confirm the recall_guard public MIA-primitive surface and module/test scaffold
+- [x] 1.1 Confirm the recall_guard public MIA-primitive surface and module/test scaffold
   - Add an import-smoke test asserting the public primitives the design relies on are importable
     (`NvidiaLM`, `compute_mia_features`, `MiaFeatures`, `build_baseline`, `standardise`, `ControlBaseline`,
     `MCSCalibrator`, `LOGPROB_FLOOR`, and `train` from the mcs submodule) and that the host package imports
