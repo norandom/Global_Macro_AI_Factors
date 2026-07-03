@@ -1,0 +1,74 @@
+{
+  "screen": "R8 certified no-recall model selection (task 3.3 live half)",
+  "cutoff_date": "2023-12-01",
+  "n_per_class": 200,
+  "parse_sample": 20,
+  "candidates": [
+    "meta/llama-3.3-70b-instruct",
+    "meta/llama-4-maverick-17b-128e-instruct",
+    "microsoft/phi-4-mini-instruct",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b"
+  ],
+  "built_at": "2026-07-03T12:23:05.183613+00:00",
+  "results": [
+    {
+      "model": "meta/llama-4-maverick-17b-128e-instruct",
+      "controlled_auc": 0.6368055555555556,
+      "controlled_ci_low": 0.5605121527777779,
+      "controlled_ci_high": 0.7213628472222222,
+      "controlled_perm_p": 0.007984031936127744,
+      "positive_control_auc": 0.88125,
+      "positive_control_perm_p": 0.001996007984031936,
+      "parse_rate": 0.0,
+      "n_per_class": 120,
+      "verdict": "recalls",
+      "elapsed_s": 583.7
+    },
+    {
+      "model": "microsoft/phi-4-mini-instruct",
+      "controlled_auc": 0.6951388888888889,
+      "controlled_ci_low": 0.646328125,
+      "controlled_ci_high": 0.7809114583333333,
+      "controlled_perm_p": 0.001996007984031936,
+      "positive_control_auc": 0.8854166666666667,
+      "positive_control_perm_p": 0.001996007984031936,
+      "parse_rate": 1.0,
+      "n_per_class": 120,
+      "verdict": "recalls",
+      "elapsed_s": 2918.9
+    },
+    {
+      "model": "meta/llama-3.3-70b-instruct",
+      "verdict": "screen_failed",
+      "error": "ValueError: certification_stats: each class needs at least n_splits (=5) feature rows of equal width for stratified CV; got n_is=8, n_oos=0.",
+      "elapsed_s": 885.8
+    },
+    {
+      "model": "openai/gpt-oss-120b",
+      "controlled_auc": 0.6327146401985112,
+      "controlled_ci_low": 0.5977275434243176,
+      "controlled_ci_high": 0.7312521091811415,
+      "controlled_perm_p": 0.003992015968063872,
+      "positive_control_auc": 0.7287138461538462,
+      "positive_control_perm_p": 0.001996007984031936,
+      "parse_rate": 0.4,
+      "n_per_class": 167,
+      "verdict": "recalls",
+      "elapsed_s": 13739.3
+    },
+    {
+      "model": "openai/gpt-oss-20b",
+      "controlled_auc": 0.9255064009074705,
+      "controlled_ci_low": 0.8850433479176796,
+      "controlled_ci_high": 0.9614832820180413,
+      "controlled_perm_p": 0.001996007984031936,
+      "positive_control_auc": 0.7990115054286179,
+      "positive_control_perm_p": 0.001996007984031936,
+      "parse_rate": 1.0,
+      "n_per_class": 167,
+      "verdict": "recalls",
+      "elapsed_s": 3144.6
+    }
+  ]
+}

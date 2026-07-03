@@ -273,3 +273,51 @@ pipeline on it (the certified model is BOTH the loadings generator and the score
   cutoff.
 - **Candidates:** the logprob-bearing NIM pool from the 2026-06-26 re-probe (maverick,
   llama-3.1-8b-instruct, gpt-oss-20b, + whatever else the live probe admits), capped for cost.
+
+---
+
+## 2026-07-03 — Task 3.3 live result: the certified-no-recall set is EMPTY
+
+_The R8 screen ran evidence-grade (raw per-prompt evidence persisted per candidate under
+`data/norecall_screen/evidence/<model>/` — gitignored, ships via the GH data release) across every
+servable logprob-bearing NIM candidate, common cutoff 2023-12-01, bootstrap CI + permutation p,
+prose-confounded positive control, parse gate._
+
+### Certification table (data/norecall_screen/results.json)
+| model | verdict | controlled AUC [95% CI] | perm p | pos.ctrl AUC (p) | parse | n/class |
+|---|---|---|---|---|---|---|
+| openai/gpt-oss-120b | recalls | 0.633 [0.598, 0.731] | 0.004 | 0.729 (0.002) | 0.4* | 167 |
+| meta/llama-4-maverick-17b-128e | recalls | 0.637 [0.561, 0.721] | 0.008 | 0.881 (0.002) | 0.0** | 120 |
+| microsoft/phi-4-mini-instruct | recalls | 0.695 [0.646, 0.781] | 0.002 | 0.885 (0.002) | 1.0 | 120 |
+| openai/gpt-oss-20b | recalls | **0.926 [0.885, 0.961]** | 0.002 | 0.799 (0.002) | 1.0 | 167 |
+| meta/llama-3.3-70b-instruct | screen_failed | — | — | — | — | — |
+
+\* timeout attrition at n=200 serving load, not format failure. \** maverick narrates 512 tokens
+without emitting the loadings JSON (live-verified); a format failure, not attrition.
+
+### Findings
+1. **R8 answer: NO servable NIM candidate is certifiably recall-free on the macro numbers.** We are
+   statistically certain of the OPPOSITE for all four screenable models (perm p ≤ 0.008 each,
+   detector validated per model). The identifying additions (date + tickers + raw levels) shift
+   token-probability behavior detectably in every model.
+2. **The 2026-06-27 3.2 "weak/no-signal" finding is superseded as under-powered**: same model
+   (maverick), controlled renderer, but n=60/class on a 30-prompt single split → AUC 0.34; at
+   n=120/class with CV + permutation the same setup shows AUC 0.637, p=0.008. The earlier entry
+   stands as written; its interpretation ("controlled contamination undetectable") does not survive
+   the power upgrade.
+3. **Size gradient inside one family**: gpt-oss-20b (0.926) ≫ gpt-oss-120b (0.633). The smaller
+   model carries the far sharper memorization signature — consistent with less capacity forcing
+   more verbatim storage relative to generalization.
+4. gpt-oss-120b resolved from `inconclusive` (n=120, p=0.098) to `recalls` (n=167, p=0.004) — the
+   max-power rescreen settled the fence exactly as the trend suggested.
+5. llama-3.3-70b is not servable non-streaming at screen volume on this endpoint (15–120 s
+   timeouts); recorded as unscreenable, not exonerated.
+
+### Consequence — the strong-calibrator branch
+With recall demonstrably present, the number-native calibrators are NOT weak → per R4.3 the
+`recall_guarded_adjust` discount ENGAGES (no passthrough). The Excel storyboard S1 becomes:
+"no model is certifiably recall-free — recall is quantified per model; the pipeline runs
+RECALL-GUARDED." Fallback model selection for nb13/nb14 (generator + scored model) is a user
+decision: phi-4-mini (parse 1.0, fastest serving, AUC 0.695), gpt-oss-20b (parse 1.0, sharpest
+signature 0.926 → most vivid guarding + premium measurement), gpt-oss-120b (numerically least
+recall 0.633 but ~4× slower serving with attrition).

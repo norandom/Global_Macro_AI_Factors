@@ -77,7 +77,7 @@
   - _Requirements: 1.1, 1.6, 6.3_
   - _Depends: 2.1, 2.3, 2.5_
 
-- [ ] 3.3 Certified no-recall model screen (module + live run) — _added 2026-07-03 (R8 amendment)_
+- [x] 3.3 Certified no-recall model screen (module + live run) — _added 2026-07-03 (R8 amendment)_
   - Extend the factor-scoring module additively with a certification screen: gather the standardized per-prompt MIA features for the controlled identifying/anonymized classes, compute the held-out separation with a resampled confidence interval and a permutation p-value (offline, on the gathered features — no extra live calls), render a deliberately prose-confounded positive-control framing (diagnostic, explicitly non-R7.6), measure the factor-task parse rate, and produce a typed per-candidate certification verdict (certified-no-recall / recalls / detector-unvalidated / inconclusive)
   - Run the screen live across the logprob-bearing NIM candidates at a conservative common cutoff (pre-cutoff states trained-on for every candidate); persist per-candidate results (no credential) and append a dated research-log entry; select the certified model per the R8.4 rule and persist its calibrator at its own true cutoff
   - Observable: mocked unit tests cover the statistics (CI/permutation on synthetic features), the positive-control renderer, the parse-rate measure, and the verdict rule; the live run writes a results artifact + research-log entry; a certified model is selected and its calibrator persisted
