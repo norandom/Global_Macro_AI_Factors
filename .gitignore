@@ -31,3 +31,4 @@ data/prompt_refinement_*_equity_2019_2024.parquet
 # Persisted number-native FactorScorer calibrator (regenerable via scripts/calibrate_factor_scorer.py;
 # env/run-specific; currently is_weak). Metadata/finding recorded in research.md.
 data/factor_calibrator_*/
+data/norecall_screen/evidence/

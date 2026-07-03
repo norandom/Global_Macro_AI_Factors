@@ -2239,6 +2239,7 @@ def gather_certification_features(
     baseline: ControlBaseline,
     *,
     max_workers: int = 8,
+    evidence: list[dict[str, Any]] | None = None,
 ) -> list[list[float]]:
     """Gather the standardized per-prompt MIA feature vectors for one corpus (R8.2).
 
@@ -2255,15 +2256,27 @@ def gather_certification_features(
     Rows whose generation, feature computation, or standardisation fails are
     SKIPPED (dropped); the surviving vectors keep the input-row order.
 
+    When ``evidence`` is given (a caller-owned list), one raw-evidence record is
+    appended per INPUT row — surviving and dropped alike — carrying the prompt,
+    the reply text, the token count, the raw MIA features (``raw_<key>``), the
+    standardized values (``std_<key>``), an ``included`` flag, and the
+    ``dropped_reason`` when the row did not survive. This is the audit trail
+    the R8.6 evidence artifact persists so the assessment can be re-derived
+    from raw data (no credential is ever recorded).
+
     Args:
         lm: the candidate's inference client (only ``generate`` is used).
         rows: the corpus rows to gather features for.
         baseline: the candidate's control baseline (standardisation stats).
         max_workers: parallelism for the LM calls.
+        evidence: optional caller-owned list to append per-row raw-evidence
+            records to (one per input row, in input order).
 
     Returns:
         One standardized feature vector per surviving row, in input order.
     """
+    from dataclasses import asdict
+
     from recall_guard import standardise
 
     # The deterministic vector order: the baseline's feature keys, restricted
@@ -2276,18 +2289,49 @@ def gather_certification_features(
     results = generate_many(lm, prompts, max_workers=max_workers)
 
     vectors: list[list[float]] = []
-    for completion in results:
+    for i, completion in enumerate(results):
+        record: dict[str, Any] | None = None
+        if evidence is not None:
+            record = {
+                "row_index": i,
+                "as_of": rows[i].metadata.get("as_of"),
+                "prompt": rows[i].prompt,
+                "reply": None,
+                "n_tokens": None,
+                "included": False,
+                "dropped_reason": None,
+            }
+            evidence.append(record)
         if isinstance(completion, BaseException) or completion is None:
+            if record is not None:
+                record["dropped_reason"] = (
+                    f"generation failed: {type(completion).__name__}"
+                    if isinstance(completion, BaseException)
+                    else "generation failed"
+                )
             continue  # generation failed for this row -> drop it
         logprobs = getattr(completion, "logprobs", None)
-        if not logprobs:
-            continue
         content = getattr(completion, "content", "")
+        if record is not None:
+            record["reply"] = content
+            record["n_tokens"] = len(logprobs) if logprobs else 0
+        if not logprobs:
+            if record is not None:
+                record["dropped_reason"] = "logprobs missing"
+            continue
         try:
             features = compute_mia_features(content, logprobs, None)
-        except (ValueError, RuntimeError):
+        except (ValueError, RuntimeError) as exc:
+            if record is not None:
+                record["dropped_reason"] = f"features failed: {type(exc).__name__}"
             continue
         standardised = standardise(features, baseline)
+        if record is not None:
+            for key, value in asdict(features).items():
+                if value is None or isinstance(value, (int, float)):
+                    record[f"raw_{key}"] = value
+            for key in order:
+                record[f"std_{key}"] = standardised.get(key)
         vector: list[float] = []
         for key in order:
             value = standardised.get(key)
@@ -2296,7 +2340,63 @@ def gather_certification_features(
             vector.append(float(value))
         else:
             vectors.append(vector)
+            if record is not None:
+                record["included"] = True
+        if record is not None and not record["included"] and record["dropped_reason"] is None:
+            record["dropped_reason"] = "standardised feature missing"
     return vectors
+
+
+def _write_screen_evidence(
+    evidence_dir: Any,
+    *,
+    result: CertificationResult,
+    cutoff_date: date,
+    baseline: ControlBaseline,
+    arms: dict[str, list[dict[str, Any]]],
+) -> None:
+    """Persist the raw per-prompt evidence backing one candidate's screen (R8.6).
+
+    Written for the follow-up PyXLL/Excel spec: the assessment must be
+    re-derivable from RAW evidence, not just the summary statistics. Files
+    (all credential-free) under ``evidence_dir``:
+
+    - ``evidence.parquet`` — one row per prompt across every arm
+      (``identifying`` / ``anonymized`` / ``prose_confounded`` /
+      ``parse_sample``): prompt, reply, token count, raw + standardized MIA
+      features, included flag, dropped reason.
+    - ``baseline.json`` — the control-baseline standardisation stats.
+    - ``summary.json`` — the ``CertificationResult`` plus the screen cutoff.
+    """
+    from pathlib import Path
+
+    pd_mod = _pd()
+    out = Path(evidence_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    frames = []
+    for arm, records in arms.items():
+        if not records:
+            continue
+        frame = pd_mod.DataFrame.from_records(records)
+        frame.insert(0, "arm", arm)
+        frames.append(frame)
+    if frames:
+        pd_mod.concat(frames, ignore_index=True, sort=False).to_parquet(
+            out / "evidence.parquet"
+        )
+
+    (out / "baseline.json").write_text(json.dumps({
+        "model": baseline.model,
+        "n_valid": baseline.n_valid,
+        "min_valid": baseline.min_valid,
+        "is_calibrated": baseline.is_calibrated,
+        "feature_means": baseline.feature_means,
+        "feature_stds": baseline.feature_stds,
+    }, indent=2))
+    (out / "summary.json").write_text(json.dumps(
+        {**result.to_dict(), "cutoff_date": cutoff_date.isoformat()}, indent=2
+    ))
 
 
 def screen_candidate(
@@ -2310,6 +2410,7 @@ def screen_candidate(
     parse_sample: int = 20,
     max_workers: int = 8,
     lm_factory: Callable[[str, str], NvidiaLM] | None = None,
+    evidence_dir: Any | None = None,
 ) -> CertificationResult:
     """Screen one logprob-bearing candidate for certified no-recall (R8.1–R8.4).
 
@@ -2347,6 +2448,11 @@ def screen_candidate(
         max_workers: parallelism for the LM calls.
         lm_factory: optional ``(api_key, model) -> lm`` factory for test
             injection; defaults to constructing ``NvidiaLM``.
+        evidence_dir: when set, the raw per-prompt evidence backing this
+            screen (all four arms) is persisted under it via
+            ``_write_screen_evidence`` — ``evidence.parquet`` +
+            ``baseline.json`` + ``summary.json``, credential-free (R8.6 /
+            the PyXLL data contract).
 
     Returns:
         The candidate's :class:`CertificationResult`.
@@ -2420,12 +2526,30 @@ def screen_candidate(
             "that the panel yielded a non-empty pre-cutoff OOS corpus."
         )
 
+    # Optional raw-evidence capture (R8.6 / PyXLL data contract): one record
+    # per prompt per arm, so the assessment is re-derivable from raw data.
+    ev: dict[str, list[dict[str, Any]]] | None = None
+    if evidence_dir is not None:
+        ev = {
+            "identifying": [],
+            "anonymized": [],
+            "prose_confounded": [],
+            "parse_sample": [],
+        }
+
     # Gather the standardized features per class — the only live calls; every
     # statistic below is computed OFFLINE on these matrices (R8.2).
-    x_is = gather_certification_features(lm, is_rows, baseline, max_workers=max_workers)
-    x_oos = gather_certification_features(lm, oos_rows, baseline, max_workers=max_workers)
+    x_is = gather_certification_features(
+        lm, is_rows, baseline, max_workers=max_workers,
+        evidence=ev["identifying"] if ev is not None else None,
+    )
+    x_oos = gather_certification_features(
+        lm, oos_rows, baseline, max_workers=max_workers,
+        evidence=ev["anonymized"] if ev is not None else None,
+    )
     x_prose = gather_certification_features(
-        lm, prose_rows, baseline, max_workers=max_workers
+        lm, prose_rows, baseline, max_workers=max_workers,
+        evidence=ev["prose_confounded"] if ev is not None else None,
     )
 
     controlled_auc, ci_low, ci_high, controlled_perm_p = certification_stats(
@@ -2452,12 +2576,23 @@ def screen_candidate(
             lm, [row.prompt for row in sample], max_workers=max_workers
         )
         n_parsed = 0
-        for completion in replies:
-            if isinstance(completion, BaseException) or completion is None:
-                continue
-            content = getattr(completion, "content", "")
-            if parse_loadings(content, None) is not None:
+        for j, completion in enumerate(replies):
+            content: str | None = None
+            parsed_ok = False
+            if not (isinstance(completion, BaseException) or completion is None):
+                content = getattr(completion, "content", "")
+                parsed_ok = parse_loadings(content, None) is not None
+            if parsed_ok:
                 n_parsed += 1
+            if ev is not None:
+                ev["parse_sample"].append({
+                    "row_index": j,
+                    "as_of": sample[j].metadata.get("as_of"),
+                    "prompt": sample[j].prompt,
+                    "reply": content,
+                    "included": parsed_ok,
+                    "dropped_reason": None if parsed_ok else "loadings parse failed",
+                })
         parse_rate = n_parsed / len(sample)
 
     verdict = certification_verdict(
@@ -2469,7 +2604,7 @@ def screen_candidate(
         parse_rate=parse_rate,
     )
 
-    return CertificationResult(
+    result = CertificationResult(
         model=nim_model,
         controlled_auc=controlled_auc,
         controlled_ci_low=ci_low,
@@ -2481,3 +2616,14 @@ def screen_candidate(
         n_per_class=len(is_rows),
         verdict=verdict,
     )
+
+    if ev is not None:
+        _write_screen_evidence(
+            evidence_dir,
+            result=result,
+            cutoff_date=cutoff_date,
+            baseline=baseline,
+            arms=ev,
+        )
+
+    return result

@@ -2994,3 +2994,94 @@ def test_certification_result_to_dict_round_trips_through_json() -> None:
 
     payload = json.dumps(result.to_dict())
     assert json.loads(payload) == result.to_dict()
+
+
+def test_screen_candidate_persists_raw_evidence(tmp_path) -> None:
+    """evidence_dir persists the raw per-prompt audit trail (R8.6 / PyXLL contract).
+
+    One evidence row per prompt per arm (identifying / anonymized /
+    prose_confounded / parse_sample), with prompt + reply + raw and
+    standardized features, plus baseline.json and summary.json — and no
+    credential anywhere in the artifacts.
+    """
+    import pandas as pd
+
+    from macro_framework import factor_scoring as fs
+
+    result = fs.screen_candidate(
+        nim_model="fake/candidate-model",
+        cutoff_date=date(2024, 8, 1),
+        macro_panel=_synthetic_panel(),
+        asset_map=AssetMap.default(),
+        api_key="secret-test-key",
+        n_per_class=8,
+        parse_sample=5,
+        max_workers=2,
+        lm_factory=_ScreenFakeLM,
+        evidence_dir=tmp_path,
+    )
+
+    evidence = pd.read_parquet(tmp_path / "evidence.parquet")
+    # All four arms present, with the expected row counts (fake LM never fails).
+    counts = evidence["arm"].value_counts().to_dict()
+    assert counts["identifying"] == result.n_per_class
+    assert counts["anonymized"] == result.n_per_class
+    assert counts["prose_confounded"] == result.n_per_class
+    assert counts["parse_sample"] == 5
+    # Feature arms carry the raw + standardized values and the audit columns.
+    feature_arm = evidence[evidence["arm"] == "identifying"]
+    raw_cols = [c for c in evidence.columns if c.startswith("raw_")]
+    std_cols = [c for c in evidence.columns if c.startswith("std_")]
+    assert raw_cols and std_cols
+    assert feature_arm["included"].all()
+    assert feature_arm["prompt"].str.len().gt(0).all()
+    assert feature_arm["reply"].str.len().gt(0).all()
+    # The parse arm records the parse outcome per reply.
+    parse_arm = evidence[evidence["arm"] == "parse_sample"]
+    assert parse_arm["included"].all()  # fake reply is well-formed
+
+    baseline = json.loads((tmp_path / "baseline.json").read_text())
+    assert baseline["n_valid"] > 0
+    assert set(baseline["feature_means"]) == set(baseline["feature_stds"])
+
+    summary = json.loads((tmp_path / "summary.json").read_text())
+    assert summary["verdict"] == result.verdict
+    assert summary["cutoff_date"] == "2024-08-01"
+
+    # No credential in ANY persisted artifact.
+    for artifact in tmp_path.iterdir():
+        assert b"secret-test-key" not in artifact.read_bytes()
+
+
+def test_gather_certification_features_evidence_records_dropped_rows() -> None:
+    """The evidence list records dropped rows with a reason (audit honesty)."""
+    from recall_guard import build_baseline
+    from recall_guard.core.loader import EvalRow
+
+    from macro_framework import factor_scoring as fs
+
+    lm = _ScreenFakeLM("k", "m")
+    rows = [
+        EvalRow(prompt="prompt-one", target_direction=0, metadata={"as_of": "2020-01-31"}),
+        EvalRow(prompt="prompt-two", target_direction=0, metadata={"as_of": "2020-02-29"}),
+    ]
+    baseline = build_baseline(lm, rows, None, min_valid=2, max_workers=1)
+
+    class _FlakyLM:
+        def generate(self, prompt: str, *a: object, **k: object) -> object:
+            if prompt == "prompt-two":
+                raise TimeoutError("boom")
+            return lm.generate(prompt)
+
+    evidence: list[dict] = []
+    vectors = fs.gather_certification_features(
+        _FlakyLM(), rows, baseline, max_workers=1, evidence=evidence
+    )
+
+    assert len(vectors) == 1  # only the surviving row
+    assert len(evidence) == 2  # but BOTH rows are in the audit trail
+    ok, dropped = evidence
+    assert ok["included"] and ok["dropped_reason"] is None
+    assert ok["as_of"] == "2020-01-31"
+    assert not dropped["included"]
+    assert "generation failed" in dropped["dropped_reason"]
