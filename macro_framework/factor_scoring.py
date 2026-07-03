@@ -623,6 +623,7 @@ class FactorScorer:
         n_per_class: int = 60,
         min_auc: float = 0.6,
         max_workers: int = 8,
+        lm_factory: Callable[[str, str], NvidiaLM] | None = None,
     ) -> FactorScorer:
         """Calibrate a number-native contamination scorer on the macro numbers.
 
@@ -644,6 +645,8 @@ class FactorScorer:
             n_per_class: target number of prompts per class (IS and OOS).
             min_auc: weak-calibrator threshold (``is_weak`` iff below it).
             max_workers: parallelism for the baseline + train LM calls.
+            lm_factory: optional ``(api_key, model) -> lm`` factory (e.g. an
+                ``NvidiaLM`` with a longer timeout for slow-serving models).
 
         Returns:
             A calibrated ``FactorScorer``.
@@ -669,7 +672,12 @@ class FactorScorer:
             n_per_class=n_per_class,
         )
 
-        lm = NvidiaLM(api_key=api_key, model=nim_model)
+        # lm_factory mirrors screen_candidate: inject a client with a longer
+        # timeout for slow-serving models (NvidiaLM defaults to 15 s).
+        if lm_factory is not None:
+            lm = lm_factory(api_key, nim_model)
+        else:
+            lm = NvidiaLM(api_key=api_key, model=nim_model)
 
         baseline = build_baseline(
             lm,
@@ -780,7 +788,13 @@ class FactorScorer:
         )
 
     @classmethod
-    def load(cls, path: Path, *, api_key: str) -> FactorScorer:
+    def load(
+        cls,
+        path: Path,
+        *,
+        api_key: str,
+        lm_factory: Callable[[str, str], NvidiaLM] | None = None,
+    ) -> FactorScorer:
         """Reconstruct a fully usable scorer from a saved directory (R1.6).
 
         Reads the joblib-pickled :class:`MCSCalibrator`, reconstructs the
@@ -794,6 +808,8 @@ class FactorScorer:
             path: the directory previously written by :meth:`save`.
             api_key: the NIM scoring credential to attach to the fresh
                 ``NvidiaLM`` (non-empty).
+            lm_factory: optional ``(api_key, model) -> lm`` factory (e.g. an
+                ``NvidiaLM`` with a longer timeout for slow-serving models).
 
         Returns:
             A fully usable :class:`FactorScorer`.
@@ -838,8 +854,12 @@ class FactorScorer:
             n_oos=int(stats_payload["n_oos"]),
         )
 
-        # Re-attach a fresh NvidiaLM with the caller's key on the persisted model.
-        lm = NvidiaLM(api_key=api_key, model=baseline.model)
+        # Re-attach a fresh NvidiaLM with the caller's key on the persisted model
+        # (lm_factory injection for slow-serving models, mirroring calibrate).
+        if lm_factory is not None:
+            lm = lm_factory(api_key, baseline.model)
+        else:
+            lm = NvidiaLM(api_key=api_key, model=baseline.model)
 
         return cls(calibrator=calibrator, baseline=baseline, lm=lm, stats=stats)
 

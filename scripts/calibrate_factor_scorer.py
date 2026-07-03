@@ -33,10 +33,15 @@ from macro_framework.factor_scoring import (  # noqa: E402
     render_regime_loadings_prompt,
 )
 
-NIM_MODEL = "meta/llama-4-maverick-17b-128e-instruct"
-CUTOFF = date(2024, 8, 1)
-N_PER_CLASS = 60
+# Defaults = the original task-3.2 run (maverick @ 2024-08-01). The R8
+# selection re-runs this for the CERTIFIED model: pass `<model> <cutoff>` as
+# argv; NIM_TIMEOUT_S / CAL_N_PER_CLASS envs override the client timeout and
+# corpus size (slow-serving models need >15 s).
+NIM_MODEL = sys.argv[1] if len(sys.argv) > 1 else "meta/llama-4-maverick-17b-128e-instruct"
+CUTOFF = date.fromisoformat(sys.argv[2]) if len(sys.argv) > 2 else date(2024, 8, 1)
+N_PER_CLASS = int(os.environ.get("CAL_N_PER_CLASS") or 60)
 MIN_AUC = 0.6
+TIMEOUT_S = float(os.environ.get("NIM_TIMEOUT_S") or 0) or None
 SLUG = NIM_MODEL.replace("/", "_")
 OUT_DIR = REPO / "data" / f"factor_calibrator_{SLUG}"
 PANEL = REPO / "data" / "macro_panel_monthly.parquet"
@@ -50,6 +55,13 @@ def main() -> None:
     panel = pd.read_parquet(PANEL)
     print(f"[1/3] Calibrating {NIM_MODEL} @ cutoff {CUTOFF} "
           f"(number-native: identifying IS vs anonymized OOS, {N_PER_CLASS}/class) ...")
+    lm_factory = None
+    if TIMEOUT_S:
+        from recall_guard.core.nvidia_lm import NvidiaLM
+
+        def lm_factory(key: str, model: str) -> NvidiaLM:  # noqa: E731
+            return NvidiaLM(api_key=key, model=model, timeout_s=TIMEOUT_S)
+
     scorer = FactorScorer.calibrate(
         nim_model=NIM_MODEL,
         cutoff_date=CUTOFF,
@@ -58,6 +70,7 @@ def main() -> None:
         api_key=api_key,
         n_per_class=N_PER_CLASS,
         min_auc=MIN_AUC,
+        lm_factory=lm_factory,
     )
     print(f"      holdout_auc={scorer.holdout_auc:.4f}  is_weak={scorer.is_weak}")
 
