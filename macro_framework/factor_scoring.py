@@ -365,7 +365,7 @@ def parse_loadings(text: str, rebalance_date: pd.Timestamp) -> RegimeLoadings | 
 #                                                                              #
 #   - recall class (IS)   = pre-cutoff macro states presented IDENTIFYINGLY     #
 #                           (real date + raw levels + real tickers).            #
-#   - honest class (OOS)  = the SAME states presented ANONYMIZED                #
+#   - recall-guarded class (OOS)  = the SAME states presented ANONYMIZED                #
 #                           (z-scores, no date, Asset_A-D).                     #
 #                                                                              #
 # The only difference between the two corpora is the identifying-vs-anonymized  #
@@ -465,7 +465,7 @@ class CalibrationStats:
             of the identifying-IS vs anonymized-OOS corpus.
         is_weak: ``True`` iff ``holdout_auc < min_auc`` — the fallback signal.
         n_is: number of identifying (recall-class) prompts built for calibration.
-        n_oos: number of anonymized (honest-class) prompts built for calibration.
+        n_oos: number of anonymized (recall-guarded-class) prompts built for calibration.
     """
 
     holdout_auc: float
@@ -513,7 +513,7 @@ def _build_corpus(
 
       - **identifying IS** (``identifying=True``, ``as_of=<date>``,
         ``raw_levels=<raw>``) — the recall-enabled class;
-      - **anonymized OOS** (``identifying=False``) — the honest, recall-disabled
+      - **anonymized OOS** (``identifying=False``) — the recall-guarded (recall-disabled)
         class.
 
     Returns ``(is_rows, oos_rows)`` as ``EvalRow`` lists. The two corpora are
@@ -708,7 +708,7 @@ class FactorScorer:
     def is_weak(self) -> bool:
         """Whether the trained calibrator is weak (``holdout_auc < min_auc``) (R1.6).
 
-        The fallback signal: when weak, the honesty adjustment leaves exposures
+        The fallback signal: when weak, the recall-guarded adjustment leaves exposures
         unadjusted rather than applying an unvalidated discount.
         """
         return bool(self._calibrator.is_weak)
@@ -1162,7 +1162,7 @@ def loadings_to_tilt_views(
 
 
 # --------------------------------------------------------------------------- #
-# Task 2.7 — HonestyAdjust: HonestyConfig + honesty_adjust                      #
+# Task 2.7 — RecallGuardedAdjust: RecallGuardedConfig + recall_guarded_adjust                      #
 # (Requirements 4.1, 4.2, 4.3, 4.4)                                            #
 #                                                                              #
 # Down-weight each view's dimensionless exposure tilt by its measured           #
@@ -1183,11 +1183,11 @@ def loadings_to_tilt_views(
 
 
 @dataclass(frozen=True)
-class HonestyConfig:
-    """Configuration for the honesty (contamination-discount) adjustment (R4).
+class RecallGuardedConfig:
+    """Configuration for the recall-guarded (contamination-discount) adjustment (R4).
 
     Attributes:
-        enabled: when ``False``, :func:`honesty_adjust` is a passthrough that
+        enabled: when ``False``, :func:`recall_guarded_adjust` is a passthrough that
             returns the input views UNCHANGED regardless of ``p_memorized``
             (the off switch; the weak-calibrator fallback is supplied instead by
             the caller as ``p_memorized=None``) (R4.3).
@@ -1196,10 +1196,10 @@ class HonestyConfig:
     enabled: bool = True
 
 
-def honesty_adjust(
+def recall_guarded_adjust(
     views: list[MacroView],
     p_memorized: float | None,
-    config: HonestyConfig = HonestyConfig(),
+    config: RecallGuardedConfig = RecallGuardedConfig(),
 ) -> list[MacroView]:
     """Down-weight exposure tilts by measured contamination — magnitude-only (R4).
 
@@ -1234,7 +1234,7 @@ def honesty_adjust(
         p_memorized: the measured contamination score in ``[0, 1]`` for this
             rebalance, or ``None`` when scoring failed / the calibrator is weak /
             the adjustment is off.
-        config: the honesty configuration (the ``enabled`` flag).
+        config: the recall-guarded configuration (the ``enabled`` flag).
 
     Returns:
         Passthrough — the input views unchanged (disabled / ``p_memorized``
@@ -1618,17 +1618,17 @@ def run_pit_vs_nonpit_contrast(
 #                                                                              #
 # Compose the finished pieces — render_regime_loadings_prompt (2.1),            #
 # parse_loadings (2.2), FactorScorer.score (2.4), loadings_to_tilt_views (2.6), #
-# honesty_adjust (2.7) — plus the agent's UNCHANGED views_to_bl into one        #
+# recall_guarded_adjust (2.7) — plus the agent's UNCHANGED views_to_bl into one        #
 # network-free, walk-forward-compatible factor decision step. The "Factor       #
 # rebalance" sequence (design System Flows):                                    #
 #                                                                              #
 #   render anonymized PIT prompt (R1.4) → generate loadings (injected) → parse  #
-#   → score the SAME prompt for p_memorized → loadings→tilt views → honesty     #
+#   → score the SAME prompt for p_memorized → loadings→tilt views → recall-guard #
 #   adjust → UNCHANGED views_to_bl → HRP+BL blend (injected via `combine`).      #
 #                                                                              #
 # Gating fallbacks (design gating note): a loadings parse-fail ⇒ (None, None)   #
 # ⇒ the caller's `combine` falls back to the base allocation; p_memorized       #
-# unavailable / scorer.is_weak / scorer is None ⇒ the honesty step passes       #
+# unavailable / scorer.is_weak / scorer is None ⇒ the recall-guarded step passes       #
 # through (unadjusted exposures) but P/Q are still produced from the raw tilt.   #
 # No directional signal is read and no return objective is introduced (R3.4).    #
 #                                                                              #
@@ -1677,26 +1677,26 @@ class FactorDecision:
     Frozen so a decision is a stable value the (later) nb13 decision log can
     persist verbatim. It carries the UNCHANGED ``views_to_bl`` output
     (``P``/``Q``, ``(None, None)`` when the loadings failed to parse so the
-    caller's ``combine`` falls back to the base allocation), the honesty-adjusted
+    caller's ``combine`` falls back to the base allocation), the recall-guarded
     ``views`` handed to ``views_to_bl`` (``[]`` on the parse-fail path), the
     parsed ``loadings`` (``None`` on parse fail), the measured ``p_memorized``
     (``None`` on the weak / no-scorer / scoring-failure path — R4.3), a
     ``parse_ok`` flag, and a ``steered`` flag that is ``True`` only when a
-    measured score actually drove the honesty adjustment.
+    measured score actually drove the recall-guarded adjustment.
 
     Attributes:
         P, Q: the ``views_to_bl`` BL view pair, or ``(None, None)`` when no view
             survived (parse fail) — the caller's ``combine`` then falls back to
             the base allocation, exactly as Track A (R3.2).
-        views: the (honesty-adjusted or unadjusted) exposure-tilt views handed to
+        views: the (recall-guarded or unadjusted) exposure-tilt views handed to
             ``views_to_bl``; ``[]`` on the parse-fail path.
         loadings: the parsed :class:`RegimeLoadings`, or ``None`` on parse fail.
         p_memorized: the measured contamination score in ``[0, 1]`` for this
             rebalance, or ``None`` when scoring was unavailable / weak / failed
-            (R4.3) — the honesty adjustment then passes through (unadjusted).
+            (R4.3) — the recall-guarded adjustment then passes through (unadjusted).
         parse_ok: whether the loadings reply yielded the full factor vector.
         steered: ``True`` iff ``p_memorized is not None`` — a measured score
-            actually drove the honesty discount; ``False`` on every fallback.
+            actually drove the recall-guard discount; ``False`` on every fallback.
     """
 
     P: pd.DataFrame | None
@@ -1718,13 +1718,13 @@ def factor_rebalance(
     real_symbols: list[str],
     as_of: Any | None = None,
     raw_levels: dict[str, float] | None = None,
-    honesty_config: HonestyConfig = HonestyConfig(),
+    recall_guarded_config: RecallGuardedConfig = RecallGuardedConfig(),
 ) -> FactorDecision:
     """Compose one factor rebalance decision (design "Factor rebalance" flow).
 
     Wires the finished pieces — :func:`render_regime_loadings_prompt` (2.1),
     :func:`parse_loadings` (2.2), :meth:`FactorScorer.score` (2.4),
-    :func:`loadings_to_tilt_views` (2.6), :func:`honesty_adjust` (2.7) — plus the
+    :func:`loadings_to_tilt_views` (2.6), :func:`recall_guarded_adjust` (2.7) — plus the
     agent's UNCHANGED ``views_to_bl`` into one network-free step. The composition
     owns NEITHER the LLM call (injected ``generate_loadings``) NOR the HRP/BL
     blend (the caller's ``combine``), so it is unit-testable with mocks and stays
@@ -1743,10 +1743,10 @@ def factor_rebalance(
        scorer.is_weak`` is the SAME anonymized prompt scored
        (``scorer.score(prompt).p_memorized`` — ``None`` on a scoring failure).
        The weak / no-scorer / failure cases keep ``p_memorized = None`` so the
-       honesty step passes through (unadjusted exposures; R4.3).
+       recall-guarded step passes through (unadjusted exposures; R4.3).
     5. ``conviction`` is the dimensionless clipped-L2 norm of the loadings
        (``[0, 1]``, non-return-bearing); ``views = loadings_to_tilt_views(...)``.
-    6. ``adjusted = honesty_adjust(views, p_memorized, honesty_config)`` — a
+    6. ``adjusted = recall_guarded_adjust(views, p_memorized, recall_guarded_config)`` — a
        passthrough when ``p_memorized`` is ``None`` (R4.3); otherwise the tilt is
        discounted by ``(1 − p_memorized)`` (R4.1).
     7. ``P, Q = agent.views_to_bl(adjusted, real_symbols)`` — the UNCHANGED method.
@@ -1769,7 +1769,7 @@ def factor_rebalance(
             (carried into the artifact; the anonymized prompt discloses no date).
         raw_levels: accepted for signature parity with the renderer's identifying
             form; unused on the anonymized PIT path (kept ``None``).
-        honesty_config: the honesty (contamination-discount) configuration.
+        recall_guarded_config: the recall-guarded (contamination-discount) configuration.
 
     Returns:
         A :class:`FactorDecision` carrying the (possibly ``(None, None)``) BL view
@@ -1802,7 +1802,7 @@ def factor_rebalance(
     p_memorized: float | None = None
     if scorer is not None and not scorer.is_weak:
         score = scorer.score(prompt)
-        # None on a scoring failure ⇒ honesty_adjust passes through (R4.3).
+        # None on a scoring failure ⇒ recall_guarded_adjust passes through (R4.3).
         p_memorized = score.p_memorized
 
     # 5. Dimensionless conviction (clipped L2 norm) → per-asset exposure tilts.
@@ -1810,12 +1810,12 @@ def factor_rebalance(
     views = loadings_to_tilt_views(loadings, asset_snapshot, agent.asset_map, conviction)
 
     # 6. Down-weight the exposure by the measured contamination (passthrough on None).
-    adjusted = honesty_adjust(views, p_memorized, honesty_config)
+    adjusted = recall_guarded_adjust(views, p_memorized, recall_guarded_config)
 
     # 7. The UNCHANGED views_to_bl conversion (Q = tilt·conviction/252).
     P, Q = agent.views_to_bl(adjusted, real_symbols)
 
-    # 8. Steered iff a measured score actually drove the honesty adjustment.
+    # 8. Steered iff a measured score actually drove the recall-guarded adjustment.
     steered = p_memorized is not None
 
     return FactorDecision(
@@ -1836,7 +1836,7 @@ def make_factor_weight_fn(
     agent: object,
     build_inputs: Callable[[dict], tuple[dict[str, float], list[dict[str, object]], Any, dict[str, float] | None]],
     combine: Callable[[dict, pd.DataFrame | None, pd.DataFrame | None], pd.Series],
-    honesty_config: HonestyConfig = HonestyConfig(),
+    recall_guarded_config: RecallGuardedConfig = RecallGuardedConfig(),
 ) -> Callable[[dict], pd.Series]:
     """Adapt :func:`factor_rebalance` into a ``walk_forward`` ``weight_fn(ctx) -> pd.Series``.
 
@@ -1862,14 +1862,14 @@ def make_factor_weight_fn(
         generate_loadings: injected callable mapping the rendered prompt to a
             loadings reply (the LLM / agent / replay).
         scorer: the calibrated :class:`FactorScorer` (or ``None`` to disable
-            scoring — the honesty passthrough path, R4.3).
+            scoring — the recall-guarded passthrough path, R4.3).
         agent: the agent instance reused across rebalances (only ``views_to_bl``
             + ``asset_map`` are used).
         build_inputs: injected; maps a walk-forward ctx to
             ``(macro_state, asset_snapshot, as_of, raw_levels)``.
         combine: injected; maps ``(ctx, P, Q)`` to a target-weight ``pd.Series``
             (owns the BL / base blend; falls back to base on ``(None, None)``).
-        honesty_config: the honesty configuration shared across rebalances.
+        recall_guarded_config: the recall-guarded configuration shared across rebalances.
 
     Returns:
         A ``walk_forward``-compatible ``weight_fn(ctx) -> pd.Series``.
@@ -1888,7 +1888,7 @@ def make_factor_weight_fn(
             real_symbols=real_symbols,
             as_of=as_of,
             raw_levels=raw_levels,
-            honesty_config=honesty_config,
+            recall_guarded_config=recall_guarded_config,
         )
         return combine(ctx, dec.P, dec.Q)
 

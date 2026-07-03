@@ -1460,10 +1460,10 @@ def test_loadings_to_tilt_views_introduces_no_predictive_objective() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Task 2.7 — HonestyAdjust: HonestyConfig + honesty_adjust                      #
+# Task 2.7 — RecallGuardedAdjust: RecallGuardedConfig + recall_guarded_adjust                      #
 # (Requirements 4.1, 4.2, 4.3, 4.4)                                            #
 #                                                                              #
-# honesty_adjust down-weights each view's dimensionless exposure tilt by its   #
+# recall_guarded_adjust down-weights each view's dimensionless exposure tilt by its   #
 # measured contamination: adjusted_tilt = expected_excess_annualized·(1−p_mem).#
 # It mirrors ONLY the discount limb of steering.steer_views — NO hard          #
 # exclusion gate (R4 is magnitude-only): higher p_memorized ⇒ lower-or-equal   #
@@ -1474,8 +1474,8 @@ def test_loadings_to_tilt_views_introduces_no_predictive_objective() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def _honesty_views() -> list[MacroView]:
-    """A small list of real MacroView exposure-tilt views for the honesty tests.
+def _recall_guarded_views() -> list[MacroView]:
+    """A small list of real MacroView exposure-tilt views for the recall-guarded tests.
 
     Positive tilts below 1.0 so the (1 - p_memorized) discount is strictly
     decreasing in p_memorized over the test range and never clips at a bound.
@@ -1498,19 +1498,19 @@ def _honesty_views() -> list[MacroView]:
     ]
 
 
-def test_honesty_higher_p_memorized_yields_strictly_lower_tilt() -> None:
+def test_recall_guarded_higher_p_memorized_yields_strictly_lower_tilt() -> None:
     """Higher p_memorized ⇒ strictly lower adjusted tilt for a positive tilt (4.1).
 
     adjusted_tilt = raw·(1 − p_memorized) is monotone decreasing in p_memorized;
     for a positive raw tilt below 1.0 a larger p_memorized gives a strictly
     smaller (lower-or-equal, here strictly lower) adjusted exposure magnitude.
     """
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
+    views = _recall_guarded_views()
 
-    low = honesty_adjust(views, 0.2)
-    high = honesty_adjust(views, 0.8)
+    low = recall_guarded_adjust(views, 0.2)
+    high = recall_guarded_adjust(views, 0.8)
 
     assert len(low) == len(high) == len(views)
     for raw, lo, hi in zip(views, low, high):
@@ -1519,12 +1519,12 @@ def test_honesty_higher_p_memorized_yields_strictly_lower_tilt() -> None:
         assert hi.expected_excess_annualized < lo.expected_excess_annualized
 
 
-def test_honesty_p_memorized_zero_equals_raw_tilt() -> None:
+def test_recall_guarded_p_memorized_zero_equals_raw_tilt() -> None:
     """p_memorized == 0 ⇒ adjusted tilt equals the raw tilt (4.2)."""
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
-    adjusted = honesty_adjust(views, 0.0)
+    views = _recall_guarded_views()
+    adjusted = recall_guarded_adjust(views, 0.0)
 
     assert len(adjusted) == len(views)
     for raw, adj in zip(views, adjusted):
@@ -1533,16 +1533,16 @@ def test_honesty_p_memorized_zero_equals_raw_tilt() -> None:
         )
 
 
-def test_honesty_none_p_memorized_returns_views_unchanged() -> None:
+def test_recall_guarded_none_p_memorized_returns_views_unchanged() -> None:
     """p_memorized is None ⇒ input views returned UNCHANGED (4.3).
 
     The weak-calibrator path is supplied by the caller as p_memorized=None; the
-    honesty layer leaves the raw exposure unadjusted (same values).
+    recall-guarded layer leaves the raw exposure unadjusted (same values).
     """
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
-    result = honesty_adjust(views, None)
+    views = _recall_guarded_views()
+    result = recall_guarded_adjust(views, None)
 
     assert len(result) == len(views)
     for raw, adj in zip(views, result):
@@ -1551,12 +1551,12 @@ def test_honesty_none_p_memorized_returns_views_unchanged() -> None:
         )
 
 
-def test_honesty_disabled_config_returns_views_unchanged() -> None:
+def test_recall_guarded_disabled_config_returns_views_unchanged() -> None:
     """not config.enabled ⇒ input views returned UNCHANGED even with a real p_mem (4.3)."""
-    from macro_framework.factor_scoring import HonestyConfig, honesty_adjust
+    from macro_framework.factor_scoring import RecallGuardedConfig, recall_guarded_adjust
 
-    views = _honesty_views()
-    result = honesty_adjust(views, 0.9, HonestyConfig(enabled=False))
+    views = _recall_guarded_views()
+    result = recall_guarded_adjust(views, 0.9, RecallGuardedConfig(enabled=False))
 
     assert len(result) == len(views)
     for raw, adj in zip(views, result):
@@ -1565,30 +1565,30 @@ def test_honesty_disabled_config_returns_views_unchanged() -> None:
         )
 
 
-def test_honesty_config_is_frozen_dataclass_default_enabled_true() -> None:
-    """HonestyConfig is a frozen dataclass defaulting to enabled=True."""
+def test_recall_guarded_config_is_frozen_dataclass_default_enabled_true() -> None:
+    """RecallGuardedConfig is a frozen dataclass defaulting to enabled=True."""
     import dataclasses
 
-    from macro_framework.factor_scoring import HonestyConfig
+    from macro_framework.factor_scoring import RecallGuardedConfig
 
-    assert dataclasses.is_dataclass(HonestyConfig)
-    cfg = HonestyConfig()
+    assert dataclasses.is_dataclass(RecallGuardedConfig)
+    cfg = RecallGuardedConfig()
     assert cfg.enabled is True
     with pytest.raises(dataclasses.FrozenInstanceError):
         cfg.enabled = False  # type: ignore[misc]
 
 
-def test_honesty_is_magnitude_only_other_fields_unchanged() -> None:
+def test_recall_guarded_is_magnitude_only_other_fields_unchanged() -> None:
     """Magnitude-only: only expected_excess_annualized changes (4.4).
 
     asset_long / asset_short / confidence / rationale are copied UNCHANGED; the
     discount affects only the exposure magnitude — no return objective is
     introduced (4.4).
     """
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
-    adjusted = honesty_adjust(views, 0.3)
+    views = _recall_guarded_views()
+    adjusted = recall_guarded_adjust(views, 0.3)
 
     assert len(adjusted) == len(views)
     for raw, adj in zip(views, adjusted):
@@ -1602,15 +1602,15 @@ def test_honesty_is_magnitude_only_other_fields_unchanged() -> None:
         )
 
 
-def test_honesty_returns_new_objects_input_not_mutated() -> None:
+def test_recall_guarded_returns_new_objects_input_not_mutated() -> None:
     """Returns a NEW list of NEW MacroView; the input list/views are not mutated."""
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
+    views = _recall_guarded_views()
     raw_tilts_before = [v.expected_excess_annualized for v in views]
     list_id_before = id(views)
 
-    adjusted = honesty_adjust(views, 0.5)
+    adjusted = recall_guarded_adjust(views, 0.5)
 
     # New list and new view objects.
     assert id(adjusted) != list_id_before
@@ -1621,17 +1621,17 @@ def test_honesty_returns_new_objects_input_not_mutated() -> None:
     assert [v.expected_excess_annualized for v in views] == raw_tilts_before
 
 
-def test_honesty_no_hard_gate_high_p_memorized_still_returns_views() -> None:
+def test_recall_guarded_no_hard_gate_high_p_memorized_still_returns_views() -> None:
     """No exclusion gate: a high p_memorized (0.95) still returns the views (4.4).
 
     This is the key difference from steer_views: R4 is magnitude-only — the
     views are down-weighted, NOT dropped. The result is non-empty, with strictly
     smaller (but still present) tilts.
     """
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
-    adjusted = honesty_adjust(views, 0.95)
+    views = _recall_guarded_views()
+    adjusted = recall_guarded_adjust(views, 0.95)
 
     # NOT an empty list — the discount-only property (no hard gate).
     assert len(adjusted) == len(views)
@@ -1642,13 +1642,13 @@ def test_honesty_no_hard_gate_high_p_memorized_still_returns_views() -> None:
         assert adj.expected_excess_annualized < raw.expected_excess_annualized
 
 
-def test_honesty_is_deterministic() -> None:
+def test_recall_guarded_is_deterministic() -> None:
     """Determinism: equal inputs ⇒ equal adjusted tilts (no randomness, no I/O)."""
-    from macro_framework.factor_scoring import honesty_adjust
+    from macro_framework.factor_scoring import recall_guarded_adjust
 
-    views = _honesty_views()
-    first = honesty_adjust(views, 0.42)
-    second = honesty_adjust(views, 0.42)
+    views = _recall_guarded_views()
+    first = recall_guarded_adjust(views, 0.42)
+    second = recall_guarded_adjust(views, 0.42)
 
     assert [v.expected_excess_annualized for v in first] == [
         v.expected_excess_annualized for v in second
@@ -2251,7 +2251,7 @@ def test_run_contrast_is_deterministic() -> None:
 #                                                                              #
 # Compose the finished pieces — render_regime_loadings_prompt (2.1),            #
 # parse_loadings (2.2), FactorScorer.score (2.4), loadings_to_tilt_views (2.6), #
-# honesty_adjust (2.7) — plus the agent's UNCHANGED views_to_bl, into a         #
+# recall_guarded_adjust (2.7) — plus the agent's UNCHANGED views_to_bl, into a         #
 # walk-forward-compatible factor decision step. Mocked agent + scorer; no       #
 # network. The injected build_inputs / combine stand in for nb09's HRP/BL/blend #
 # (never duplicated here).                                                      #
@@ -2296,7 +2296,7 @@ class _FactorFakeAgent:
     ``views_to_bl`` delegates to the REAL LlmMacroAgent conversion (the unchanged
     method, task boundary) so the composition exercises the genuine field
     reinterpretation Q = tilt·conviction/252 end-to-end; the fake only records the
-    views it received so the honesty discount can be asserted.
+    views it received so the recall-guard discount can be asserted.
     """
 
     def __init__(self) -> None:
@@ -2399,11 +2399,11 @@ def test_factor_decision_is_frozen_with_spec_fields() -> None:
         dec.steered = True  # type: ignore[misc]
 
 
-def test_factor_rebalance_end_to_end_steered_with_honesty_discount() -> None:
-    """End-to-end: render→score→parse→tilt→honesty→unchanged views_to_bl (R3.1–R3.3, R4.3).
+def test_factor_rebalance_end_to_end_steered_with_recall_guard_discount() -> None:
+    """End-to-end: render→score→parse→tilt→recall-guard→unchanged views_to_bl (R3.1–R3.3, R4.3).
 
     A well-formed loadings reply + a present scorer (not weak, p_memorized=0.5)
-    runs to a valid (P, Q); dec.steered=True; the honesty discount (1−0.5) is
+    runs to a valid (P, Q); dec.steered=True; the recall-guard discount (1−0.5) is
     applied to the tilt that reaches the UNCHANGED views_to_bl (R4.1/R4.3).
     """
     from macro_framework.factor_scoring import (
@@ -2439,7 +2439,7 @@ def test_factor_rebalance_end_to_end_steered_with_honesty_discount() -> None:
     assert dec.P is not None and dec.Q is not None
     assert len(dec.Q) >= 1
 
-    # The honesty discount (1 − 0.5) reached the tilt fed to views_to_bl: the
+    # The recall-guard discount (1 − 0.5) reached the tilt fed to views_to_bl: the
     # view magnitude equals the raw dot-product tilt times the discount.
     loadings = parse_loadings(reply, pd.Timestamp("2022-06-30"))
     assert loadings is not None
