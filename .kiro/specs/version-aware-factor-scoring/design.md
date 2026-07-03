@@ -529,3 +529,26 @@ def run_pit_vs_nonpit_contrast(
 - **REGIME_ASSET_EXPOSURE table (3.1):** a deliberate, documented heuristic mapping axes→category exposures; must remain non-predictive (no return fitting).
 - **Self-identifying regimes:** extreme states score high `p_memorized` even anonymized (validated) → honesty-adjust discounts them; confirm this doesn't over-suppress the factor in crisis windows (report, don't tune to the eval window).
 - **Calibration cost/persistence:** ~135 NIM calls per build; the persisted calibrator must reload deterministically so nb13/nb14 don't rebuild.
+
+---
+
+## Amendment 2026-07-03 — R8 certified no-recall model selection (addendum)
+
+_This design predates the R8 amendment (requirements.md Requirement 8, tasks.md task 3.3). The
+delivered layout extends the original plan additively; the authoritative artifact map for the
+extension is tasks.md's "2026-07-03 Excel storyboard" + "data contract" notes. Deltas vs the
+original File Structure Plan:_
+
+- `macro_framework/factor_scoring.py` gained the "Task 3.3 — R8 certification screen" section
+  (renderer positive control, certification statistics, evidence writer, `screen_candidate`) and
+  `lm_factory` injection on `FactorScorer.calibrate`/`.load` (slow-serving models).
+- New runners: `scripts/screen_norecall_models.py` (argv retries, `NIM_TIMEOUT_S`,
+  `SCREEN_N_PER_CLASS`); `scripts/calibrate_factor_scorer.py` parameterized (`<model> <cutoff>`).
+- New data: `data/norecall_screen/` (results.json committed; `evidence/<model>/` gitignored,
+  ships via the GH data release), `data/factor_calibrator_openai_gpt-oss-20b/` (gitignored).
+- API rename (`e9b1ed9`): `honesty_*` → `recall_guarded_*`; design prose reading
+  "honesty-adjusted" refers to the `recall_guarded_*` API.
+- Known accepted deviation: the module imports the order-preserving parallel helper
+  `generate_many` from `recall_guard.core.nvidia_lm` — one step below the enumerated public
+  primitives; accepted because it is the library's own fan-out used by its harness, and
+  re-implementing it would duplicate retry/order semantics.

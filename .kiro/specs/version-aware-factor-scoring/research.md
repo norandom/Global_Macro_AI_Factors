@@ -402,3 +402,25 @@ targets/equity/decision-logs gitignored, shipped via the GH data release._
   |SSR|=0.00 < 1.96: the recall premium's return differential is statistically indistinguishable from zero under Newey-West HAC inference — the premium is LUCK-COMPATIBLE, not skill
 - Success stays non-predictive (R6.4): version-aware contamination + stability + non-degraded
   head-to-head; no forecast-accuracy claim. Task 4.2 closes the Excel storyboard (S4 recall line + S5).
+
+---
+
+## 2026-07-03 — /kiro-validate-impl: GO (feature-level validation)
+
+- **Mechanical**: full suite 180 PASS (fresh at `8e65073`); TODO/secret greps CLEAN (py sources +
+  notebook source cells); smoke: persisted calibrator loads credential-free
+  (holdout_auc 0.9668 / is_weak False / openai/gpt-oss-20b); nb13 + nb14 committed EXECUTED.
+- **Dimensions** (3 parallel validators): coverage **PASS** (R1–R8 every AC mapped to
+  symbol/test/artifact/log entry); design **WARN→resolved** (dated design.md addendum records the
+  R8 pivot deltas + the accepted `generate_many` deep-import deviation); integration **WARN**
+  (cosmetic: luck_vs_skill SSR computed on nb14's re-simulated v1 line; agrees with the persisted
+  equity to ~7 s.f.).
+- **Maverick raw-evidence gap** (flagged twice, minor): an evidence-grade re-screen was attempted;
+  NIM's maverick serving had degraded (every call timed out; the morning run completed in 583 s) →
+  the failed retry initially clobbered maverick's committed `recalls` row in results.json —
+  restored from HEAD, and the runner now PRESERVES a prior successful row when a retry fails.
+  Disposition: gap DOCUMENTED, not blocking — maverick is rejected/out of the pipeline; its verdict
+  rests on the committed summary row. Retry when NIM recovers:
+  `NIM_TIMEOUT_S=120 SCREEN_N_PER_CLASS=200 uv run python scripts/screen_norecall_models.py meta/llama-4-maverick-17b-128e-instruct`
+- **DECISION: GO.** All 15 tasks [x]; spec complete. Follow-up: `data-v1` GitHub Release
+  (the PyXLL feed — next entry).

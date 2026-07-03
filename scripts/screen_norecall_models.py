@@ -73,9 +73,11 @@ def main() -> None:
     )
 
     results: list[dict] = []
+    prior_by_model: dict[str, dict] = {}
     out_path = OUT_DIR / "results.json"
     if out_path.exists():
         prior = json.loads(out_path.read_text())
+        prior_by_model = {r.get("model"): r for r in prior.get("results", [])}
         results = [r for r in prior.get("results", []) if r.get("model") not in models]
 
     for i, model in enumerate(models, 1):
@@ -107,13 +109,20 @@ def main() -> None:
                 flush=True,
             )
         except Exception as exc:  # one failing candidate must not kill the screen
-            row = {
-                "model": model,
-                "verdict": "screen_failed",
-                "error": f"{type(exc).__name__}: {exc}",
-                "elapsed_s": round(time.time() - t0, 1),
-            }
-            print(f"    FAILED {row['error']}", flush=True)
+            prior_row = prior_by_model.get(model)
+            if prior_row and prior_row.get("verdict") not in (None, "screen_failed"):
+                # NEVER clobber prior successful evidence with a failed retry.
+                row = prior_row
+                print(f"    FAILED ({type(exc).__name__}) — keeping prior "
+                      f"'{prior_row['verdict']}' row for {model}", flush=True)
+            else:
+                row = {
+                    "model": model,
+                    "verdict": "screen_failed",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "elapsed_s": round(time.time() - t0, 1),
+                }
+                print(f"    FAILED {row['error']}", flush=True)
             traceback.print_exc()
         results.append(row)
         # Incremental write so a crash preserves completed candidates.
