@@ -364,3 +364,41 @@ shipped via the GH data release)._
 - Success stays non-predictive (R6.4): factor stability + the measured memorization distribution +
   a non-degraded head-to-head — no forecast-accuracy claim. S5 (SSR luck-vs-skill) and the non-PIT
   diagnostic line are nb14 (task 4.2).
+
+
+---
+
+## 2026-07-03 — nb14 prompt refinement (v2 gate) + PIT-vs-non-PIT contrast + S5 luck-vs-skill
+
+_nb14 executed end-to-end on `openai/gpt-oss-20b` (calibrator `factor_calibrator_openai_gpt-oss-20b`,
+holdout_auc=0.9668, is_weak=False); nb13's v1 artifacts REUSED verbatim
+(zero new NIM calls for v1); yfinance prices in-cell; price-dependent v2/non-PIT
+targets/equity/decision-logs gitignored, shipped via the GH data release._
+
+- **R5 prompt versions (same PIT stream, n=72)** — v2 = v1 + one output-discipline line
+  ("Respond with ONLY the JSON object — no other text."). p_memorized mean: v1=0.2361, v2=0.2709;
+  parse rate v1=0.986, v2=1.000; stability mean_mac
+  v1=0.3878, v2=0.4063; head-to-head
+  v2−v1: total_return=-0.0485, sharpe=-0.0044,
+  max_dd=-0.0046.
+- **R5.4 accept-gate: v2 REJECTED** (contamination_no_greater=False,
+  sharpe_not_worse=True, max_dd_not_deeper=True, stability_not_worse=True;
+  tolerances sharpe −0.05, max_dd −0.02, mean_mac +0.05) →
+  `prompt_version_gate_v1.json`; v1 artifacts preserved either way (R5.5).
+- **R7 contrast (n_pairs=72)** — p_memorized PIT mean=0.2361 vs
+  non-PIT mean=0.7644; contamination premium mean delta=
+  +0.5283 (median +0.5667),
+  paired Cohen's d=1.925 (`factor_contrast_v1.parquet`,
+  `factor_contrast_summary_v1.json`). Head-to-head: PIT v1 total_return=0.8678,
+  sharpe=1.2000, max_dd=-0.1204; non-PIT DIAGNOSTIC
+  total_return=0.8958, sharpe=1.1961,
+  max_dd=-0.1119 → premium (non-PIT−PIT)
+  total_return=+0.0280,
+  sharpe=-0.0038 — reported as LOOKAHEAD/RECALL BIAS,
+  never attainable skill (R7.5); the non-PIT line is a diagnostic control, never deployed (R7.4).
+- **S5 luck-vs-skill (`factor_luck_vs_skill_v1.parquet`, compute_ssr NW-HAC/Andrews)** —
+  PIT SSR=0.12 (L=125), non-PIT SSR=0.13 (L=125),
+  differential SSR=0.00 (L=125). Verdict on the differential:
+  |SSR|=0.00 < 1.96: the recall premium's return differential is statistically indistinguishable from zero under Newey-West HAC inference — the premium is LUCK-COMPATIBLE, not skill
+- Success stays non-predictive (R6.4): version-aware contamination + stability + non-degraded
+  head-to-head; no forecast-accuracy claim. Task 4.2 closes the Excel storyboard (S4 recall line + S5).

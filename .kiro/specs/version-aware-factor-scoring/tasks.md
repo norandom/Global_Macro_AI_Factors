@@ -96,7 +96,7 @@
   - _Depends: 3.1, 3.2, 3.3_
   - _Resumed: 2026-07-03 (user directive). Was deferred 2026-06-27 after the 3.2 weak-calibrator finding; now gated on the R8 certified no-recall model from task 3.3, which the playbook uses as both loadings generator and scored model (8.5)._
 
-- [ ] 4.2 (P) Version-aware prompt refinement + PIT-vs-non-PIT contrast playbook
+- [x] 4.2 (P) Version-aware prompt refinement + PIT-vs-non-PIT contrast playbook
   - Add a new numbered playbook that evaluates at least two prompt versions over the same point-in-time stream, reporting each version's memorization distribution (which now differs by version) and factor-stability and the head-to-head deltas, with an accept-gate that adopts a refinement only at no-greater contamination and no-worse metrics, preserving prior versions
   - Run the PIT-vs-non-PIT contrast over the full rebalance stream and report the contamination premium with a paired effect size; the non-PIT variant is a diagnostic control and is never used to produce the deployable portfolio
   - Close with the Excel-storyboard S5 section: `compute_ssr` (Newey-West HAC) on the PIT line, the non-PIT line, and the recall-minus-no-recall return differential — luck-vs-skill stated with robust inference; persist the comparison table
