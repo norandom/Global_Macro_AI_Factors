@@ -1893,3 +1893,591 @@ def make_factor_weight_fn(
         return combine(ctx, dec.P, dec.Q)
 
     return weight_fn
+
+
+# --------------------------------------------------------------------------- #
+# Task 3.3 — R8 certification screen (certified no-recall model selection)     #
+# (Requirements 8.1, 8.2, 8.3, 8.4, 8.6)                                       #
+#                                                                              #
+# Screen a logprob-bearing NIM candidate for CERTIFIED absence of recall on     #
+# the identified macro history. The screen reuses the EXACT controlled corpora  #
+# the factor scorer calibrates on (_build_corpus: identifying IS vs anonymized  #
+# OOS, token-identical except the identifying additions — R8.1) and adds:       #
+#                                                                              #
+#   - certification_stats — OFFLINE statistics on the gathered standardized     #
+#     MIA features (R8.2): stratified-CV AUC point estimate + a per-class       #
+#     bootstrap CI + a label-permutation two-sided p-value against chance.      #
+#     No additional live inference for the statistics.                          #
+#   - render_prose_confounded_prompt — the deliberately recall-enabling         #
+#     POSITIVE-CONTROL framing (R8.3): dated narrative prose with real tickers  #
+#     and raw levels. DIAGNOSTIC ONLY and explicitly NON-R7.6 (it differs from  #
+#     the anonymized form by STYLE, not only additions) — never deployed.       #
+#   - certification_verdict — the pure R8.4 decision rule mapping the           #
+#     controlled + positive-control statistics and the factor-task parse rate   #
+#     to one of: "recalls" / "detector_unvalidated" / "certified_no_recall" /   #
+#     "inconclusive".                                                           #
+#   - screen_candidate — the per-candidate orchestration (R8.1): build the      #
+#     corpora, baseline, gather features (the ONLY live calls), compute the     #
+#     controlled and positive-control statistics offline, measure the parse     #
+#     rate, and return a typed CertificationResult (no credential in it, R8.6). #
+# --------------------------------------------------------------------------- #
+
+
+# The allowed R8.4 verdict strings, in precedence order.
+CERTIFICATION_VERDICTS: tuple[str, ...] = (
+    "recalls",
+    "detector_unvalidated",
+    "certified_no_recall",
+    "inconclusive",
+)
+
+
+def render_prose_confounded_prompt(
+    macro_state: dict[str, float],
+    asset_snapshot: list[dict[str, object]],
+    *,
+    as_of: Any,
+    raw_levels: dict[str, float],
+) -> str:
+    """Render the deliberately recall-enabling PROSE-CONFOUNDED framing (R8.3).
+
+    DIAGNOSTIC ONLY — the positive-control framing of the certification screen.
+    A candidate model that recalls its training data at all should light up on
+    THIS framing; if it does not, the detector itself is unvalidated
+    ("detector_unvalidated", R8.3) and a null controlled result proves nothing.
+
+    Explicitly NON-R7.6: unlike ``render_regime_loadings_prompt(identifying=True)``
+    — which differs from the anonymized form ONLY by the identifying additions —
+    this framing differs by STYLE as well: a dated market-commentary NARRATIVE
+    ("It is {as_of}. ...") that names the real tickers and weaves the raw macro
+    levels into sentences. It is therefore NEVER used for the deployable factor
+    pipeline or for the controlled (R7.6) contrast; it exists solely to validate
+    that the MIA detector can fire on this candidate at all.
+
+    The task at the end is UNCHANGED: the same five ``MACRO_AXES`` loadings and
+    the same JSON output instruction, so ``parse_loadings`` still applies to the
+    reply. Deterministic: equal inputs produce an identical string.
+
+    Args:
+        macro_state: z-scored macro state (same dict the anonymized form renders).
+        asset_snapshot: the asset descriptors (``id`` + ``category``); their
+            categories are woven into the narrative.
+        as_of: the calendar date to disclose in the opening sentence.
+        raw_levels: the raw non-normalized macro levels woven into the prose.
+
+    Returns:
+        The rendered positive-control prompt string.
+    """
+    real_to_pseudo = _default_asset_identities()
+    tickers_text = ", ".join(real_to_pseudo)
+    categories_text = ", ".join(
+        str(a.get("category")) for a in asset_snapshot if a.get("category") is not None
+    )
+    raw_text = "; ".join(
+        f"{name} prints at {float(value):g}" for name, value in sorted(raw_levels.items())
+    )
+    z_text = "; ".join(
+        f"{name} at {float(value):+.2f}" for name, value in sorted(macro_state.items())
+    )
+
+    lines: list[str] = [
+        f"It is {as_of}. You are reading this morning's market commentary before "
+        "the open, and every desk already knows how this chapter of the macro "
+        "story goes.",
+        "",
+        f"The book holds the usual sleeves — {tickers_text} — covering "
+        f"{categories_text}.",
+        "",
+        f"Today's tape is unambiguous: {raw_text}. Against their rolling history "
+        f"the standardized readings sit at {z_text}.",
+        "",
+        "Write the regime the way the period's history is already told. "
+        "Characterize it as a continuous loading in [-1, +1] on each of these "
+        "five macro axes:",
+        _axes_block(),
+        "",
+        'Output a JSON object mapping each axis name to its loading, e.g. '
+        '{"inflation": 0.4, "growth": -0.2, "credit_stress": 0.6, "policy": -0.1, '
+        '"risk_appetite": -0.3}.',
+    ]
+    return "\n".join(lines)
+
+
+def certification_stats(
+    x_is: Sequence[Sequence[float]],
+    x_oos: Sequence[Sequence[float]],
+    *,
+    n_boot: int = 200,
+    n_perm: int = 500,
+    n_splits: int = 5,
+    seed: int = 0,
+) -> tuple[float, float, float, float]:
+    """Offline separation statistics on gathered standardized features (R8.2).
+
+    Pure statistics — NO live inference. Operates on the two standardized MIA
+    feature matrices gathered once per candidate (identifying vs anonymized, or
+    prose-confounded vs anonymized) and reports how separable the two classes
+    are, with statistical-certainty measures:
+
+    - **Point estimate** — the mean fold AUC of a stratified ``n_splits``-fold
+      cross-validated ``LogisticRegression(class_weight='balanced',
+      solver='liblinear', random_state=seed)`` (the same classifier family the
+      MCS calibrator uses, so the screen measures the separation the deployed
+      calibrator could exploit).
+    - **CI** — a bootstrap 2.5/97.5 percentile interval: rows are resampled
+      with replacement PER CLASS (preserving both class sizes) ``n_boot``
+      times and the CV AUC recomputed each time. Known ceiling (review
+      2026-07-03): with-replacement duplicates span CV fold boundaries, so the
+      bootstrap distribution is upward-biased (~+0.1 CI-midpoint on pure noise
+      at n=20/class, shrinking with n). The bias is strictly CONSERVATIVE for
+      the R8.4 gate — certification requires the CI to CONTAIN 0.5, so
+      inflation can only block a certification, never grant a false one.
+      Upgrade path if it ever blocks a true no-recall candidate: bootstrap the
+      held-out fold predictions instead of the rows.
+    - **Permutation p** — the class labels are shuffled ``n_perm`` times, the
+      CV AUC recomputed each time, and the two-sided p-value reported as
+      ``(1 + #{|auc_perm − 0.5| ≥ |auc_obs − 0.5|}) / (n_perm + 1)`` (the
+      add-one permutation estimator; never exactly 0).
+
+    Deterministic given ``seed``: one ``numpy`` Generator seeded from ``seed``
+    drives all resampling in a fixed order, and the CV splitter / classifier
+    share the same ``seed``.
+
+    Args:
+        x_is: the recall-class standardized feature rows (label 1).
+        x_oos: the anonymized-class standardized feature rows (label 0).
+        n_boot: bootstrap resamples for the CI.
+        n_perm: label permutations for the p-value.
+        n_splits: stratified CV folds.
+        seed: the deterministic seed for resampling, splitting, and fitting.
+
+    Returns:
+        ``(auc, ci_low, ci_high, perm_p)``.
+
+    Raises:
+        ValueError: when either class has fewer than ``n_splits`` rows —
+            stratified ``n_splits``-fold CV cannot guarantee both classes in
+            every fold on such degenerate input.
+    """
+    import numpy as np
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import StratifiedKFold
+
+    xi = np.asarray(x_is, dtype=np.float64)
+    xo = np.asarray(x_oos, dtype=np.float64)
+    if xi.ndim != 2 or xo.ndim != 2 or len(xi) < n_splits or len(xo) < n_splits:
+        raise ValueError(
+            "certification_stats: each class needs at least n_splits "
+            f"(={n_splits}) feature rows of equal width for stratified CV; "
+            f"got n_is={len(xi) if xi.ndim else 0}, n_oos={len(xo) if xo.ndim else 0}."
+        )
+
+    x = np.vstack([xi, xo])
+    y = np.concatenate(
+        [np.ones(len(xi), dtype=np.int64), np.zeros(len(xo), dtype=np.int64)]
+    )
+
+    def _cv_auc(xm: np.ndarray, ym: np.ndarray) -> float:
+        skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+        fold_aucs: list[float] = []
+        for train_idx, test_idx in skf.split(xm, ym):
+            clf = LogisticRegression(
+                class_weight="balanced", solver="liblinear", random_state=seed
+            )
+            clf.fit(xm[train_idx], ym[train_idx])
+            fold_aucs.append(
+                float(
+                    roc_auc_score(
+                        ym[test_idx], clf.predict_proba(xm[test_idx])[:, 1]
+                    )
+                )
+            )
+        return float(np.mean(fold_aucs))
+
+    auc_obs = _cv_auc(x, y)
+
+    rng = np.random.default_rng(seed)
+
+    # Bootstrap CI: resample rows with replacement PER CLASS so both class
+    # sizes are preserved (stratified CV stays valid on every resample).
+    n_i, n_o = len(xi), len(xo)
+    boot_aucs = np.empty(n_boot, dtype=np.float64)
+    for b in range(n_boot):
+        idx_i = rng.integers(0, n_i, n_i)
+        idx_o = rng.integers(0, n_o, n_o)
+        boot_aucs[b] = _cv_auc(np.vstack([xi[idx_i], xo[idx_o]]), y)
+    ci_low = float(np.percentile(boot_aucs, 2.5))
+    ci_high = float(np.percentile(boot_aucs, 97.5))
+
+    # Two-sided permutation p against chance separation (AUC = 0.5).
+    obs_dev = abs(auc_obs - 0.5)
+    hits = 0
+    for _ in range(n_perm):
+        y_perm = rng.permutation(y)
+        if abs(_cv_auc(x, y_perm) - 0.5) >= obs_dev:
+            hits += 1
+    perm_p = (1 + hits) / (n_perm + 1)
+
+    return auc_obs, ci_low, ci_high, float(perm_p)
+
+
+@dataclass(frozen=True)
+class CertificationResult:
+    """The typed per-candidate certification outcome (R8.2, R8.3, R8.4, R8.6).
+
+    Frozen so a screened candidate's outcome is a stable value the live run can
+    persist verbatim (via :meth:`to_dict`). Carries NO credential (R8.6).
+
+    Attributes:
+        model: the screened NIM model id.
+        controlled_auc: the controlled (identifying vs anonymized) CV AUC.
+        controlled_ci_low: the bootstrap CI lower bound of the controlled AUC.
+        controlled_ci_high: the bootstrap CI upper bound of the controlled AUC.
+        controlled_perm_p: the controlled permutation p-value against chance.
+        positive_control_auc: the prose-confounded (vs anonymized) CV AUC, or
+            ``None`` when the positive-control statistics could not be computed.
+        positive_control_perm_p: the positive-control permutation p-value, or
+            ``None`` when unavailable — which maps to "detector_unvalidated".
+        parse_rate: the fraction of sampled anonymized factor replies that
+            ``parse_loadings`` parsed, or ``None`` when no sample was taken.
+        n_per_class: the number of controlled prompts actually built per class.
+        verdict: one of :data:`CERTIFICATION_VERDICTS` (R8.4).
+    """
+
+    model: str
+    controlled_auc: float
+    controlled_ci_low: float
+    controlled_ci_high: float
+    controlled_perm_p: float
+    positive_control_auc: float | None
+    positive_control_perm_p: float | None
+    parse_rate: float | None
+    n_per_class: int
+    verdict: str
+
+    def to_dict(self) -> dict[str, Any]:
+        """A JSON-serializable dict of this result (for the persisted artifact)."""
+        return {
+            "model": self.model,
+            "controlled_auc": self.controlled_auc,
+            "controlled_ci_low": self.controlled_ci_low,
+            "controlled_ci_high": self.controlled_ci_high,
+            "controlled_perm_p": self.controlled_perm_p,
+            "positive_control_auc": self.positive_control_auc,
+            "positive_control_perm_p": self.positive_control_perm_p,
+            "parse_rate": self.parse_rate,
+            "n_per_class": self.n_per_class,
+            "verdict": self.verdict,
+        }
+
+
+def certification_verdict(
+    *,
+    controlled_auc: float,
+    controlled_ci_low: float,
+    controlled_ci_high: float,
+    controlled_perm_p: float,
+    positive_control_perm_p: float | None,
+    parse_rate: float | None,
+    alpha: float = 0.05,
+    no_recall_p: float = 0.1,
+    min_parse_rate: float = 0.9,
+) -> str:
+    """The pure R8.4 certification rule — precedence-ordered, deterministic.
+
+    Precedence:
+
+    1. **"recalls"** — the controlled separation is statistically significant
+       AND above chance (``controlled_perm_p < alpha`` and
+       ``controlled_auc > 0.5``): the candidate is rejected as recalling,
+       regardless of the positive control (a firing controlled detector is
+       itself the strongest possible detector validation).
+    2. **"detector_unvalidated"** — the positive control did not fire
+       (``positive_control_perm_p`` is ``None`` or ``>= alpha``): a null
+       controlled result proves nothing when the detector cannot even see the
+       deliberately recall-enabling framing (R8.3).
+    3. **"certified_no_recall"** — the controlled separation is statistically
+       indistinguishable from chance (``controlled_perm_p > no_recall_p`` and
+       the CI contains 0.5) AND the factor-task replies parse at a usable rate
+       (``parse_rate >= min_parse_rate``) (R8.4).
+    4. **"inconclusive"** — everything else (e.g. a borderline p-value, a CI
+       missing 0.5, or an unusable parse rate).
+
+    Args:
+        controlled_auc: the controlled CV AUC point estimate.
+        controlled_ci_low: the controlled bootstrap CI lower bound.
+        controlled_ci_high: the controlled bootstrap CI upper bound.
+        controlled_perm_p: the controlled permutation p-value.
+        positive_control_perm_p: the positive-control permutation p-value
+            (``None`` when unavailable).
+        parse_rate: the measured factor-task parse rate (``None`` when unmeasured).
+        alpha: the significance level for "recalls" and the positive control.
+        no_recall_p: the minimum controlled p-value for a no-recall certificate.
+        min_parse_rate: the minimum usable factor-task parse rate.
+
+    Returns:
+        One of :data:`CERTIFICATION_VERDICTS`.
+    """
+    if controlled_perm_p < alpha and controlled_auc > 0.5:
+        return "recalls"
+    if positive_control_perm_p is None or positive_control_perm_p >= alpha:
+        return "detector_unvalidated"
+    if (
+        controlled_perm_p > no_recall_p
+        and controlled_ci_low <= 0.5 <= controlled_ci_high
+        and parse_rate is not None
+        and parse_rate >= min_parse_rate
+    ):
+        return "certified_no_recall"
+    return "inconclusive"
+
+
+def gather_certification_features(
+    lm: NvidiaLM,
+    rows: list[EvalRow],
+    baseline: ControlBaseline,
+    *,
+    max_workers: int = 8,
+) -> list[list[float]]:
+    """Gather the standardized per-prompt MIA feature vectors for one corpus (R8.2).
+
+    Mirrors the ``FactorScorer._score_completion`` primitive path exactly —
+    ``lm.generate(prompt)`` (fanned out via the library's order-preserving
+    ``generate_many``) → ``compute_mia_features(content, logprobs, None)``
+    (``ref_logprobs=None``: the reference run is disabled, matching the
+    calibration contract) → ``standardise(features, baseline)`` — then flattens
+    each standardized dict into a vector in the deterministic order
+    ``list(baseline.feature_means)`` restricted to the features the baseline
+    actually carries (``ref_delta`` is excluded when its baseline mean is
+    ``None``, mirroring the calibrator's ``feature_order`` resolution).
+
+    Rows whose generation, feature computation, or standardisation fails are
+    SKIPPED (dropped); the surviving vectors keep the input-row order.
+
+    Args:
+        lm: the candidate's inference client (only ``generate`` is used).
+        rows: the corpus rows to gather features for.
+        baseline: the candidate's control baseline (standardisation stats).
+        max_workers: parallelism for the LM calls.
+
+    Returns:
+        One standardized feature vector per surviving row, in input order.
+    """
+    from recall_guard import standardise
+
+    # The deterministic vector order: the baseline's feature keys, restricted
+    # to features the baseline actually carries (ref_delta mean None -> excluded).
+    order = [
+        key for key, mean in baseline.feature_means.items() if mean is not None
+    ]
+
+    prompts = [row.prompt for row in rows]
+    results = generate_many(lm, prompts, max_workers=max_workers)
+
+    vectors: list[list[float]] = []
+    for completion in results:
+        if isinstance(completion, BaseException) or completion is None:
+            continue  # generation failed for this row -> drop it
+        logprobs = getattr(completion, "logprobs", None)
+        if not logprobs:
+            continue
+        content = getattr(completion, "content", "")
+        try:
+            features = compute_mia_features(content, logprobs, None)
+        except (ValueError, RuntimeError):
+            continue
+        standardised = standardise(features, baseline)
+        vector: list[float] = []
+        for key in order:
+            value = standardised.get(key)
+            if value is None:
+                break
+            vector.append(float(value))
+        else:
+            vectors.append(vector)
+    return vectors
+
+
+def screen_candidate(
+    *,
+    nim_model: str,
+    cutoff_date: date,
+    macro_panel: pd.DataFrame,
+    asset_map: AssetMap,
+    api_key: str,
+    n_per_class: int = 120,
+    parse_sample: int = 20,
+    max_workers: int = 8,
+    lm_factory: Callable[[str, str], NvidiaLM] | None = None,
+) -> CertificationResult:
+    """Screen one logprob-bearing candidate for certified no-recall (R8.1–R8.4).
+
+    The per-candidate orchestration of the certification screen:
+
+    1. Build the CONTROLLED corpora via :func:`_build_corpus` — the exact
+       identifying-IS vs anonymized-OOS framings the factor scorer calibrates
+       on, from the pre-cutoff macro states (R8.1; ``n_per_class`` is capped at
+       the available pre-cutoff rows by ``_build_corpus``).
+    2. Re-render the SAME pre-cutoff states with
+       :func:`render_prose_confounded_prompt` — the positive-control class
+       (R8.3); the anonymized OOS rows are shared as its contrast class.
+    3. ``build_baseline`` on the anonymized OOS corpus (``ref_lm=None``).
+    4. Gather standardized features for all three classes (the ONLY live
+       calls), then compute the controlled (identifying vs anonymized) and
+       positive-control (prose-confounded vs anonymized) statistics OFFLINE
+       via :func:`certification_stats` (R8.2). A positive-control statistics
+       failure (too few surviving rows) degrades to ``None`` — which the
+       verdict maps to "detector_unvalidated" — rather than crashing the screen.
+    5. Measure the factor-task parse rate: the fraction of ``parse_loadings``
+       successes over up to ``parse_sample`` fresh anonymized factor replies.
+    6. Map everything through :func:`certification_verdict` (R8.4).
+
+    The returned :class:`CertificationResult` carries NO credential (R8.6).
+
+    Args:
+        nim_model: the candidate's logprob-bearing NIM model id.
+        cutoff_date: the conservative screening cutoff; only rows before it are
+            used (pre-cutoff states trained-on for every candidate).
+        macro_panel: the FRED macro panel with raw + z-scored columns.
+        asset_map: the identifying <-> anonymized asset map.
+        api_key: the NIM scoring credential (non-empty; never persisted).
+        n_per_class: target number of controlled prompts per class.
+        parse_sample: number of anonymized replies sampled for the parse rate.
+        max_workers: parallelism for the LM calls.
+        lm_factory: optional ``(api_key, model) -> lm`` factory for test
+            injection; defaults to constructing ``NvidiaLM``.
+
+    Returns:
+        The candidate's :class:`CertificationResult`.
+
+    Raises:
+        ConfigurationError: when ``api_key`` is empty (same fail-fast contract
+            as :meth:`FactorScorer.calibrate`, R1.5) or when the control
+            baseline ends up with zero usable rows.
+        ValueError: when the CONTROLLED classes end up with too few gathered
+            feature rows for :func:`certification_stats` (a candidate that
+            cannot even be measured is a hard screen failure).
+    """
+    # R1.5-style fail-fast: a missing credential is a configuration fault.
+    if not api_key:
+        raise ConfigurationError(
+            "screen_candidate: a non-empty NIM api_key is required "
+            "(the scoring credential is missing)."
+        )
+
+    is_rows, oos_rows = _build_corpus(
+        cutoff_date=cutoff_date,
+        macro_panel=macro_panel,
+        asset_map=asset_map,
+        n_per_class=n_per_class,
+    )
+
+    # Positive-control corpus: the SAME selected pre-cutoff states, re-rendered
+    # prose-confounded. The state is re-read from the panel via each OOS row's
+    # as_of tag so the selection is exactly _build_corpus's (R8.3 shares the
+    # anonymized OOS rows as the contrast class).
+    pd_mod = _pd()
+    asset_snapshot = _asset_snapshot_from_map(asset_map)
+    prose_rows: list[EvalRow] = []
+    for row in oos_rows:
+        as_of_tag = row.metadata["as_of"]
+        panel_row = macro_panel.loc[pd_mod.Timestamp(as_of_tag)]
+        macro_state = {
+            z_col: float(panel_row[z_col])
+            for z_col in _RAW_TO_Z.values()
+            if z_col in panel_row
+        }
+        raw_levels = {
+            raw_col: float(panel_row[raw_col])
+            for raw_col in _RAW_TO_Z
+            if raw_col in panel_row
+        }
+        prose_prompt = render_prose_confounded_prompt(
+            macro_state, asset_snapshot, as_of=as_of_tag, raw_levels=raw_levels
+        )
+        prose_rows.append(
+            EvalRow(prompt=prose_prompt, target_direction=0, metadata={"as_of": as_of_tag})
+        )
+
+    if lm_factory is not None:
+        lm = lm_factory(api_key, nim_model)
+    else:
+        lm = NvidiaLM(api_key=api_key, model=nim_model)
+
+    baseline = build_baseline(
+        lm,
+        oos_rows,
+        None,  # ref_lm=None -> ref_delta inert (matching calibrate)
+        min_valid=min(len(oos_rows), 2),
+        max_workers=max_workers,
+    )
+    if baseline.n_valid == 0:
+        raise ConfigurationError(
+            "screen_candidate: the control baseline has no valid rows "
+            f"(baseline.n_valid == 0) for model {nim_model!r}; cannot "
+            "standardise MIA features. Check the NIM credential/endpoint and "
+            "that the panel yielded a non-empty pre-cutoff OOS corpus."
+        )
+
+    # Gather the standardized features per class — the only live calls; every
+    # statistic below is computed OFFLINE on these matrices (R8.2).
+    x_is = gather_certification_features(lm, is_rows, baseline, max_workers=max_workers)
+    x_oos = gather_certification_features(lm, oos_rows, baseline, max_workers=max_workers)
+    x_prose = gather_certification_features(
+        lm, prose_rows, baseline, max_workers=max_workers
+    )
+
+    controlled_auc, ci_low, ci_high, controlled_perm_p = certification_stats(
+        x_is, x_oos
+    )
+
+    positive_control_auc: float | None
+    positive_control_perm_p: float | None
+    try:
+        positive_control_auc, _, _, positive_control_perm_p = certification_stats(
+            x_prose, x_oos
+        )
+    except ValueError:
+        # Too few surviving positive-control rows: the detector cannot be
+        # validated -> None, which the verdict maps to "detector_unvalidated".
+        positive_control_auc = None
+        positive_control_perm_p = None
+
+    # Factor-task parse rate over fresh anonymized replies (R8.4's "usable rate").
+    sample = oos_rows[: max(0, int(parse_sample))]
+    parse_rate: float | None = None
+    if sample:
+        replies = generate_many(
+            lm, [row.prompt for row in sample], max_workers=max_workers
+        )
+        n_parsed = 0
+        for completion in replies:
+            if isinstance(completion, BaseException) or completion is None:
+                continue
+            content = getattr(completion, "content", "")
+            if parse_loadings(content, None) is not None:
+                n_parsed += 1
+        parse_rate = n_parsed / len(sample)
+
+    verdict = certification_verdict(
+        controlled_auc=controlled_auc,
+        controlled_ci_low=ci_low,
+        controlled_ci_high=ci_high,
+        controlled_perm_p=controlled_perm_p,
+        positive_control_perm_p=positive_control_perm_p,
+        parse_rate=parse_rate,
+    )
+
+    return CertificationResult(
+        model=nim_model,
+        controlled_auc=controlled_auc,
+        controlled_ci_low=ci_low,
+        controlled_ci_high=ci_high,
+        controlled_perm_p=controlled_perm_p,
+        positive_control_auc=positive_control_auc,
+        positive_control_perm_p=positive_control_perm_p,
+        parse_rate=parse_rate,
+        n_per_class=len(is_rows),
+        verdict=verdict,
+    )

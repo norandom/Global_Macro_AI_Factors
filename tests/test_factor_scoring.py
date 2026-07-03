@@ -2673,3 +2673,324 @@ def test_make_factor_weight_fn_parse_fail_returns_base_row() -> None:
     pd.testing.assert_series_equal(
         row, base_row.reindex(list(ctx["prices"].columns)).fillna(0.0)
     )
+
+
+# --------------------------------------------------------------------------- #
+# Task 3.3 — R8 certification screen (certified no-recall model selection)     #
+# (Requirements 8.1, 8.2, 8.3, 8.4, 8.6)                                       #
+#                                                                              #
+# All offline: certification_stats runs on synthetic features (no LM at all),  #
+# the verdict rule is pure, the prose-confounded renderer is pure, and         #
+# screen_candidate is exercised with an injected fake LM (lm_factory) so the   #
+# real build_baseline / gather / stats path runs with zero network calls.      #
+# --------------------------------------------------------------------------- #
+
+import json  # noqa: E402
+
+
+def _gaussian_clusters(
+    seed: int, n: int, dim: int, shift: float
+) -> tuple[list[list[float]], list[list[float]]]:
+    """Two seeded Gaussian feature clusters; ``shift`` separates the classes."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    a = rng.normal(0.0, 1.0, size=(n, dim)) + shift
+    b = rng.normal(0.0, 1.0, size=(n, dim))
+    return a.tolist(), b.tolist()
+
+
+def test_certification_stats_separable_clusters_are_significant() -> None:
+    """Separable synthetic features: high AUC, small perm p, CI excludes 0.5 (R8.2)."""
+    from macro_framework.factor_scoring import certification_stats
+
+    x_is, x_oos = _gaussian_clusters(seed=1, n=30, dim=3, shift=3.0)
+    auc, ci_low, ci_high, perm_p = certification_stats(
+        x_is, x_oos, n_boot=50, n_perm=99, seed=0
+    )
+
+    assert auc > 0.9
+    assert perm_p < 0.05
+    # CI excludes chance — and on the above-chance side.
+    assert ci_low > 0.5
+    assert ci_high >= ci_low
+
+
+def test_certification_stats_pure_noise_is_indistinguishable_from_chance() -> None:
+    """Same-distribution features both classes: perm p > 0.1, CI contains 0.5 (R8.2)."""
+    from macro_framework.factor_scoring import certification_stats
+
+    # seed=3 is a comfortably null draw (deterministic: p≈0.89, CI ≈ [0.40, 0.77]);
+    # a raw noise draw can land a borderline p by chance (seed=2 gave p=0.07).
+    x_is, x_oos = _gaussian_clusters(seed=3, n=30, dim=3, shift=0.0)
+    _auc, ci_low, ci_high, perm_p = certification_stats(
+        x_is, x_oos, n_boot=50, n_perm=99, seed=0
+    )
+
+    assert perm_p > 0.1
+    assert ci_low <= 0.5 <= ci_high
+
+
+def test_certification_stats_is_deterministic_given_seed() -> None:
+    """The same inputs + seed yield the identical statistics tuple (R8.2)."""
+    from macro_framework.factor_scoring import certification_stats
+
+    x_is, x_oos = _gaussian_clusters(seed=3, n=12, dim=2, shift=1.0)
+    first = certification_stats(x_is, x_oos, n_boot=20, n_perm=39, seed=7)
+    second = certification_stats(x_is, x_oos, n_boot=20, n_perm=39, seed=7)
+
+    assert first == second
+
+
+def test_certification_stats_degenerate_class_raises_value_error() -> None:
+    """A class with fewer than n_splits rows raises a clear ValueError (R8.2)."""
+    from macro_framework.factor_scoring import certification_stats
+
+    tiny = [[0.1, 0.2], [0.3, 0.4]]  # 2 rows < n_splits=5
+    _x_is, x_oos = _gaussian_clusters(seed=4, n=10, dim=2, shift=0.0)
+
+    with pytest.raises(ValueError):
+        certification_stats(tiny, x_oos)
+
+
+# -- certification_verdict: one test per branch + precedence (R8.4) ---------- #
+
+
+def test_verdict_recalls_on_significant_above_chance_separation() -> None:
+    from macro_framework.factor_scoring import certification_verdict
+
+    verdict = certification_verdict(
+        controlled_auc=0.85,
+        controlled_ci_low=0.7,
+        controlled_ci_high=0.95,
+        controlled_perm_p=0.001,
+        positive_control_perm_p=0.001,
+        parse_rate=1.0,
+    )
+    assert verdict == "recalls"
+
+
+def test_verdict_detector_unvalidated_when_positive_control_does_not_fire() -> None:
+    from macro_framework.factor_scoring import certification_verdict
+
+    # Positive control p missing entirely.
+    assert (
+        certification_verdict(
+            controlled_auc=0.5,
+            controlled_ci_low=0.4,
+            controlled_ci_high=0.6,
+            controlled_perm_p=0.8,
+            positive_control_perm_p=None,
+            parse_rate=1.0,
+        )
+        == "detector_unvalidated"
+    )
+    # Positive control present but not significant (>= alpha).
+    assert (
+        certification_verdict(
+            controlled_auc=0.5,
+            controlled_ci_low=0.4,
+            controlled_ci_high=0.6,
+            controlled_perm_p=0.8,
+            positive_control_perm_p=0.3,
+            parse_rate=1.0,
+        )
+        == "detector_unvalidated"
+    )
+
+
+def test_verdict_certified_no_recall_when_all_conditions_hold() -> None:
+    from macro_framework.factor_scoring import certification_verdict
+
+    verdict = certification_verdict(
+        controlled_auc=0.52,
+        controlled_ci_low=0.38,
+        controlled_ci_high=0.63,
+        controlled_perm_p=0.6,
+        positive_control_perm_p=0.001,
+        parse_rate=0.95,
+    )
+    assert verdict == "certified_no_recall"
+
+
+def test_verdict_inconclusive_on_borderline_or_unusable_parse_rate() -> None:
+    from macro_framework.factor_scoring import certification_verdict
+
+    # Borderline controlled p: not significant, but not comfortably null either.
+    assert (
+        certification_verdict(
+            controlled_auc=0.6,
+            controlled_ci_low=0.45,
+            controlled_ci_high=0.75,
+            controlled_perm_p=0.08,
+            positive_control_perm_p=0.001,
+            parse_rate=1.0,
+        )
+        == "inconclusive"
+    )
+    # Null separation but an unusable parse rate blocks certification.
+    assert (
+        certification_verdict(
+            controlled_auc=0.5,
+            controlled_ci_low=0.4,
+            controlled_ci_high=0.6,
+            controlled_perm_p=0.6,
+            positive_control_perm_p=0.001,
+            parse_rate=0.5,
+        )
+        == "inconclusive"
+    )
+
+
+def test_verdict_precedence_recalls_wins_over_unvalidated_detector() -> None:
+    """Significant controlled recall is reported even with a dead positive control."""
+    from macro_framework.factor_scoring import certification_verdict
+
+    verdict = certification_verdict(
+        controlled_auc=0.9,
+        controlled_ci_low=0.8,
+        controlled_ci_high=0.97,
+        controlled_perm_p=0.001,
+        positive_control_perm_p=None,  # detector unvalidated on its own
+        parse_rate=None,
+    )
+    assert verdict == "recalls"
+
+
+# -- render_prose_confounded_prompt (R8.3) ----------------------------------- #
+
+
+def test_prose_confounded_contains_date_ticker_and_raw_levels() -> None:
+    """The positive-control framing is deliberately recall-enabling (R8.3)."""
+    from macro_framework.factor_scoring import MACRO_AXES, render_prose_confounded_prompt
+
+    prompt = render_prose_confounded_prompt(
+        _macro_state(), _asset_snapshot(), as_of="2020-03-31", raw_levels=_raw_levels()
+    )
+
+    assert "2020-03-31" in prompt
+    assert any(ticker in prompt for ticker in _REAL_TICKERS)
+    # Raw non-normalized levels woven into the prose ({:g} formatting).
+    assert "4.62" in prompt and "-0.41" in prompt
+    # Still the same five-axis factor task with the JSON instruction.
+    for axis in MACRO_AXES:
+        assert axis in prompt
+    assert "JSON object" in prompt
+
+
+def test_prose_confounded_is_deterministic_and_differs_from_controlled_form() -> None:
+    """Deterministic; NOT the controlled identifying form (non-R7.6 by design)."""
+    from macro_framework.factor_scoring import (
+        render_prose_confounded_prompt,
+        render_regime_loadings_prompt,
+    )
+
+    kwargs = dict(as_of="2020-03-31", raw_levels=_raw_levels())
+    first = render_prose_confounded_prompt(_macro_state(), _asset_snapshot(), **kwargs)
+    second = render_prose_confounded_prompt(_macro_state(), _asset_snapshot(), **kwargs)
+    assert first == second
+
+    controlled = render_regime_loadings_prompt(
+        _macro_state(), _asset_snapshot(), identifying=True, **kwargs
+    )
+    # A different STYLE, not just identifying additions: the prose form is not
+    # the anonymized form plus inserted blocks (it shares no base skeleton).
+    assert first != controlled
+    assert "It is 2020-03-31." in first
+    assert "It is" not in controlled
+
+
+# -- screen_candidate wire-through (R8.1, R8.6) ------------------------------- #
+
+
+class _ScreenFakeLM:
+    """A fake NIM client: deterministic, prompt-dependent logprobs; parseable reply.
+
+    Distinct prompts -> distinct logprobs -> distinct MIA features, so the real
+    build_baseline / gather / certification_stats path runs end-to-end with no
+    network. The content is a well-formed loadings reply so the parse-rate
+    sample parses (parse_rate == 1.0).
+    """
+
+    def __init__(self, api_key: str, model: str) -> None:
+        self.api_key = api_key
+        self.model = model
+        self.calls: list[str] = []
+
+    def generate(self, prompt: str, *args: object, **kwargs: object) -> object:
+        self.calls.append(prompt)
+        return _FakeCompletion(
+            content=_well_formed_reply(),
+            logprobs=_logprobs_for((len(prompt) % 37) * 0.01),
+        )
+
+
+def test_screen_candidate_wire_through_with_injected_lm() -> None:
+    """screen_candidate returns a fully-populated CertificationResult (R8.1)."""
+    from macro_framework import factor_scoring as fs
+
+    built: dict[str, object] = {}
+
+    def _factory(api_key: str, model: str) -> _ScreenFakeLM:
+        lm = _ScreenFakeLM(api_key, model)
+        built["lm"] = lm
+        return lm
+
+    result = fs.screen_candidate(
+        nim_model="fake/candidate-model",
+        cutoff_date=date(2024, 8, 1),
+        macro_panel=_synthetic_panel(),
+        asset_map=AssetMap.default(),
+        api_key="test-key",
+        n_per_class=8,
+        parse_sample=5,
+        max_workers=2,
+        lm_factory=_factory,
+    )
+
+    assert isinstance(result, fs.CertificationResult)
+    assert result.model == "fake/candidate-model"
+    assert result.n_per_class == 8
+    assert result.verdict in fs.CERTIFICATION_VERDICTS
+    # Every mocked reply is a well-formed loadings JSON -> full parse rate.
+    assert result.parse_rate == 1.0
+    # The screen used the injected client (and no credential is in the result).
+    assert built["lm"].model == "fake/candidate-model"
+    assert "test-key" not in json.dumps(result.to_dict())
+
+
+def test_screen_candidate_empty_api_key_raises_configuration_error() -> None:
+    """An empty credential fails fast with the module's ConfigurationError (R1.5)."""
+    from macro_framework import factor_scoring as fs
+
+    with pytest.raises(fs.ConfigurationError):
+        fs.screen_candidate(
+            nim_model="fake/candidate-model",
+            cutoff_date=date(2024, 8, 1),
+            macro_panel=_synthetic_panel(),
+            asset_map=AssetMap.default(),
+            api_key="",
+            n_per_class=8,
+            lm_factory=lambda key, model: _ScreenFakeLM(key, model),
+        )
+
+
+def test_certification_result_to_dict_round_trips_through_json() -> None:
+    """to_dict is JSON-serializable and round-trips losslessly (R8.6)."""
+    from macro_framework.factor_scoring import CertificationResult
+
+    result = CertificationResult(
+        model="fake/candidate-model",
+        controlled_auc=0.51,
+        controlled_ci_low=0.38,
+        controlled_ci_high=0.64,
+        controlled_perm_p=0.62,
+        positive_control_auc=0.93,
+        positive_control_perm_p=0.001,
+        parse_rate=0.95,
+        n_per_class=120,
+        verdict="certified_no_recall",
+    )
+
+    payload = json.dumps(result.to_dict())
+    assert json.loads(payload) == result.to_dict()
