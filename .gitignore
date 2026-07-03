@@ -32,3 +32,9 @@ data/prompt_refinement_*_equity_2019_2024.parquet
 # env/run-specific; currently is_weak). Metadata/finding recorded in research.md.
 data/factor_calibrator_*/
 data/norecall_screen/evidence/
+
+# nb13 recall-guarded factor line: price-dependent (yfinance) outputs — regenerable via
+# notebooks/13_macro_factor_scoring.ipynb; shipped via the GH data release.
+data/factor_targets_v1.parquet
+data/factor_equity_v1.parquet
+data/factor_decision_log_v1.json

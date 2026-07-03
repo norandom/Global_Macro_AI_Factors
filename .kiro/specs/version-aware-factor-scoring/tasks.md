@@ -85,7 +85,7 @@
   - _Depends: 2.1, 2.3, 2.5_
 
 - [ ] 4. Validation: playbooks
-- [ ] 4.1 (P) Regime-loadings + recall-guarded factor playbook
+- [x] 4.1 (P) Regime-loadings + recall-guarded factor playbook
   - Add a new numbered playbook that builds the per-rebalance regime-loadings artifact, scores each rebalance for memorization, runs the recall-guarded factor variant through the existing walk-forward and simulation, and persists the loadings, score log, and steered targets/equity/decision-log under new filenames
   - Open with the Excel-storyboard S2 section: the naive directional eval of the certified model (per-prompt records persisted, accuracy ≈ coin flip with binomial CI — the expected, correct no-alpha result)
   - Evaluate the variant with the existing head-to-head framework by adding a "Track A (factor)" entry alongside the existing tracks, and additionally report the memorization distribution; state the non-predictive success definition (factor stability + lower-or-equal contamination + non-degraded head-to-head)

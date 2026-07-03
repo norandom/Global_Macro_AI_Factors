@@ -44,7 +44,9 @@ CANDIDATES = [
 # so the identifying pre-cutoff states are recall-enabled for ALL of them and the
 # controlled AUCs are comparable across candidates.
 CUTOFF = date(2023, 12, 1)
-N_PER_CLASS = 120
+# SCREEN_N_PER_CLASS env overrides (capped by available pre-cutoff panel rows);
+# used to resolve an "inconclusive" verdict with maximum data.
+N_PER_CLASS = int(os.environ.get("SCREEN_N_PER_CLASS") or 120)
 PARSE_SAMPLE = 20
 OUT_DIR = REPO / "data" / "norecall_screen"
 PANEL = REPO / "data" / "macro_panel_monthly.parquet"

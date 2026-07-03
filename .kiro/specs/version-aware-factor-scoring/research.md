@@ -336,3 +336,31 @@ recall 0.633 but ~4× slower serving with attrition).
   identifying prompts are expected to score far higher (screen CV AUC 0.926).
 - Strong-calibrator branch CONFIRMED: per R4.3 the `recall_guarded_adjust` discount ENGAGES —
   nb13's deployable line is genuinely guarded, nb14's premium is measured with a validated detector.
+
+
+---
+
+## 2026-07-03 — nb13 recall-guarded factor playbook (S2–S4 live run)
+
+_nb13 executed end-to-end on the selected model `openai/gpt-oss-20b` (persisted calibrator
+`factor_calibrator_openai_gpt-oss-20b`: holdout_auc=0.9668, is_weak=False); yfinance prices
+in-cell; artifacts under `data/` (price-dependent factor targets/equity/decision-log gitignored,
+shipped via the GH data release)._
+
+- **S2 naive directional eval** (`naive_directional_eval_openai_gpt-oss-20b.parquet`): accuracy=0.389, Wilson 95% CI
+  [0.285, 0.504] over n=72 directional predictions (flat=0,
+  unparsed=0); 0.5 inside the CI: True. Coin-flip is the EXPECTED,
+  CORRECT result — recall_guard measures honesty, not alpha; the model was selected DESPITE maximal
+  recall (screen AUC 0.926) to make the guarding measurable.
+- **S3 factors**: 71/72 loadings parsed; p_memorized mean=0.2361,
+  median=0.2085, min=0.0000, max=0.7346, p90=0.5183
+  (`factor_scores_v1.parquet`, `factor_loadings_v1.parquet`, `factor_views_v1.parquet`); factor stability
+  mean_std=0.5437, mean_mac=0.3878 (`factor_stability_v1.json`).
+- **S4 recall-guarded PIT line**: 71/72 rebalances guarded (tilt × (1−p_mem));
+  head-to-head row Track A (factor): total_return=0.8678, sharpe=1.2000,
+  max_dd=-0.1204, crisis_return=-0.0336, avg_turnover=0.2769
+  (Baseline sharpe 0.3199, Track A (LLM) 1.2304,
+  Track B 0.8130).
+- Success stays non-predictive (R6.4): factor stability + the measured memorization distribution +
+  a non-degraded head-to-head — no forecast-accuracy claim. S5 (SSR luck-vs-skill) and the non-PIT
+  diagnostic line are nb14 (task 4.2).
