@@ -77,29 +77,37 @@
   - _Requirements: 1.1, 1.6, 6.3_
   - _Depends: 2.1, 2.3, 2.5_
 
+- [ ] 3.3 Certified no-recall model screen (module + live run) — _added 2026-07-03 (R8 amendment)_
+  - Extend the factor-scoring module additively with a certification screen: gather the standardized per-prompt MIA features for the controlled identifying/anonymized classes, compute the held-out separation with a resampled confidence interval and a permutation p-value (offline, on the gathered features — no extra live calls), render a deliberately prose-confounded positive-control framing (diagnostic, explicitly non-R7.6), measure the factor-task parse rate, and produce a typed per-candidate certification verdict (certified-no-recall / recalls / detector-unvalidated / inconclusive)
+  - Run the screen live across the logprob-bearing NIM candidates at a conservative common cutoff (pre-cutoff states trained-on for every candidate); persist per-candidate results (no credential) and append a dated research-log entry; select the certified model per the R8.4 rule and persist its calibrator at its own true cutoff
+  - Observable: mocked unit tests cover the statistics (CI/permutation on synthetic features), the positive-control renderer, the parse-rate measure, and the verdict rule; the live run writes a results artifact + research-log entry; a certified model is selected and its calibrator persisted
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.6_
+  - _Depends: 2.1, 2.3, 2.5_
+
 - [ ] 4. Validation: playbooks
-- [ ] 4.1 (P) Regime-loadings + honesty-adjusted factor playbook
-  - Add a new numbered playbook that builds the per-rebalance regime-loadings artifact, scores each rebalance for memorization, runs the honesty-adjusted factor variant through the existing walk-forward and simulation, and persists the loadings, score log, and steered targets/equity/decision-log under new filenames
+- [ ] 4.1 (P) Regime-loadings + recall-guarded factor playbook
+  - Add a new numbered playbook that builds the per-rebalance regime-loadings artifact, scores each rebalance for memorization, runs the recall-guarded factor variant through the existing walk-forward and simulation, and persists the loadings, score log, and steered targets/equity/decision-log under new filenames
   - Evaluate the variant with the existing head-to-head framework by adding a "Track A (factor)" entry alongside the existing tracks, and additionally report the memorization distribution; state the non-predictive success definition (factor stability + lower-or-equal contamination + non-degraded head-to-head)
   - Append the run's findings as a new dated research-log entry; if run concurrently with the refinement playbook, serialize the research-log append
   - Observable: the playbook runs end-to-end producing the new loadings/score/steered artifacts and a head-to-head table including the factor entry plus the memorization distribution; no existing notebook, module, or data artifact is modified
-  - _Requirements: 2.4, 3.3, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 6.4_
+  - _Requirements: 2.4, 3.3, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 6.4, 8.5_
   - _Boundary: notebook 13 macro factor scoring (shared append-only research log, serialized)_
-  - _Depends: 3.1, 3.2_
-  - _Deferred: 2026-06-27 (user "stop here" after the 3.2 weak-calibrator finding). Engine + persisted calibrator ready; this notebook needs live OpenRouter and would run UNSTEERED (is_weak=True, R4.3). Resume = run nb13 against the persisted calibrator._
+  - _Depends: 3.1, 3.2, 3.3_
+  - _Resumed: 2026-07-03 (user directive). Was deferred 2026-06-27 after the 3.2 weak-calibrator finding; now gated on the R8 certified no-recall model from task 3.3, which the playbook uses as both loadings generator and scored model (8.5)._
 
 - [ ] 4.2 (P) Version-aware prompt refinement + PIT-vs-non-PIT contrast playbook
   - Add a new numbered playbook that evaluates at least two prompt versions over the same point-in-time stream, reporting each version's memorization distribution (which now differs by version) and factor-stability and the head-to-head deltas, with an accept-gate that adopts a refinement only at no-greater contamination and no-worse metrics, preserving prior versions
   - Run the PIT-vs-non-PIT contrast over the full rebalance stream and report the contamination premium with a paired effect size; the non-PIT variant is a diagnostic control and is never used to produce the deployable portfolio
   - Append the comparison and contrast outcomes as a new dated research-log entry; if run concurrently with the factor playbook, serialize the research-log append
   - Observable: the playbook reports per-version memorization distributions (differing across versions), factor-stability, head-to-head deltas, an accept/reject decision, and the PIT-vs-non-PIT premium over the full stream; new versioned artifacts are written without overwriting prior ones; the non-PIT control is not persisted as the deployable portfolio
-  - _Requirements: 1.2, 5.1, 5.2, 5.3, 5.4, 5.5, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6_
+  - _Requirements: 1.2, 5.1, 5.2, 5.3, 5.4, 5.5, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 8.5_
   - _Boundary: notebook 14 prompt refinement and contrast (shared append-only research log, serialized)_
-  - _Depends: 2.8, 2.9, 3.1, 3.2_
-  - _Deferred: 2026-06-27 (user "stop here"). Resume = run nb14 (version-aware p_memorized distribution + PIT-vs-non-PIT contrast); the controlled contrast is expected to show little separable premium per the 3.2 finding._
+  - _Depends: 2.8, 2.9, 3.1, 3.2, 3.3_
+  - _Resumed: 2026-07-03 (user directive). Was deferred 2026-06-27; now gated on the R8 certified model (3.3). The controlled contrast is expected to show little separable premium for a certified no-recall model per the 3.2 finding — reporting that honestly is the point._
 
 ## Implementation Notes
 - Carried forward from track-a-macro-steering: `recall_guard@v0.1.0` + pytest/pytest-mock are installed; run tests with `uv run pytest -q`. Offline core tasks mock `NvidiaLM`/the MIA primitives (no network). Reviewers must never `git checkout`/`reset` uncommitted task work.
 - Number-native calibration uses the validated model `meta/llama-4-maverick-17b-128e-instruct` @ cutoff `2024-08-01` (research.md 2026-06-26: holdout_auc≈0.96, is_weak=False). The calibrator is trained on the FRED panel (identifying IS vs anonymized OOS on the factor task) — no news/FMP.
 - Live tasks (3.2 calibration build, 4.1 nb13, 4.2 nb14) need `NVIDIA_API_KEY` (+ `OPENROUTER_KEY` for the agent). The Postgres price DB is absent → notebooks fetch yfinance prices in-cell; price-dependent equity/targets + any variant LLM caches are gitignored (regenerable). Persist the trained calibrator (joblib + JSON, no API key) so nb13/nb14 don't rebuild (~135 NIM calls).
 - 2.2: `parse_loadings` clips to [-1,1] and returns None on malformed (no fabrication). Edge: non-standard JSON `NaN`/`Infinity` bypass the clip (NaN compares False); the tilt step (2.6) and any loadings consumer should guard non-finite values.
+- 2026-07-03 amendment: the 103-note's "validated holdout_auc≈0.96" was the prose-confounded probe; the controlled 3.2 run came back weak (holdout_auc=0.338 on a 30-prompt holdout — statistically consistent with chance). R8 + task 3.3 formalize this: screen candidates with bootstrap CI + permutation p (offline on gathered features), positive-control (prose-confounded) framing must fire, n_per_class raised (panel has ~168 pre-2024 months → up to ~120/class, holdout ~60). API rename (e9b1ed9): `honesty_*` → `recall_guarded_*` — spec prose "honesty/recall-guarded adjustment" refers to the `recall_guarded_*` API.

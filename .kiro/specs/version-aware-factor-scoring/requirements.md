@@ -197,3 +197,34 @@ how much apparent performance is lookahead/recall rather than genuine inference.
    contamination premium (lookahead/recall bias) rather than as attainable skill.
 6. The contrast shall hold all inputs other than the point-in-time discipline equal between the two
    variants, so that the reported difference is attributable to that discipline.
+
+### Requirement 8: Certified no-recall model selection
+
+_Amendment 2026-07-03 (user directive): select the scoring/generation model from measured
+recall-guard evidence — "the one AI model that doesn't recall and where we are certain" — before
+running the factor playbooks._
+
+**Objective:** As a researcher, I want the factor pipeline's model selected from measured evidence
+that it does not recall the identified macro history — with statistical certainty and a validated
+detector — so the model is chosen for demonstrated honesty rather than by convenience.
+
+#### Acceptance Criteria
+
+1. The model screen shall evaluate each logprob-bearing candidate model with the same controlled
+   number-native calibration the factor scorer uses (identifying vs anonymized framings of the same
+   pre-cutoff macro states, token-identical except the identifying additions).
+2. For each candidate, the screen shall report the held-out separation together with
+   statistical-certainty measures computed offline on the gathered features — a resampled confidence
+   interval and a permutation p-value against chance separation — without additional live inference
+   for the statistics.
+3. Each candidate shall include a positive-control detection run using a deliberately recall-enabling
+   (prose-confounded) framing, labeled a diagnostic control; when the positive control does not fire,
+   the screen shall report the candidate as "detector unvalidated" rather than "no recall".
+4. The screen shall certify a candidate as no-recall only when its controlled separation is
+   statistically indistinguishable from chance AND its positive control fires AND its factor-task
+   replies parse at a usable rate; a candidate with statistically significant above-chance controlled
+   separation shall be rejected as recalling.
+5. The factor playbooks shall use the certified model as both the loadings generator and the scored
+   model.
+6. The screen shall append its per-candidate outcomes and the selection decision to the research log,
+   shall persist no credential, and shall write its results under new filenames (additive).

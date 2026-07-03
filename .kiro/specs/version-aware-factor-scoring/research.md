@@ -236,3 +236,40 @@ of an anonymized factor prompt: parse_ok=True, p_memorized≈0.49._
   nb13/nb14 unsteered and document it.
 - (b) **Recover separation** — relax the identifying form (a stronger, less-controlled framing) to get a
   validated calibrator, trading R7.6 controlledness for signal; would re-open the 2.1 renderer.
+
+---
+
+## 2026-07-03 — Directive: certified no-recall model selection (R8) + recall_guarded rename
+
+_User directive: nb13/nb14 are un-deferred. Before running them, SELECT the model from recall_guard
+evidence — "the one AI model that doesn't recall and where we are certain" — and run the factor
+pipeline on it (the certified model is BOTH the loadings generator and the scored model)._
+
+### Spec amendments
+- **Requirement 8** (certified no-recall model selection) appended to requirements.md; **task 3.3**
+  (certification screen: module + live run) inserted; 4.1/4.2 **resumed**, now `_Depends: … 3.3_`.
+- **API rename** (commit `e9b1ed9`): `HonestyConfig`→`RecallGuardedConfig`,
+  `honesty_adjust`→`recall_guarded_adjust`, `honesty_config`→`recall_guarded_config`. No behavior
+  change; 164 tests green. Spec prose "honesty-adjusted" refers to the `recall_guarded_*` API.
+
+### Certification design (the "where we are certain" machinery)
+- **Reframing of the 3.2 finding:** `holdout_auc=0.338` sat on a 30-prompt holdout
+  (`n_per_class=60`, `mcs.train` holds out 25%) — ~1.5 SE below 0.5, i.e. statistically consistent
+  with chance ("no detectable recall"), not evidence of anti-signal. `is_weak` was a threshold
+  verdict; R8 demands a statistical one.
+- **Certainty stats, offline:** gather the standardized per-prompt MIA features once (live), then
+  bootstrap-resample the train/holdout split for an AUC confidence interval and permute labels for a
+  p-value against AUC=0.5. No extra live calls for the statistics.
+- **Positive control per candidate:** the deliberately prose-confounded identifying framing (the
+  2026-06-26 probe form that hit 0.96 on maverick) must fire (perm p < 0.05); otherwise the verdict
+  is "detector unvalidated", never "no recall".
+- **Common screening cutoff 2023-12-01:** pre-cutoff states are trained-on for every candidate
+  (llama-3.1 cutoff 2023-12, gpt-oss ~2024-06, maverick ~2024-08) and AUCs are comparable across
+  candidates. Panel has 196 monthly rows (2010-01→2026-04) → ~167 pre-2024 states → n_per_class up
+  to ~120, holdout ~60 (double the 3.2 run).
+- **Verdict rule (R8.4):** certified-no-recall ⇔ controlled AUC indistinguishable from chance
+  (CI ∋ 0.5, perm p > 0.1) ∧ positive control fires ∧ factor-task parse rate ≥ 0.9. Significant
+  above-chance controlled AUC ⇒ rejected (recalls). Winner's calibrator re-persisted at its own true
+  cutoff.
+- **Candidates:** the logprob-bearing NIM pool from the 2026-06-26 re-probe (maverick,
+  llama-3.1-8b-instruct, gpt-oss-20b, + whatever else the live probe admits), capped for cost.
