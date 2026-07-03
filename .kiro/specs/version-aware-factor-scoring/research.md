@@ -321,3 +321,18 @@ RECALL-GUARDED." Fallback model selection for nb13/nb14 (generator + scored mode
 decision: phi-4-mini (parse 1.0, fastest serving, AUC 0.695), gpt-oss-20b (parse 1.0, sharpest
 signature 0.926 → most vivid guarding + premium measurement), gpt-oss-120b (numerically least
 recall 0.633 but ~4× slower serving with attrition).
+
+---
+
+## 2026-07-03 — Selection: gpt-oss-20b (user-confirmed) + production calibrator persisted
+
+- With the certified set empty, the user selected **openai/gpt-oss-20b** for the recall-guarded
+  pipeline (recommended option: sharpest recall signature 0.926 → most measurable guarding/premium;
+  parse 1.0; workable serving). phi-4-mini (ops-best) and gpt-oss-120b (least-recall, slow) declined.
+- Production calibrator persisted at the model's TRUE cutoff **2024-06-01**, n=170/class:
+  **holdout_auc = 0.9668, is_weak = False** → `data/factor_calibrator_openai_gpt-oss-20b/`
+  (joblib + JSON, credential-free; run_header.json committed context lives in the dir, gitignored).
+- Smoke: anonymized factor prompt scores p_memorized = 0.384 (guard scales such tilts ×0.616);
+  identifying prompts are expected to score far higher (screen CV AUC 0.926).
+- Strong-calibrator branch CONFIRMED: per R4.3 the `recall_guarded_adjust` discount ENGAGES —
+  nb13's deployable line is genuinely guarded, nb14's premium is measured with a validated detector.
