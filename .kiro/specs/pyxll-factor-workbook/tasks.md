@@ -85,7 +85,7 @@
   - _Depends: 3.1, 3.2, 3.4_
 
 - [ ] 5. Integration: Excel surface and workbook generation
-- [ ] 5.1 Excel function surface (stub-safe wrappers)
+- [x] 5.1 Excel function surface (stub-safe wrappers)
   - Expose the thin worksheet-function layer: an asynchronous versioned load returning a cached client handle, per-step view builders, on-demand table expansion, the verification-flags table, and the provenance table; version change is an explicit re-load driven by the tag input
   - No function accepts a token argument; error states surface as per-asset messages in the sheet
   - Observable: under the platform stub (no Excel), every exposed function is importable and callable end-to-end on fixtures in the root test run; the provenance and checks tables render as data frames
@@ -120,3 +120,4 @@
 - 3.3: full-data reproduction test runs on the REAL local evidence parquet (guarded skip elsewhere) and reproduces all four published values at 1e-9 — tolerance is sklearn-version-sensitive (1.8.0; loosen on upgrade). Do NOT module-level-import macro_framework.factor_scoring in workbook tests (breaks test_factor_scoring's sys.modules assertion) — import lazily inside test bodies.
 - 4.1: gap markers are DATA-DRIVEN (screen_failed -> unscreenable; any other verdict with missing evidence member -> pending_evidence) — phi-4-mini is also pending in fixtures since the fixture tar ships only 20b/120b. Class-count checks flag ok=False on fixture subsets by design (R7.2 renders them); live agreement lands in 6.1.
 - 4.5: SSR re-derivation slices equity at the first contrast date (2019-01-02), mirroring nb14; differential row uses documented _S5_DIFF_TOL=1e-3 (near-zero cancellation amplifies the parquet's ~1e-7 storage rounding to ~1.5e-4 rel) — non-differential rows hold 1e-6. paired_d reproduces exactly (1.9252251).
+- 5.1: canonical in-cell error format is '#ERROR <asset>: <cause> — <detail>' (supersedes the design sketch's '#ERROR: <asset>: <cause>'). Surface is 7 functions: the design's five + FW_FRAMING (R7.3 sheet headers) + FW_VERSION (R1.2) — 5.2's formula-name check must target these.
