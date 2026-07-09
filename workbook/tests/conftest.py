@@ -11,3 +11,15 @@ from pathlib import Path
 _WORKBOOK_DIR = str(Path(__file__).resolve().parents[1])
 if _WORKBOOK_DIR not in sys.path:
     sys.path.insert(0, _WORKBOOK_DIR)
+
+
+def pytest_configure(config):
+    """Register the opt-in live-network marker without touching root config.
+
+    The marked test additionally skips itself unless ``FW_LIVE_NETWORK=1``,
+    so default runs never touch the network (task 6.1).
+    """
+    config.addinivalue_line(
+        "markers",
+        "live_network: fetches a real GitHub release asset; opt in with FW_LIVE_NETWORK=1",
+    )

@@ -105,7 +105,7 @@
   - _Depends: 5.1_
 
 - [ ] 6. Validation
-- [ ] 6.1 End-to-end validation and opt-in live-network test
+- [x] 6.1 End-to-end validation and opt-in live-network test
   - Run the full fixture-driven pipeline (load → contract → re-derive → verify → all five step views) asserting every verification check passes on the shipped fixtures, and add one opt-in (marker-excluded) live test fetching a real release asset end-to-end
   - Confirm the whole repository test suite passes with the workbook tests collected, and that the working tree remains additive (new directory + dev-group and ignore-file lines only)
   - Observable: default root test run is green including all workbook tests with the live test excluded; enabling the marker fetches the real asset and validates it against the contract; a final review confirms no existing file beyond the declared two was modified
