@@ -25,7 +25,7 @@
   - _Depends: 2.1_
 
 - [ ] 3. Core: computation (independent pure modules)
-- [ ] 3.1 (P) Re-derivation formulas
+- [x] 3.1 (P) Re-derivation formulas
   - Implement the pure re-derivation set: the binomial interval for the naive eval, the guard formula (raw times one minus score), the paired effect size, the contamination premium, the loading-stability measures, the equity-line metrics (returns/risk/drawdown plus the fixed crisis window), and the evidence class statistics
   - Observable: each formula is tested against hand-computed values AND against the published values in the fixtures (agreement within display precision)
   - _Boundary: rederive_
@@ -116,3 +116,4 @@
 - 1.1: workbook/tests has NO __init__.py (deliberate — with it, pytest maps the dir to package "tests", colliding with the root tests/ package and breaking full-suite collection). Do not reintroduce it. Smoke command: `PYTHONPATH=workbook uv run python -c "import factor_workbook"` (the package is intentionally outside the root uv workspace; root pytest imports it via workbook/tests/conftest.py sys.path insert).
 - 2.1: cache is keyed (tag, asset) and served without re-fetch on hit (tags immutable); the no-stale rule = a FAILED fetch never falls back to any cache entry. Reviewer minors (acceptable, revisit only if the repo goes private): cache-hit provenance replays the public URL even for API-fetched bytes (from_cache=True flags it); cache writes are non-atomic and tag/asset are raw path segments (inputs come from the fixed registry).
 - 2.2: an entirely-null column satisfies its contract dtype (parquet writers persist all-null as object OR float64 — the real 120b evidence raw_ref_delta is all-null float64 while 20b/phi-4 are str). Evidence tests parametrize over EVIDENCE_MODELS; fixture tarball carries both flavors. Registry keys are logical names; evidence loader is model-slug-parameterized.
+- 3.1: paired_cohens_d uses POPULATION std (ddof=0) + 1e-12 zero-variance guard, matching macro_framework.factor_scoring._paired_cohens_d (the producer of the published 1.9252251) — ddof=1 misses it by ~0.7%. equity annualized_return is geometric ((1+total)^(252/n)-1); crisis_vol ddof=1, sortino downside ddof=0. Fixtures are ROW SUBSETS: full-data published-figure agreement (equity metrics vs pit/nonpit_metrics, paired_d vs 1.925) is assigned to tasks 4.2/4.4/4.5 which load full assets.
