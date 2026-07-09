@@ -164,3 +164,26 @@ loading-stability comparison (computable from released parquets alone).
 - **Async UDF over RTD**: loads are `async def @xl_func` returning object-cache handles (Excel UI
   stays live); per-table expansion functions spill DataFrames on demand. RTD deferred — nothing
   in this feature streams.
+
+---
+
+## 2026-07-09 — /kiro-validate-impl: GO (after one remediation round)
+
+- **Mechanical**: full suite 394→396 passed (+2 gated live skips); TODO/secret greps CLEAN
+  (hits were test fakes/assertions); smoke imports all 9 modules (stats extra available);
+  generator emits the 6-sheet workbook headlessly.
+- **Dimensions**: coverage **PASS** (33/33 ACs matrixed to shipped behavior; 3 minors — data-v1
+  "27 assets" prose counts the calibrator tarball the workbook deliberately does not consume;
+  notes recorded). Design **PASS** (layering verified by import scan; lean surface verified by
+  wheel build; 2 minors — SchemaError UDF leg FIXED in remediation; pinned published-side
+  constants are the documented data-v1 anchoring). Integration **FAIL→FIXED**: the S1
+  count-check false-alarmed 6 flags on pristine live data (compared included rows incl. the
+  parse_sample arm vs the per-main-arm gather target) — semantics corrected to
+  total-gathered-per-main-arm, parse_sample excluded; **the new opt-in live test now builds all
+  five step views against the real data-v1 release with every check ok** (the cross-task
+  guarantee the fixture path cannot give). Accepted leftovers recorded in Implementation Notes
+  (5 loadable-but-unconsumed registry entries; test_docs.py boundary extension; uv.lock).
+- Remediation commit `9caf1ad`; 1 of 3 permitted rounds used.
+- **DECISION: GO.** 16/16 tasks complete, each adversarially reviewed; the workbook core is
+  fully verified on Linux; the Windows Excel layer awaits the manual checklist (README §7) —
+  the documented, out-of-automated-scope residue (design Non-Goals).
