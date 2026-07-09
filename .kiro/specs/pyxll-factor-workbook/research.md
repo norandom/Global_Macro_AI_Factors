@@ -134,3 +134,33 @@ yields smoother state-driven inference. SSR stability is a statistical tie (0.12
 natural workbook addition); prompt version also moves the metric (v2 mac 0.406) but the
 PIT-vs-non-PIT gap is ~3× the v1-vs-v2 gap. → The workbook's S5 sheet should include this
 loading-stability comparison (computable from released parquets alone).
+
+---
+
+## 2026-07-09 — Design synthesis (decisions on top of the gap analysis)
+
+- **Option B refined → "one source tree, two install surfaces"**: the package lives once in-repo
+  (`workbook/factor_workbook/`), collected by the repo's root `uv run pytest` (root env is a
+  superset, satisfying R7.4's "existing test workflow"), while `workbook/pyproject.toml` defines
+  the LEAN install (pandas, pyarrow, requests, pyxll-stub; `keyring` + `scikit-learn` optional
+  extras) for the Windows Excel machine — no vectorbt/numba/recall_guard ever reaches Excel.
+- **Presentation is generated, not hand-built**: a Linux-runnable `build_workbook.py` uses
+  openpyxl to emit the five-sheet workbook skeleton (labels, framing text, `=FW_*()` formulas);
+  PyXLL evaluates those functions live in Excel. This moves most of the "Excel-only" layer back
+  into Linux-testable code; the manual Windows checklist shrinks to type-conversion + ribbon.
+- **Vendoring over importing**: `compute_ssr` (~80 pure lines) is vendored verbatim with a
+  provenance header (source path + commit) instead of importing `macro_framework` (drags heavy
+  deps, needs repo-root sys.path). Wilson CI (~4 lines), guarded=raw·(1−p) (1 line), paired
+  Cohen's d (2 lines) are reimplemented in `rederive.py`. `certification_stats` is vendored too
+  but behind the `sklearn` extra — R2.6 only REQUIRES class counts + feature summary stats, so
+  the full AUC/CI/p re-derivation is an optional deepening, not a hard dependency.
+- **The schema contract IS the discrepancy detector's foundation**: `contract.py` encodes the
+  captured per-asset schema (columns/dtypes/index/row-counts) as typed loaders that fail fast
+  with asset+column-specific messages; `verify.py` compares re-derived vs published figures with
+  a display-precision tolerance and returns flag rows (R7.2) — never silently preferring either.
+- **Token path (dormant)**: `keyring` (Credential Manager on Windows / Secret Service on Linux)
+  → `GITHUB_TOKEN` env fallback; only consulted when an unauthenticated GET fails with 404/403 on
+  a private repo. Never accepted as a UDF argument (tokens must not live in cells; R1.3).
+- **Async UDF over RTD**: loads are `async def @xl_func` returning object-cache handles (Excel UI
+  stays live); per-table expansion functions spill DataFrames on demand. RTD deferred — nothing
+  in this feature streams.
