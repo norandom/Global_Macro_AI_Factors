@@ -46,7 +46,7 @@
   - _Requirements: 2.6_
   - _Depends: 2.2_
 
-- [ ] 3.4 (P) Verification framework (published vs re-derived)
+- [x] 3.4 (P) Verification framework (published vs re-derived)
   - Implement the comparison record and tolerance check that pairs a published figure with its re-derived value and yields a visible flag on disagreement — returned as data, never raised, never silently resolved in favor of either value
   - Observable: tests show agreement produces an ok record and an injected discrepancy produces a flagged record carrying a human-readable message
   - _Boundary: verify_
