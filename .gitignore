@@ -1,3 +1,7 @@
+# Workbook (pyxll-factor-workbook): release-asset disk cache + generated skeleton
+workbook/.cache/
+workbook/*.xlsx
+
 # Python-generated files
 __pycache__/
 *.py[oc]

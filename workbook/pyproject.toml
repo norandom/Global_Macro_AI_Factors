@@ -1,0 +1,23 @@
+[project]
+name = "factor-workbook"
+version = "0.1.0"
+description = "Excel-native audit workbook for the factor-scoring assessment (reads the data-v1 GitHub Release)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pandas",
+    "pyarrow",
+    "requests",
+    "pyxll",
+    "openpyxl",
+]
+
+[project.optional-dependencies]
+token = ["keyring"]
+stats = ["scikit-learn"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["factor_workbook"]

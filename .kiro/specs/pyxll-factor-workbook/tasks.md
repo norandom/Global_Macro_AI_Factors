@@ -1,7 +1,7 @@
 # Implementation Plan
 
 - [ ] 1. Foundation: workbook package scaffold
-- [ ] 1.1 Scaffold the lean workbook package with dual install surfaces
+- [x] 1.1 Scaffold the lean workbook package with dual install surfaces
   - Create the new top-level workbook package with its own lean project manifest (runtime deps + optional token/statistics extras) and an importable package skeleton with no heavy work at import time
   - Add the two Excel-support libraries (the add-in stub and the spreadsheet writer) to the repository's dev dependency group only, so the root test run can import every workbook module; verify the statistics library needed by the optional certification extra is importable in the root environment (add it to the dev group only if it is not)
   - Create every planned module as a stub with the complete package re-export list up front, so the later parallel computation tasks each touch only their own module and test file (no shared-file conflicts)
@@ -111,3 +111,6 @@
   - Observable: default root test run is green including all workbook tests with the live test excluded; enabling the marker fetches the real asset and validates it against the contract; a final review confirms no existing file beyond the declared two was modified
   - _Requirements: 7.1, 7.4, 7.5_
   - _Depends: 5.2, 5.3_
+
+## Implementation Notes
+- 1.1: workbook/tests has NO __init__.py (deliberate — with it, pytest maps the dir to package "tests", colliding with the root tests/ package and breaking full-suite collection). Do not reintroduce it. Smoke command: `PYTHONPATH=workbook uv run python -c "import factor_workbook"` (the package is intentionally outside the root uv workspace; root pytest imports it via workbook/tests/conftest.py sys.path insert).
