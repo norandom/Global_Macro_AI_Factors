@@ -10,6 +10,7 @@ statistics extra is present and both arms carry enough rows (R2.6).
 
 import dataclasses
 import io
+import json
 import tarfile
 from pathlib import Path
 
@@ -17,9 +18,9 @@ import pandas as pd
 import pytest
 
 from factor_workbook import certification
-from factor_workbook.rederive import wilson_ci
+from factor_workbook.rederive import loading_stability, wilson_ci
 from factor_workbook.release import FetchError, Provenance, ReleaseError
-from factor_workbook.steps import S2_FRAMING, StepView, build_s1, build_s2
+from factor_workbook.steps import S2_FRAMING, S3_FRAMING, StepView, build_s1, build_s2, build_s3
 from factor_workbook.verify import Check
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -432,3 +433,162 @@ def test_s2_framing_states_expected_correct_no_alpha_outcome(s2):
     assert "0.5" in framing
     assert s2.framing == S2_FRAMING
     assert "coin-flip" in s2.title.lower()
+
+
+# --------------------------------------------------------------------------- #
+# S3 — factor development with the guard re-derived (task 4.3)                 #
+# --------------------------------------------------------------------------- #
+
+AXES = ["inflation", "growth", "credit_stress", "policy", "risk_appetite"]
+GUARD_CHECK_NAME = "S3 guarded_tilt equals raw*(1-p)"
+
+
+@pytest.fixture(scope="module")
+def s3() -> StepView:
+    """One S3 view over the fixture subsets for all read-only assertions."""
+    return build_s3(FakeClient())
+
+
+def test_s3_loadings_tables_with_parse_status(s3):
+    """R4.1: per-rebalance loadings on the five axes + parse status, both versions."""
+    for version in ("v1", "v2"):
+        table = s3.tables[f"loadings_{version}"]
+        assert "parse_ok" in table.columns
+        for axis in AXES:
+            assert axis in table.columns, axis
+        expected = pd.read_parquet(FIXTURES / f"factor_loadings_{version}.parquet")
+        pd.testing.assert_frame_equal(table, expected)
+    # v1 carries the not-parsed rebalance verbatim (a state, not a failure)
+    assert bool(s3.tables["loadings_v1"]["parse_ok"].iloc[0]) is False
+
+
+def test_s3_scores_tables_both_versions(s3):
+    """R4.2: per-rebalance memorization scores alongside the loadings."""
+    for version in ("v1", "v2"):
+        table = s3.tables[f"scores_{version}"]
+        assert "p_memorized" in table.columns
+        expected = pd.read_parquet(FIXTURES / f"factor_scores_{version}.parquet")
+        pd.testing.assert_frame_equal(table, expected)
+
+
+def test_s3_score_summary_distribution_matches(s3):
+    """R4.2: the distribution summary is re-derived from the LOADED scores —
+    one row per prompt version, and the two versions genuinely differ."""
+    summary = s3.tables["score_summary"]
+    assert list(summary["version"]) == ["v1", "v2"]
+    for version in ("v1", "v2"):
+        p = pd.read_parquet(FIXTURES / f"factor_scores_{version}.parquet")["p_memorized"].dropna()
+        row = summary[summary["version"] == version].iloc[0]
+        assert row["n"] == len(p)
+        assert row["mean"] == pytest.approx(p.mean())
+        assert row["median"] == pytest.approx(p.median())
+        assert row["p90"] == pytest.approx(p.quantile(0.9))
+        assert row["min"] == pytest.approx(p.min())
+        assert row["max"] == pytest.approx(p.max())
+    v1, v2 = summary.iloc[0], summary.iloc[1]
+    assert v1["mean"] != v2["mean"]  # the versions differ (R4.5 alternatives)
+
+
+def test_s3_views_table_raw_vs_guarded_with_rederivation(s3):
+    """R4.3: raw vs guarded side by side with the guard formula re-derived
+    in front of the reviewer as its own column."""
+    table = s3.tables["views_v1"]
+    for column in ("date", "asset", "raw_tilt", "p_memorized", "guarded_tilt",
+                   "conviction", "guarded_tilt_rederived"):
+        assert column in table.columns, column
+    expected = table["raw_tilt"] * (1.0 - table["p_memorized"].clip(0.0, 1.0))
+    pd.testing.assert_series_equal(
+        table["guarded_tilt_rederived"], expected, check_names=False
+    )
+
+
+def test_s3_guard_check_passes_on_the_fixture(s3):
+    """R4.3/R7.2: guarded == raw*(1-p) is a per-row identity of the published
+    table — the check PASSES even on a row subset (rtol 1e-9)."""
+    by_name = {c.name: c for c in s3.checks}
+    check = by_name[GUARD_CHECK_NAME]
+    assert check.ok is True
+    assert check.tolerance == pytest.approx(1e-9)
+    assert check.message == ""
+
+
+def test_s3_stability_table_per_version_with_published_side_by_side(s3):
+    """R4.4: per-version stability rows — re-derived mean_std/mean_mac next
+    to the published figures."""
+    table = s3.tables["stability"]
+    assert list(table["version"]) == ["v1", "v2"]
+    for version in ("v1", "v2"):
+        loadings = pd.read_parquet(FIXTURES / f"factor_loadings_{version}.parquet")
+        rederived = loading_stability(loadings[AXES], loadings["parse_ok"])
+        published = json.loads((FIXTURES / f"factor_stability_{version}.json").read_text())
+        row = table[table["version"] == version].iloc[0]
+        assert row["mean_std_rederived"] == pytest.approx(rederived["mean_std"])
+        assert row["mean_mac_rederived"] == pytest.approx(rederived["mean_mac"])
+        assert row["mean_std_published"] == pytest.approx(published["mean_std"])
+        assert row["mean_mac_published"] == pytest.approx(published["mean_mac"])
+
+
+def test_s3_stability_checks_flag_the_fixture_subset(s3):
+    """R7.2: on the 5-row fixture the re-derived stability disagrees with the
+    published full-data figures — rendered as flags, never exceptions."""
+    by_name = {c.name: c for c in s3.checks}
+    for version, published_std in (("v1", 0.5437447608527022), ("v2", 0.5257532419802151)):
+        std = by_name[f"S3 stability mean_std {version} vs published"]
+        assert std.published == pytest.approx(published_std)
+        assert std.ok is False
+        assert std.message  # visible, human-readable flag
+        mac = by_name[f"S3 stability mean_mac {version} vs published"]
+        assert mac.ok is False
+        assert mac.message
+
+
+def test_s3_gate_view_carries_decision_and_inputs(s3):
+    """R4.5: the accept-gate view — one row per check with its inputs and
+    pass flag, plus the recorded adopted version and rejection decision."""
+    gate = s3.tables["gate"]
+    assert set(gate["check"]) == {
+        "contamination_no_greater",
+        "max_dd_not_deeper",
+        "sharpe_not_worse",
+        "stability_not_worse",
+    }
+    assert len(gate) == 4
+    assert set(gate["adopted_version"]) == {"v1"}
+    assert all("rejected" in d for d in gate["decision"])
+    contamination = gate[gate["check"] == "contamination_no_greater"].iloc[0]
+    assert bool(contamination["pass"]) is False
+    assert contamination["v1"] == pytest.approx(0.23608487596219696)
+    assert contamination["v2"] == pytest.approx(0.270941888784604)
+    # every performance check passed — the rejection is on contamination alone
+    performance = gate[gate["check"] != "contamination_no_greater"]
+    assert performance["pass"].all()
+    sharpe = gate[gate["check"] == "sharpe_not_worse"].iloc[0]
+    assert sharpe["v1"] == pytest.approx(1.1999737224508815)
+    assert sharpe["v2"] == pytest.approx(1.1955608394838948)
+    assert sharpe["tolerance"] == pytest.approx(0.05)
+
+
+def test_s3_both_prompt_versions_preserved(s3):
+    """R4.5: both versions' artifacts appear in the view as preserved
+    alternatives — the rejected v2 is data, not discarded."""
+    for version in ("v1", "v2"):
+        assert f"loadings_{version}" in s3.tables
+        assert f"scores_{version}" in s3.tables
+    assert set(s3.tables["score_summary"]["version"]) == {"v1", "v2"}
+    assert set(s3.tables["stability"]["version"]) == {"v1", "v2"}
+
+
+def test_s3_framing_guard_and_rejection_no_accuracy_claim(s3):
+    """R7.3: the guard discounts by measured memorization; v2 rejected by the
+    accept-gate on contamination with every performance check passing; both
+    versions preserved; no forecast-accuracy claim."""
+    framing = s3.framing.lower()
+    assert "raw * (1 - p_memorized)" in framing
+    assert "rejected" in framing
+    assert "contamination" in framing
+    assert "0.2709" in framing and "0.2361" in framing
+    assert "every performance check passed" in framing
+    assert "preserved" in framing
+    assert "no forecast-accuracy claim" in framing
+    assert s3.framing == S3_FRAMING
+    assert "factor" in s3.title.lower()

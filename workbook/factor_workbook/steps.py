@@ -17,7 +17,12 @@ import pandas as pd
 
 from factor_workbook import certification
 from factor_workbook.contract import load_frame, load_json
-from factor_workbook.rederive import evidence_class_stats, wilson_ci
+from factor_workbook.rederive import (
+    evidence_class_stats,
+    guarded_tilt,
+    loading_stability,
+    wilson_ci,
+)
 from factor_workbook.release import ReleaseClient, ReleaseError
 from factor_workbook.verify import Check, compare
 
@@ -238,5 +243,131 @@ def build_s2(client: ReleaseClient) -> StepView:
         title="S2 — Coin-flip naive prediction",
         framing=S2_FRAMING,
         tables={"naive_eval": records, "summary": summary},
+        checks=checks,
+    )
+
+
+#: The five macro axes carried by every loadings table.
+_AXES = ["inflation", "growth", "credit_stress", "policy", "risk_appetite"]
+
+#: Factor-development framing for S3 (R4.3, R4.5, R7.3) — displayed with the sheet.
+S3_FRAMING = (
+    "Factor development on the numbers: the per-rebalance loadings are "
+    "continuous exposures on the five macro axes, built from the published "
+    "figures. The recall guard discounts every raw tilt by the measured "
+    "memorization score — guarded = raw * (1 - p_memorized) — re-derived "
+    "here and checked against the published guarded values. The prompt-v2 "
+    "refinement was rejected by the accept-gate on contamination (mean "
+    "p_memorized 0.2709 vs 0.2361) even though every performance check "
+    "passed; both prompt versions' data are preserved as alternatives. "
+    "No forecast-accuracy claim is made."
+)
+
+
+def _score_summary_row(version: str, scores: pd.DataFrame) -> dict:
+    """One distribution-summary row for a version's loaded p_memorized scores."""
+    p = scores["p_memorized"].dropna()
+    return {
+        "version": version,
+        "n": len(p),
+        "mean": float(p.mean()),
+        "median": float(p.median()),
+        "p90": float(p.quantile(0.9)),
+        "min": float(p.min()),
+        "max": float(p.max()),
+    }
+
+
+def _gate_row(name: str, payload: dict, adopted: str, decision: str) -> dict:
+    """Flatten one accept-gate check: its v1/v2 inputs, tolerance, and verdict."""
+    return {
+        "check": name,
+        "v1": next(v for k, v in payload.items() if k.endswith("_v1")),
+        "v2": next(v for k, v in payload.items() if k.endswith("_v2")),
+        "tolerance": payload.get("tolerance"),
+        "pass": payload["pass"],
+        "adopted_version": adopted,
+        "decision": decision,
+    }
+
+
+def build_s3(client: ReleaseClient) -> StepView:
+    """Assemble the S3 factor-development view with the guard re-derived (R4.1-4.5).
+
+    Per prompt version the loadings-with-parse-status (``loadings_v*``, R4.1)
+    and memorization scores (``scores_v*``) plus a one-row-per-version
+    distribution summary re-derived from the loaded scores (``score_summary``,
+    R4.2). The raw-vs-guarded views table carries the guard formula re-derived
+    as its own column, with a per-row identity check against the published
+    guarded values — raw times one minus score, rtol 1e-9 (R4.3). Per-version
+    stability shows the re-derived ``mean_std``/``mean_mac`` next to the
+    published figures with comparison checks; on fixture-sized row subsets the
+    disagreement is a rendered flag, never an exception (R4.4, R7.2). The
+    ``gate`` table flattens the recorded accept-gate: one row per check with
+    its v1/v2 inputs, tolerance, and pass flag, plus the adopted version and
+    the rejection decision — both versions' data preserved (R4.5).
+
+    Args:
+        client: Release client for the pinned data version.
+
+    Returns:
+        The typed S3 view model with the mandated framing.
+    """
+    tables: dict[str, pd.DataFrame] = {}
+    checks: list[Check] = []
+    summary_rows: list[dict] = []
+    stability_rows: list[dict] = []
+    for version in ("v1", "v2"):
+        loadings, _ = load_frame(client, f"factor_loadings_{version}")
+        scores, _ = load_frame(client, f"factor_scores_{version}")
+        tables[f"loadings_{version}"] = loadings
+        tables[f"scores_{version}"] = scores
+        summary_rows.append(_score_summary_row(version, scores))
+        rederived = loading_stability(loadings[_AXES], loadings["parse_ok"])
+        published, _ = load_json(client, f"factor_stability_{version}")
+        stability_rows.append(
+            {
+                "version": version,
+                "mean_std_rederived": rederived["mean_std"],
+                "mean_std_published": published["mean_std"],
+                "mean_mac_rederived": rederived["mean_mac"],
+                "mean_mac_published": published["mean_mac"],
+            }
+        )
+        for measure in ("mean_std", "mean_mac"):
+            checks.append(
+                compare(
+                    f"S3 stability {measure} {version} vs published",
+                    published[measure],
+                    rederived[measure],
+                )
+            )
+    tables["score_summary"] = pd.DataFrame(summary_rows)
+    tables["stability"] = pd.DataFrame(stability_rows)
+
+    views, _ = load_frame(client, "factor_views_v1")
+    views = views.assign(
+        guarded_tilt_rederived=guarded_tilt(views["raw_tilt"], views["p_memorized"])
+    )
+    tables["views_v1"] = views
+    # per-row identity of the published table — passes on any row subset
+    max_deviation = float(
+        (views["guarded_tilt"] - views["guarded_tilt_rederived"]).abs().max()
+    )
+    checks.append(
+        compare("S3 guarded_tilt equals raw*(1-p)", 0.0, max_deviation, tol=1e-9)
+    )
+
+    gate, _ = load_json(client, "prompt_version_gate_v1")
+    tables["gate"] = pd.DataFrame(
+        [
+            _gate_row(name, payload, gate["adopted_version"], gate["decision"])
+            for name, payload in sorted(gate["checks"].items())
+        ]
+    )
+    return StepView(
+        title="S3 — AI macro-factor development (recall-guarded)",
+        framing=S3_FRAMING,
+        tables=tables,
         checks=checks,
     )

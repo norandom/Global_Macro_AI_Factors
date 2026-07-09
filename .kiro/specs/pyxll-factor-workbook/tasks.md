@@ -66,7 +66,7 @@
   - _Requirements: 3.1, 3.2, 3.3, 7.3_
   - _Depends: 3.1, 3.4_
 
-- [ ] 4.3 Step 3 view — factor development with the guard re-derived
+- [x] 4.3 Step 3 view — factor development with the guard re-derived
   - Assemble loadings-with-parse-status, memorization scores with distribution summary, raw-vs-guarded views with the guard formula re-derived and checked against published values, per-version stability, and the refinement accept-gate inputs plus recorded rejection with both versions preserved
   - Observable: tests assert the guard check passes on the fixture, the distribution summary matches, the gate view carries the recorded decision and inputs, and both prompt versions appear
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 7.3_
