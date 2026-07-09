@@ -60,7 +60,7 @@
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 7.3_
   - _Depends: 3.1, 3.3, 3.4_
 
-- [ ] 4.2 Step 2 view — coin-flip naive evaluation
+- [x] 4.2 Step 2 view — coin-flip naive evaluation
   - Assemble the per-call table and the accuracy-with-interval summary re-derived from the per-call records, framed as the expected, correct no-alpha outcome (never a performance target)
   - Observable: tests assert the re-derived accuracy/interval matches the fixture records, the interval-contains-half statement, and the framing text
   - _Requirements: 3.1, 3.2, 3.3, 7.3_

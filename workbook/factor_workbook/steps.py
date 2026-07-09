@@ -17,7 +17,7 @@ import pandas as pd
 
 from factor_workbook import certification
 from factor_workbook.contract import load_frame, load_json
-from factor_workbook.rederive import evidence_class_stats
+from factor_workbook.rederive import evidence_class_stats, wilson_ci
 from factor_workbook.release import ReleaseClient, ReleaseError
 from factor_workbook.verify import Check, compare
 
@@ -176,5 +176,67 @@ def build_s1(client: ReleaseClient) -> StepView:
         title="S1 — Model certification (no-recall screen)",
         framing=S1_FRAMING,
         tables=tables,
+        checks=checks,
+    )
+
+
+#: Published full-data naive directional accuracy (28/72, nb13, data-v1).
+_S2_PUBLISHED_ACCURACY = 28 / 72
+
+#: No-alpha outcome framing for S2 (R3.3, R7.3) — displayed with the sheet.
+S2_FRAMING = (
+    "Coin-flip outcome, by design: the accuracy shown is the expected, "
+    "correct result of an honesty measurement, not a shortfall. "
+    "openai/gpt-oss-20b was selected despite maximal recall precisely to "
+    "demonstrate guarding. On the full published data the naive directional "
+    "accuracy is 0.389 (28/72) with a Wilson 95% interval of [0.285, 0.504] "
+    "— an interval that contains the coin-flip level 0.5. The accuracy "
+    "figure is never a performance target to be improved, and no "
+    "forecast-accuracy claim is made."
+)
+
+
+def build_s2(client: ReleaseClient) -> StepView:
+    """Assemble the S2 coin-flip naive-evaluation view (R3.1-3.3).
+
+    The per-call directional records — date, prompt, model reply, predicted
+    direction, confidence, realized direction, correctness — verbatim as
+    ``naive_eval`` (R3.1), plus a one-row ``summary`` re-derived from those
+    records: n, successes, accuracy, the Wilson 95% interval, and whether the
+    interval contains the coin-flip level 0.5 (R3.2). The re-derived accuracy
+    is compared against the published full-data figure as a rendered check
+    row (R7.2) — on a row-subset load the disagreement is a flag, never an
+    exception.
+
+    Args:
+        client: Release client for the pinned data version.
+
+    Returns:
+        The typed S2 view model with the mandated no-alpha framing.
+    """
+    records, _ = load_frame(client, "naive_directional_eval")
+    n = len(records)
+    successes = int(records["correct"].sum())
+    accuracy = successes / n
+    ci_low, ci_high = wilson_ci(successes, n)
+    summary = pd.DataFrame(
+        [
+            {
+                "n": n,
+                "successes": successes,
+                "accuracy": accuracy,
+                "ci_low": ci_low,
+                "ci_high": ci_high,
+                "contains_half": ci_low <= 0.5 <= ci_high,
+            }
+        ]
+    )
+    checks = [
+        compare("S2 accuracy vs published (full data)", _S2_PUBLISHED_ACCURACY, accuracy)
+    ]
+    return StepView(
+        title="S2 — Coin-flip naive prediction",
+        framing=S2_FRAMING,
+        tables={"naive_eval": records, "summary": summary},
         checks=checks,
     )

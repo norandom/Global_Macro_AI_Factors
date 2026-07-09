@@ -17,8 +17,9 @@ import pandas as pd
 import pytest
 
 from factor_workbook import certification
+from factor_workbook.rederive import wilson_ci
 from factor_workbook.release import FetchError, Provenance, ReleaseError
-from factor_workbook.steps import StepView, build_s1
+from factor_workbook.steps import S2_FRAMING, StepView, build_s1, build_s2
 from factor_workbook.verify import Check
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -323,3 +324,111 @@ def test_auc_rederivation_runs_when_both_arms_have_enough_rows():
     x_oos = included[included["arm"] == "anonymized"][cols].to_numpy()
     expected = certification.certification_stats(x_is, x_oos, n_boot=1, n_perm=1, seed=0)[0]
     assert check.rederived == pytest.approx(expected)
+
+
+# --------------------------------------------------------------------------- #
+# S2 — coin-flip naive evaluation (task 4.2)                                   #
+# --------------------------------------------------------------------------- #
+
+NAIVE_EVAL_ASSET = "naive_directional_eval_openai_gpt-oss-20b.parquet"
+PUBLISHED_NAIVE_ACCURACY = 0.3888888888888889  # 28/72, nb13 full data
+S2_CHECK_NAME = "S2 accuracy vs published (full data)"
+
+
+@pytest.fixture(scope="module")
+def s2() -> StepView:
+    """One S2 view over the 5-row fixture subset for read-only assertions."""
+    return build_s2(FakeClient())
+
+
+def test_s2_per_call_table_verbatim(s2):
+    """R3.1: the per-call records appear verbatim, prompt/reply included."""
+    table = s2.tables["naive_eval"]
+    expected = pd.read_parquet(FIXTURES / NAIVE_EVAL_ASSET)
+    for column in (
+        "date",
+        "prompt",
+        "reply",
+        "predicted_direction",
+        "confidence",
+        "realized_direction",
+        "correct",
+    ):
+        assert column in table.columns, column
+    pd.testing.assert_frame_equal(table, expected)
+
+
+def test_s2_summary_rederived_from_the_loaded_records(s2):
+    """R3.2: accuracy + Wilson interval re-derived from the per-call rows —
+    internally consistent with the loaded (fixture-subset) table."""
+    records = s2.tables["naive_eval"]
+    summary = s2.tables["summary"]
+    assert len(summary) == 1
+    row = summary.iloc[0]
+    n = len(records)
+    successes = int(records["correct"].sum())
+    assert row["n"] == n == 5
+    assert row["successes"] == successes == 1
+    assert row["accuracy"] == pytest.approx(records["correct"].mean())
+    low, high = wilson_ci(successes, n)
+    assert row["ci_low"] == pytest.approx(low)
+    assert row["ci_high"] == pytest.approx(high)
+    # the interval-contains-half statement, computed on the LOADED data
+    assert bool(row["contains_half"]) is (low <= 0.5 <= high) is True
+
+
+def test_s2_published_accuracy_check_flags_the_fixture_subset(s2):
+    """R7.2: on the 5-row fixture the re-derived accuracy disagrees with the
+    published full-data figure — rendered as a flag, never an exception."""
+    by_name = {c.name: c for c in s2.checks}
+    check = by_name[S2_CHECK_NAME]
+    assert check.published == pytest.approx(PUBLISHED_NAIVE_ACCURACY)
+    assert check.rederived == pytest.approx(0.2)
+    assert check.ok is False
+    assert check.message  # visible, human-readable flag
+
+
+def test_s2_published_accuracy_check_passes_on_full_data():
+    """Guard for the live path (task 6.1): with the full 72-row table the
+    same check agrees with the published 28/72 accuracy."""
+    dates = pd.date_range("2019-01-31", periods=72, freq="ME")
+    full = pd.DataFrame(
+        {
+            "date": dates,
+            "prompt": [f"prompt {i}" for i in range(72)],
+            "reply": [f"reply {i}" for i in range(72)],
+            "predicted_direction": [1] * 72,
+            "confidence": [0.65] * 72,
+            "realized_direction": [1 if i < 28 else -1 for i in range(72)],
+            "correct": [i < 28 for i in range(72)],
+        }
+    )
+    buf = io.BytesIO()
+    full.to_parquet(buf)
+    view = build_s2(FakeClient({NAIVE_EVAL_ASSET: buf.getvalue()}))
+    by_name = {c.name: c for c in view.checks}
+    check = by_name[S2_CHECK_NAME]
+    assert check.rederived == pytest.approx(PUBLISHED_NAIVE_ACCURACY)
+    assert check.ok is True
+    row = view.tables["summary"].iloc[0]
+    assert row["n"] == 72 and row["successes"] == 28
+    # published full-data Wilson interval [0.285, 0.504] contains 0.5
+    assert row["ci_low"] == pytest.approx(0.285, abs=5e-4)
+    assert row["ci_high"] == pytest.approx(0.504, abs=5e-4)
+    assert bool(row["contains_half"]) is True
+
+
+def test_s2_framing_states_expected_correct_no_alpha_outcome(s2):
+    """R3.3/R7.3: coin-flip framed as the expected, correct honesty-measurement
+    outcome — never a performance target, no forecast-accuracy claim."""
+    framing = s2.framing.lower()
+    assert "expected, correct" in framing
+    assert "honesty measurement" in framing
+    assert "despite maximal recall" in framing
+    assert "never a performance target" in framing
+    assert "no forecast-accuracy claim" in framing
+    # phrased around the published full-data result and the coin-flip level
+    assert "28/72" in framing
+    assert "0.5" in framing
+    assert s2.framing == S2_FRAMING
+    assert "coin-flip" in s2.title.lower()

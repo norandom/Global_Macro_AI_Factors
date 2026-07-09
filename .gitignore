@@ -51,3 +51,4 @@ data/factor_decision_log_v2.json
 data/factor_nonpit_diagnostic_targets_v1.parquet
 data/factor_nonpit_diagnostic_equity_v1.parquet
 data/factor_nonpit_diagnostic_decision_log_v1.json
+workbook/uv.lock
