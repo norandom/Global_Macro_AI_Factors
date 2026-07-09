@@ -9,7 +9,7 @@
   - _Requirements: 7.4, 7.5_
 
 - [ ] 2. Core: data access
-- [ ] 2.1 Versioned release client with provenance and error taxonomy
+- [x] 2.1 Versioned release client with provenance and error taxonomy
   - Fetch release assets by explicit version tag with an on-disk cache, archive-member extraction for the bundled tarballs, and a provenance record (tag, asset, resolved address, checksum, cache origin) for every retrieval
   - Enforce the failure rules: a failed refresh raises a typed per-asset error (network/missing/authorization/unpack) and never silently serves substitute or stale data; switching version constructs a new client
   - Implement the dormant authenticated path: a token provider (system keychain then environment) consulted only when the unauthenticated address is refused, with the token never appearing in provenance, errors, or any persisted artifact
@@ -114,3 +114,4 @@
 
 ## Implementation Notes
 - 1.1: workbook/tests has NO __init__.py (deliberate — with it, pytest maps the dir to package "tests", colliding with the root tests/ package and breaking full-suite collection). Do not reintroduce it. Smoke command: `PYTHONPATH=workbook uv run python -c "import factor_workbook"` (the package is intentionally outside the root uv workspace; root pytest imports it via workbook/tests/conftest.py sys.path insert).
+- 2.1: cache is keyed (tag, asset) and served without re-fetch on hit (tags immutable); the no-stale rule = a FAILED fetch never falls back to any cache entry. Reviewer minors (acceptable, revisit only if the repo goes private): cache-hit provenance replays the public URL even for API-fetched bytes (from_cache=True flags it); cache writes are non-atomic and tag/asset are raw path segments (inputs come from the fixed registry).
