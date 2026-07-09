@@ -424,3 +424,20 @@ targets/equity/decision-logs gitignored, shipped via the GH data release._
   `NIM_TIMEOUT_S=120 SCREEN_N_PER_CLASS=200 uv run python scripts/screen_norecall_models.py meta/llama-4-maverick-17b-128e-instruct`
 - **DECISION: GO.** All 15 tasks [x]; spec complete. Follow-up: `data-v1` GitHub Release
   (the PyXLL feed — next entry).
+
+---
+
+## 2026-07-09 — data-v1 GitHub Release published (the PyXLL/Excel feed)
+
+- **https://github.com/norandom/Global_Macro_AI_Factors/releases/tag/data-v1** — 27 assets +
+  storyboard manifest (RELEASE_NOTES), organized by the 5-step Excel narrative: S1 screen
+  results + raw evidence tarball + production calibrator + macro panel; S2 naive directional
+  eval; S3 loadings/scores/views/stability/gate (v1+v2); S4 both lines' targets/equity/decision
+  logs (PIT deployable + non-PIT diagnostic); S5 contrast + luck-vs-skill SSR table.
+- Download-by-URL smoke-tested: `pd.read_parquet(<asset URL>)` works (private-repo note: token
+  header required while the repo is private).
+- Maverick raw-evidence retry post-outage: its NIM endpoint remains degraded (all calls miss
+  logprobs/time out; runner correctly preserved the committed `recalls` row). Gap stays
+  documented in the release notes; retry command unchanged.
+- Spec `version-aware-factor-scoring` is COMPLETE (15/15, validate-impl GO) and its data
+  contract is now live for the follow-up PyXLL spec.
