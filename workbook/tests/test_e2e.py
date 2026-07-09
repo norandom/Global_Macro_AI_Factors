@@ -214,3 +214,46 @@ def test_live_fetch_validates_real_release_asset(tmp_path):
     assert re.fullmatch("[0-9a-f]{64}", provenance.sha256)
     assert provenance.from_cache is False
     assert (tmp_path / "data-v1" / "norecall_screen_results.json").exists()
+
+
+@pytest.mark.live_network
+@pytest.mark.skipif(
+    os.environ.get("FW_LIVE_NETWORK") != "1",
+    reason="live-network test: set FW_LIVE_NETWORK=1 to run",
+)
+def test_live_all_five_step_views_agree_on_full_data(tmp_path):
+    """Opt-in FULL integration: build every step view against the real data-v1
+    release and require every attached verification check to agree — the
+    cross-task guarantee the fixture path (subsets) cannot give. Added after
+    feature validation 2026-07-09 caught S1 count-check false alarms that the
+    narrower single-asset live test missed."""
+    from factor_workbook.steps import build_s1, build_s2, build_s3, build_s4, build_s5
+
+    client = ReleaseClient("data-v1", cache_dir=tmp_path, token_provider=lambda: None)
+    failed: list[str] = []
+    for build in (build_s1, build_s2, build_s3, build_s4, build_s5):
+        view = build(client)
+        assert view.tables and view.framing
+        failed.extend(c.message for c in view.checks if not c.ok)
+    assert not failed, "checks failing on pristine full data:\n" + "\n".join(failed)
+
+
+def test_fw_step_renders_schema_error_in_cell():
+    """A contract breach surfaces as the canonical in-cell #ERROR string, not
+    an exception through the UDF boundary (R1.4 — validation 2026-07-09)."""
+    import asyncio
+
+    from factor_workbook import addin
+    from factor_workbook.contract import SchemaError
+
+    class _BreachingClient:
+        def fetch(self, asset):
+            raise SchemaError(f"{asset}: missing column 'p_memorized' (expected float64)")
+
+        def fetch_tar_member(self, asset, member):
+            raise SchemaError(f"{asset}: missing member {member}")
+
+    result = asyncio.run(addin.fw_step(_BreachingClient(), "S3"))
+    assert isinstance(result, str)
+    assert result.startswith("#ERROR contract: schema")
+    assert "missing column" in result

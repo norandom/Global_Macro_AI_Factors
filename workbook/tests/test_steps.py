@@ -267,19 +267,78 @@ def test_class_stats_table_per_available_candidate(s1):
 
 
 def test_class_count_checks_attached_and_flag_the_fixture_subset(s1):
-    """Included rows per arm are compared against the published n_per_class;
-    on the 6-row fixture subset the disagreement is a rendered flag (R7.2),
-    never an exception."""
+    """TOTAL gathered rows per MAIN arm are compared against the published
+    n_per_class — the screen's gather invariant; included counts vary with
+    recorded attrition, so comparing them false-alarmed on the pristine live
+    release (validation 2026-07-09). On the fixture subset the disagreement is
+    a rendered flag (R7.2), never an exception."""
     by_name = {c.name: c for c in s1.checks}
-    fallback = by_name[f"S1 {FALLBACK} [identifying] included rows vs published n_per_class"]
+    fallback = by_name[f"S1 {FALLBACK} [identifying] gathered rows vs published n_per_class"]
     assert fallback.published == 167
     assert fallback.rederived == 6
     assert fallback.ok is False
     assert fallback.message  # visible, human-readable flag
-    big = by_name[f"S1 {BIG} [identifying] included rows vs published n_per_class"]
+    big = by_name[f"S1 {BIG} [identifying] gathered rows vs published n_per_class"]
     assert big.published == 167
-    assert big.rederived == 5
+    assert big.rederived == 6  # gathered total: dropped rows count too
     assert big.ok is False
+    assert not [c for c in s1.checks if "parse_sample" in c.name]
+
+
+def test_class_count_checks_use_gathered_totals_and_skip_parse_sample():
+    """Gathered totals (included + dropped) per MAIN arm equal n_per_class on
+    consistent data despite attrition; the parse_sample arm (own fixed size,
+    unpublished) is never count-checked — the live false-alarm root cause."""
+    import numpy as np
+
+    from factor_workbook import steps as steps_mod
+
+    rng = np.random.default_rng(0)
+    n = 12
+    feature_cols = ("loss", "min_k", "min_k_pp", "zlib_ratio")
+
+    def _arm_frame(arm: str, rows: int, dropped: int) -> pd.DataFrame:
+        return pd.DataFrame({
+            "arm": arm,
+            "row_index": range(rows),
+            "as_of": "2020-01-31",
+            "prompt": "p",
+            "reply": "r",
+            "n_tokens": 10.0,
+            "included": [True] * (rows - dropped) + [False] * dropped,
+            "dropped_reason": [None] * (rows - dropped) + ["timeout"] * dropped,
+            **{f"raw_{k}": rng.normal(size=rows) for k in feature_cols},
+            **{f"std_{k}": rng.normal(size=rows) for k in feature_cols},
+        })
+
+    # included stays below the AUC threshold (_N_SPLITS) so this test isolates
+    # the count-check semantics from the optional deeper re-derivation.
+    evidence = pd.concat(
+        [
+            _arm_frame("identifying", n, dropped=8),
+            _arm_frame("anonymized", n, dropped=8),
+            _arm_frame("prose_confounded", n, dropped=8),
+            _arm_frame("parse_sample", 4, dropped=1),
+        ],
+        ignore_index=True,
+    )
+
+    def fake_load_json(_client, key, model=None):
+        if "summary" in key:
+            return {"n_per_class": n}, None
+        return {"feature_means": {}}, None
+
+    orig = steps_mod.load_json
+    steps_mod.load_json = fake_load_json
+    try:
+        _, checks = steps_mod._evidence_consistency(object(), "m/x", "m_x", evidence)
+    finally:
+        steps_mod.load_json = orig
+
+    assert not [c for c in checks if "parse_sample" in c.name]
+    count_checks = [c for c in checks if "gathered rows" in c.name]
+    assert len(count_checks) == 3
+    assert all(c.ok for c in count_checks)  # totals match despite attrition
 
 
 def test_auc_rederivation_skipped_gracefully_on_single_arm_subset(s1):

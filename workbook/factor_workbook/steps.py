@@ -83,13 +83,19 @@ def _evidence_consistency(
 ) -> tuple[pd.DataFrame, list[Check]]:
     """Class-count/feature-statistics consistency vs the published summary (R2.6).
 
-    Always: per evidence arm, the included-row count is compared against the
-    published ``n_per_class`` and the ``std_*`` feature mean/std summary rows
-    are re-derived. Deeper (statistics extra only): where both arms carry at
-    least ``_N_SPLITS`` included rows (>= n_splits*2 usable rows total), the
-    point AUC is re-derived and compared against the published
-    ``controlled_auc``; fixture-sized subsets skip this gracefully — the
-    full-data path runs live (task 6.1).
+    Always: per MAIN evidence arm (identifying / anonymized / prose_confounded),
+    the TOTAL gathered row count — included and dropped alike — is compared
+    against the published ``n_per_class``: the screen gathers exactly
+    ``n_per_class`` prompts per main arm and records failures as dropped rows,
+    so gathered-total is the published invariant while included counts vary
+    with parse/timeout attrition (validation 2026-07-09: comparing included
+    rows false-alarmed on the pristine release). The ``parse_sample`` arm has
+    its own fixed sample size, unpublished — excluded from the count check.
+    The ``std_*`` feature mean/std summary rows are re-derived from INCLUDED
+    rows (the rows that fed the statistics). Deeper (statistics extra only):
+    where both main arms carry at least ``_N_SPLITS`` included rows, the point
+    AUC is re-derived and compared against the published ``controlled_auc``;
+    fixture-sized subsets skip this gracefully — the full-data path runs live.
 
     Returns:
         The per-arm feature-statistics table and the comparison checks.
@@ -97,13 +103,14 @@ def _evidence_consistency(
     summary, _ = load_json(client, "norecall_screen_evidence_summary", model=slug)
     included = evidence[evidence["included"]]
     stats = evidence_class_stats(included)
+    gathered = evidence[evidence["arm"] != "parse_sample"]["arm"].value_counts()
     checks = [
         compare(
-            f"S1 {model} [{arm}] included rows vs published n_per_class",
+            f"S1 {model} [{arm}] gathered rows vs published n_per_class",
             summary["n_per_class"],
             count,
         )
-        for arm, count in sorted(stats.arm_counts.items())
+        for arm, count in sorted(gathered.items())
     ]
 
     if certification.available():

@@ -72,6 +72,9 @@ skeleton contains only formulas and framing text, never data or credentials.
   produces the client handle every sheet derives from.
 - **Changing the tag re-loads**: editing `Index!B1` is the explicit version switch —
   every dataset reloads from the newly named release and the displayed version changes.
+- **Download cache**: fetched assets are cached in a `.cache/` directory next to the
+  installed `factor_workbook` package (inside your venv when pip-installed). Delete it
+  to force fresh downloads; release tags are treated as immutable.
   Nothing switches versions silently.
 - **Provenance**: `FW_PROVENANCE` on the Index sheet lists the source URL, release tag,
   and checksum of every loaded asset; `FW_VERSION` shows the active release version.

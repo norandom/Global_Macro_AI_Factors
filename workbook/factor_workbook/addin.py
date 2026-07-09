@@ -26,6 +26,7 @@ import dataclasses
 import pandas as pd
 from pyxll import xl_func
 
+from factor_workbook.contract import SchemaError
 from factor_workbook.release import Provenance, ReleaseClient, ReleaseError
 from factor_workbook.steps import StepView, build_s1, build_s2, build_s3, build_s4, build_s5
 from factor_workbook.verify import checks_frame
@@ -80,6 +81,10 @@ async def fw_step(client: ReleaseClient, step: str) -> StepView | str:
         return builder(client)
     except ReleaseError as exc:
         return _error(exc.error.asset, exc.error.cause, exc.error.detail)
+    except SchemaError as exc:
+        # A contract breach is a per-asset data error too (R1.4): render it
+        # in-cell rather than raising through the UDF boundary.
+        return _error("contract", "schema", str(exc))
 
 
 @xl_func("object step_view, string table: dataframe<index=True>", name="FW_TABLE")
