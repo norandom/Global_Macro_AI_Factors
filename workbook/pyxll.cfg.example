@@ -1,0 +1,18 @@
+; pyxll.cfg.example — copy to pyxll.cfg in your PyXLL config location and set the
+; two placeholder paths below. No secrets belong in this file: tokens go into
+; keyring (service "factor-workbook", user "github") or the GITHUB_TOKEN
+; environment variable, never into config, cells, or workbook files.
+
+[PYXLL]
+; The only module the workbook needs; it registers all FW_* worksheet functions.
+modules = factor_workbook.addin
+
+[PYTHON]
+; Full path to the python.exe of the (3.12) environment where you ran
+; "pip install <path-to-repo>\workbook", e.g. a venv's Scripts\python.exe.
+executable = <YOUR-PYTHON-3.12-PATH>\python.exe
+
+; Usually not needed when the package is pip-installed into the environment
+; above. Uncomment and point at the package parent directory only if you run
+; from a source checkout instead of an installed package.
+; pythonpath = <YOUR-REPO-CHECKOUT>\workbook

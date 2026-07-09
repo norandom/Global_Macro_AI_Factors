@@ -98,7 +98,7 @@
   - _Requirements: 2.2, 3.3, 5.2, 6.3, 7.3, 7.4_
   - _Depends: 5.1_
 
-- [ ] 5.3 Deployment documentation and configuration example
+- [x] 5.3 Deployment documentation and configuration example
   - Write the Windows deployment guide: add-in configuration example (module list, python path), install of the lean package, the commercial license/trial prerequisite stated explicitly, the token setup for a future private repo, and the manual Excel verification checklist (async load fills cells without freezing, tables spill, provenance populates)
   - Observable: the README and configuration example exist in the package directory, state the runtime prerequisite and that the data/computation layer remains verifiable without Excel, and the checklist enumerates the Excel-only behaviors excluded from automated tests
   - _Requirements: 7.6, 1.3_
