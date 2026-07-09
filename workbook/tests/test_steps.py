@@ -18,9 +18,18 @@ import pandas as pd
 import pytest
 
 from factor_workbook import certification
-from factor_workbook.rederive import loading_stability, wilson_ci
+from factor_workbook.rederive import equity_metrics, loading_stability, wilson_ci
 from factor_workbook.release import FetchError, Provenance, ReleaseError
-from factor_workbook.steps import S2_FRAMING, S3_FRAMING, StepView, build_s1, build_s2, build_s3
+from factor_workbook.steps import (
+    S2_FRAMING,
+    S3_FRAMING,
+    S4_FRAMING,
+    StepView,
+    build_s1,
+    build_s2,
+    build_s3,
+    build_s4,
+)
 from factor_workbook.verify import Check
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -592,3 +601,201 @@ def test_s3_framing_guard_and_rejection_no_accuracy_claim(s3):
     assert "no forecast-accuracy claim" in framing
     assert s3.framing == S3_FRAMING
     assert "factor" in s3.title.lower()
+
+
+# --------------------------------------------------------------------------- #
+# S4 — two-line simulation (task 4.4)                                          #
+# --------------------------------------------------------------------------- #
+
+S4_METRIC_FIELDS = [
+    "total_return",
+    "annualized_return",
+    "annualized_vol",
+    "sharpe",
+    "sortino",
+    "calmar",
+    "max_drawdown",
+    "crisis_return",
+    "crisis_max_drawdown",
+]
+PIT_LABEL = "PIT recall-guarded (deployable)"
+DETAIL_FIELDS = ["p_memorized", "steered", "parse_ok", "conviction"]
+
+
+@pytest.fixture(scope="module")
+def s4() -> StepView:
+    """One S4 view over the fixture subsets for all read-only assertions."""
+    return build_s4(FakeClient())
+
+
+def _decision_log(name: str) -> dict:
+    return json.loads((FIXTURES / name).read_text())
+
+
+def test_s4_equity_table_both_lines_matching_date_coverage(s4):
+    """R5.1: both equity curves joined over the same stream — identical Date
+    coverage, no gaps on either side."""
+    table = s4.tables["equity"]
+    assert list(table.columns) == ["value_pit", "value_nonpit"]
+    assert table.index.name == "Date"
+    assert table.notna().all().all()  # no one-sided dates after the join
+    pit = pd.read_parquet(FIXTURES / "factor_equity_v1.parquet")
+    nonpit = pd.read_parquet(FIXTURES / "factor_nonpit_diagnostic_equity_v1.parquet")
+    assert list(table.index) == list(pit.index) == list(nonpit.index)
+    pd.testing.assert_series_equal(table["value_pit"], pit["value"], check_names=False)
+    pd.testing.assert_series_equal(table["value_nonpit"], nonpit["value"], check_names=False)
+
+
+def test_s4_targets_tables_both_lines(s4):
+    """R5.1: per-line target weights verbatim, over the same dates."""
+    pit = s4.tables["targets_pit"]
+    nonpit = s4.tables["targets_nonpit"]
+    for table in (pit, nonpit):
+        for column in ("SWDA.L", "XLK", "IAU", "BIL"):
+            assert column in table.columns, column
+    pd.testing.assert_frame_equal(pit, pd.read_parquet(FIXTURES / "factor_targets_v1.parquet"))
+    pd.testing.assert_frame_equal(
+        nonpit, pd.read_parquet(FIXTURES / "factor_nonpit_diagnostic_targets_v1.parquet")
+    )
+    assert list(pit.index) == list(nonpit.index)
+
+
+def test_s4_per_date_detail_tables(s4):
+    """R5.4: per rebalance date the memorization score and whether the guard
+    steered that date's exposures — for each line, joined from the decision log."""
+    for line, log_name in (
+        ("pit", "factor_decision_log_v1.json"),
+        ("nonpit", "factor_nonpit_diagnostic_decision_log_v1.json"),
+    ):
+        detail = s4.tables[f"detail_{line}"]
+        assert list(detail.columns) == DETAIL_FIELDS
+        log = _decision_log(log_name)
+        expected_dates = pd.to_datetime(sorted(log["p_memorized"]))
+        assert list(detail.index) == list(expected_dates)
+        for date_key, score in log["p_memorized"].items():
+            row = detail.loc[pd.Timestamp(date_key)]
+            if score is None:
+                assert pd.isna(row["p_memorized"])
+            else:
+                assert row["p_memorized"] == pytest.approx(score)
+            assert bool(row["steered"]) is log["steered"][date_key]
+            assert bool(row["parse_ok"]) is log["parse_ok"][date_key]
+    # both lines cover the same rebalance dates (R5.1)
+    assert list(s4.tables["detail_pit"].index) == list(s4.tables["detail_nonpit"].index)
+
+
+def test_s4_pit_detail_carries_guard_states(s4):
+    """R5.4: the not-parsed first pit rebalance is a visible state — no score,
+    not steered — while the guarded dates carry score + steered=True."""
+    detail = s4.tables["detail_pit"]
+    first = detail.iloc[0]
+    assert pd.isna(first["p_memorized"]) and not first["steered"] and not first["parse_ok"]
+    second = detail.loc[pd.Timestamp("2019-02-01")]
+    assert second["p_memorized"] == pytest.approx(0.5536914541968635)
+    assert bool(second["steered"]) is True
+
+
+def test_s4_labels_deployable_vs_diagnostic(s4):
+    """R5.2 hard rule: the PIT line is labeled exactly as deployable; the
+    recall-enabled line carries DIAGNOSTIC CONTROL; DIAGNOSTIC never appears
+    on any pit-line label or field."""
+    metrics = s4.tables["metrics"]
+    assert list(metrics["line"]) == ["pit", "nonpit"]
+    pit_row = metrics[metrics["line"] == "pit"].iloc[0]
+    nonpit_row = metrics[metrics["line"] == "nonpit"].iloc[0]
+    assert pit_row["label"] == PIT_LABEL
+    assert "DIAGNOSTIC CONTROL" in nonpit_row["label"]
+    assert all("DIAGNOSTIC" not in str(value) for value in pit_row)
+    # nor in any pit-line check name or table key
+    assert all("DIAGNOSTIC" not in c.name for c in s4.checks)
+    for name in ("equity", "targets_pit", "detail_pit"):
+        assert "DIAGNOSTIC" not in name and name in s4.tables
+
+
+def test_s4_metrics_table_rederived_beside_published(s4):
+    """R5.3: one row per line — the metrics recomputed from the loaded equity
+    series side by side with the published reference-track figures."""
+    metrics = s4.tables["metrics"]
+    summary = json.loads((FIXTURES / "factor_contrast_summary_v1.json").read_text())
+    for line, equity_name, published in (
+        ("pit", "factor_equity_v1.parquet", summary["pit_metrics"]),
+        ("nonpit", "factor_nonpit_diagnostic_equity_v1.parquet", summary["nonpit_metrics"]),
+    ):
+        row = metrics[metrics["line"] == line].iloc[0]
+        rederived = equity_metrics(pd.read_parquet(FIXTURES / equity_name)["value"])
+        for field in S4_METRIC_FIELDS:
+            assert row[f"{field}_published"] == pytest.approx(published[field])
+            expected = getattr(rederived, field)
+            if pd.isna(expected):
+                assert pd.isna(row[f"{field}_rederived"])
+            else:
+                assert row[f"{field}_rederived"] == pytest.approx(expected)
+        # reference-track context not derivable from the equity series alone
+        assert row["avg_turnover_published"] == pytest.approx(published["avg_turnover"])
+
+
+def test_s4_metric_checks_flag_the_fixture_subset(s4):
+    """R5.3/R7.2: per line, every equity-derivable published figure carries a
+    comparison check — flagged (never raised) on the 5-row fixture subset."""
+    summary = json.loads((FIXTURES / "factor_contrast_summary_v1.json").read_text())
+    by_name = {c.name: c for c in s4.checks}
+    assert len(s4.checks) == 2 * len(S4_METRIC_FIELDS)
+    for line, published in (("pit", summary["pit_metrics"]), ("nonpit", summary["nonpit_metrics"])):
+        for field in S4_METRIC_FIELDS:
+            check = by_name[f"S4 {line} {field} vs published"]
+            assert check.published == pytest.approx(published[field])
+            assert check.ok is False
+            assert check.message  # visible, human-readable flag
+
+
+REAL_DATA = Path(__file__).resolve().parents[2] / "data"
+S4_REAL_ASSETS = [
+    "factor_contrast_summary_v1.json",
+    "factor_equity_v1.parquet",
+    "factor_targets_v1.parquet",
+    "factor_decision_log_v1.json",
+    "factor_nonpit_diagnostic_equity_v1.parquet",
+    "factor_nonpit_diagnostic_targets_v1.parquet",
+    "factor_nonpit_diagnostic_decision_log_v1.json",
+]
+
+
+@pytest.mark.skipif(
+    not all((REAL_DATA / asset).exists() for asset in S4_REAL_ASSETS),
+    reason="real release assets not present locally",
+)
+def test_s4_metric_checks_pass_on_full_data():
+    """R5.3 agreement proof (Implementation Note 3.1): on the REAL published
+    assets every equity-derivable metric recomputed from the full 2014-2024
+    series matches the published pit/nonpit figure within the documented S4
+    tolerance — all 18 checks pass. The producer convention is vectorbt's
+    (365-day calendar year, day-0 return included, ddof=1, arithmetic
+    sharpe, downside-RMS sortino); the loosest reproduction is the pit
+    crisis_return at rel err 1.7e-6, covered by tol=1e-5."""
+    overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S4_REAL_ASSETS}
+    view = build_s4(FakeClient(overrides))
+    assert len(view.checks) == 2 * len(S4_METRIC_FIELDS)
+    failing = [check.message for check in view.checks if not check.ok]
+    assert failing == []
+    for check in view.checks:
+        assert check.message == ""
+        assert check.tolerance == pytest.approx(1e-5)
+    # the full series spans the fixed 2022 crisis window: crisis figures real
+    metrics = view.tables["metrics"]
+    assert metrics[["crisis_return_rederived", "crisis_return_published"]].notna().all().all()
+
+
+def test_s4_framing_two_lines_diagnostic_never_deployable(s4):
+    """R5.2/R7.3: two lines over the same stream; the diagnostic line measures
+    recall and is never deployable; near-coincident equity is the expected
+    honest outcome; no forecast-accuracy claim."""
+    framing = s4.framing.lower()
+    assert "same rebalance stream" in framing
+    assert "measure recall" in framing
+    assert "never the deployable" in framing
+    assert "near-coincident" in framing
+    assert "expected honest outcome" in framing
+    assert "no forecast-accuracy claim" in framing
+    assert "DIAGNOSTIC CONTROL" in s4.framing
+    assert s4.framing == S4_FRAMING
+    assert "two-line" in s4.title.lower()

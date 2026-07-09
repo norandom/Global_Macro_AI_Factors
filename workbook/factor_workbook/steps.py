@@ -18,6 +18,8 @@ import pandas as pd
 from factor_workbook import certification
 from factor_workbook.contract import load_frame, load_json
 from factor_workbook.rederive import (
+    EquityMetrics,
+    equity_metrics,
     evidence_class_stats,
     guarded_tilt,
     loading_stability,
@@ -368,6 +370,125 @@ def build_s3(client: ReleaseClient) -> StepView:
     return StepView(
         title="S3 — AI macro-factor development (recall-guarded)",
         framing=S3_FRAMING,
+        tables=tables,
+        checks=checks,
+    )
+
+
+#: Line labels (R5.2): the PIT line is the deployable portfolio, exactly so;
+#: the recall-enabled line is a diagnostic control and never deployable.
+_S4_PIT_LABEL = "PIT recall-guarded (deployable)"
+_S4_NONPIT_LABEL = (
+    "non-PIT recall-enabled DIAGNOSTIC CONTROL — never the deployable portfolio"
+)
+
+#: Published-metric fields recomputable from the equity value series alone
+#: (avg_turnover needs the trade stream and stays published-only context).
+_S4_METRIC_FIELDS = [
+    "total_return",
+    "annualized_return",
+    "annualized_vol",
+    "sharpe",
+    "sortino",
+    "calmar",
+    "max_drawdown",
+    "crisis_return",
+    "crisis_max_drawdown",
+]
+
+#: Relative tolerance of the S4 published-vs-re-derived metric checks. On the
+#: full 2014-2024 series every metric reproduces at rel err <= 1.7e-6 (the
+#: loosest being the pit crisis_return, whose published figure came from a
+#: separate pipeline run than the released equity parquet); 1e-5 covers that
+#: float-level slack while staying far inside display precision.
+_S4_METRIC_TOL = 1e-5
+
+#: Two-line framing for S4 (R5.2, R7.3) — displayed with the sheet.
+S4_FRAMING = (
+    "Two lines over the same rebalance stream: the PIT recall-guarded line "
+    "is the deployable portfolio; the recall-enabled line is a DIAGNOSTIC "
+    "CONTROL that exists to measure recall, not to deploy — it is never the "
+    "deployable or recommended portfolio. Near-coincident equity curves are "
+    "the expected honest outcome of guarding, not a shortfall to close. "
+    "No forecast-accuracy claim is made."
+)
+
+
+def _decision_detail(log: dict) -> pd.DataFrame:
+    """Per-rebalance-date guard detail joined from one decision log (R5.4)."""
+    detail = pd.DataFrame(
+        {field: log[field] for field in ("p_memorized", "steered", "parse_ok", "conviction")}
+    )
+    detail.index = pd.to_datetime(detail.index)
+    detail.index.name = "date"
+    return detail.sort_index()
+
+
+def _metrics_row(line: str, label: str, metrics: EquityMetrics, published: dict) -> dict:
+    """One head-to-head row: re-derived metrics beside the published track (R5.3)."""
+    row: dict = {"line": line, "label": label}
+    for field in _S4_METRIC_FIELDS:
+        row[f"{field}_rederived"] = getattr(metrics, field)
+        row[f"{field}_published"] = published[field]
+    row["avg_turnover_published"] = published["avg_turnover"]
+    return row
+
+
+def build_s4(client: ReleaseClient) -> StepView:
+    """Assemble the S4 two-line walk-forward simulation view (R5.1-5.4).
+
+    Both lines — the PIT recall-guarded deployable line and the recall-enabled
+    diagnostic control — over the same stream: the joined equity curves
+    (``equity``), per-line target weights (``targets_*``), and per-date guard
+    detail joined from the decision logs — memorization score, steered flag,
+    parse status, conviction (``detail_*``, R5.4). The ``metrics`` table
+    carries one row per line with the metrics recomputed from the loaded
+    equity series beside the published reference-track figures (R5.3), each
+    equity-derivable figure attached as a comparison check at the documented
+    ``_S4_METRIC_TOL`` — on the full release every check passes (the metrics
+    mirror the producing vectorbt convention, see ``rederive.equity_metrics``);
+    on a row-subset load the disagreement is a rendered flag, never an
+    exception (R7.2). The
+    labeling rule is hard (R5.2): the PIT line is labeled deployable and the
+    diagnostic marker never appears on it.
+
+    Args:
+        client: Release client for the pinned data version.
+
+    Returns:
+        The typed S4 view model with the mandated framing.
+    """
+    summary, _ = load_json(client, "factor_contrast_summary_v1")
+    tables: dict[str, pd.DataFrame] = {}
+    checks: list[Check] = []
+    equity: dict[str, pd.Series] = {}
+    metrics_rows: list[dict] = []
+    for line, prefix, label, published in (
+        ("pit", "factor", _S4_PIT_LABEL, summary["pit_metrics"]),
+        ("nonpit", "factor_nonpit_diagnostic", _S4_NONPIT_LABEL, summary["nonpit_metrics"]),
+    ):
+        values, _ = load_frame(client, f"{prefix}_equity_v1")
+        targets, _ = load_frame(client, f"{prefix}_targets_v1")
+        log, _ = load_json(client, f"{prefix}_decision_log_v1")
+        equity[f"value_{line}"] = values["value"]
+        tables[f"targets_{line}"] = targets
+        tables[f"detail_{line}"] = _decision_detail(log)
+        rederived = equity_metrics(values["value"])
+        metrics_rows.append(_metrics_row(line, label, rederived, published))
+        checks.extend(
+            compare(
+                f"S4 {line} {field} vs published",
+                published[field],
+                getattr(rederived, field),
+                tol=_S4_METRIC_TOL,
+            )
+            for field in _S4_METRIC_FIELDS
+        )
+    tables["equity"] = pd.DataFrame(equity)
+    tables["metrics"] = pd.DataFrame(metrics_rows)
+    return StepView(
+        title="S4 — Two-line walk-forward simulation",
+        framing=S4_FRAMING,
         tables=tables,
         checks=checks,
     )

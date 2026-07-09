@@ -21,7 +21,12 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-_TRADING_DAYS = 252
+_TRADING_DAYS = 252  # crisis_vol_ann only, mirroring evaluation.crisis_analytics
+#: vectorbt's default ``year_freq`` (365 calendar days) — the annualization
+#: basis behind the published head-to-head metrics (``pit_metrics`` /
+#: ``nonpit_metrics`` in ``factor_contrast_summary_v1``), produced by
+#: ``macro_framework.evaluation.head_to_head_report`` via ``vbt.Portfolio``.
+_CALENDAR_DAYS = 365
 
 
 # --------------------------------------------------------------------------- #
@@ -50,13 +55,22 @@ class PremiumResult:
 class EquityMetrics:
     """Equity-line metrics recomputed from a value series (R5.3).
 
+    All fields mirror the producing pipeline —
+    ``macro_framework.evaluation.head_to_head_report`` over ``vbt.Portfolio``
+    — whose daily-returns stream includes the zero day-0 return and whose
+    annualization basis is vectorbt's 365-day calendar year (verified against
+    the published ``factor_contrast_summary_v1`` figures at rel err <= 1.7e-6
+    on the full 2014-2024 series).
+
     Attributes:
         total_return: Final over initial value minus one.
-        annualized_return: Geometric annualization on 252 trading days.
-        annualized_vol: Sample std of daily returns, annualized.
-        sharpe: annualized_return / annualized_vol (rf = 0).
-        sortino: annualized_return / annualized downside std (ddof=0 over
-            negative returns).
+        annualized_return: Geometric annualization on the 365-day calendar
+            year: ``(1 + total_return) ** (365 / n_days) - 1``.
+        annualized_vol: Sample std (ddof=1) of daily returns times sqrt(365).
+        sharpe: mean(daily returns) / std(daily returns) * sqrt(365) (rf = 0).
+        sortino: mean(daily returns) / downside RMS * sqrt(365), the downside
+            RMS being ``sqrt(mean(min(r, 0)^2))`` over ALL days (empyrical
+            downside risk, as used by vectorbt).
         calmar: annualized_return / abs(max_drawdown).
         max_drawdown: Minimum of the running-max drawdown of the value line.
         crisis_return: Period return inside the fixed crisis window (NaN when
@@ -64,7 +78,8 @@ class EquityMetrics:
         crisis_max_drawdown: Within-window running-max drawdown minimum (NaN
             when no overlap).
         crisis_vol_ann: Annualized sample std of within-window returns (NaN
-            when no overlap).
+            when no overlap); annualized on 252 trading days, mirroring
+            ``evaluation.crisis_analytics``.
     """
 
     total_return: float
@@ -230,10 +245,15 @@ def equity_metrics(
 ) -> EquityMetrics:
     """Recompute the equity-line metrics from a value series (R5.3).
 
-    Daily returns are ``value.pct_change().dropna()``; annualization uses 252
-    trading days with geometric compounding for the return. The crisis block
-    mirrors ``macro_framework.evaluation.crisis_analytics`` on the fixed 2022
-    window; a series with no window overlap reports NaN crisis fields.
+    Mirrors the published pipeline exactly
+    (``macro_framework.evaluation.head_to_head_report`` via vectorbt): daily
+    returns are ``value.pct_change()`` with the day-0 return as ``0.0`` (so
+    ``n`` counts every value row), and annualization uses vectorbt's 365-day
+    calendar year — geometric compounding for the return, arithmetic
+    mean-over-std for sharpe, and the empyrical downside RMS for sortino.
+    The crisis block mirrors ``macro_framework.evaluation.crisis_analytics``
+    on the fixed 2022 window (252-day vol basis there); a series with no
+    window overlap reports NaN crisis fields.
 
     Args:
         value: The equity value series (datetime index, e.g. the released
@@ -244,23 +264,27 @@ def equity_metrics(
         The recomputed metrics; degenerate inputs (constant line, no downside)
         degrade ratio metrics to ``0.0`` rather than NaN.
     """
-    returns = value.pct_change().dropna()
-    n = len(returns)
-    total_return = float(value.iloc[-1] / value.iloc[0] - 1.0) if len(value) else 0.0
+    n = len(value)
+    returns = value.pct_change().fillna(0.0)  # vectorbt: day-0 return is 0.0
+    total_return = float(value.iloc[-1] / value.iloc[0] - 1.0) if n else 0.0
     annualized_return = (
-        (1.0 + total_return) ** (_TRADING_DAYS / n) - 1.0 if n else 0.0
+        (1.0 + total_return) ** (_CALENDAR_DAYS / n) - 1.0 if n else 0.0
     )
-    annualized_vol = (
-        float(returns.std(ddof=1)) * math.sqrt(_TRADING_DAYS) if n >= 2 else 0.0
+    daily_std = float(returns.std(ddof=1)) if n >= 2 else 0.0
+    annualized_vol = daily_std * math.sqrt(_CALENDAR_DAYS)
+    daily_mean = float(returns.mean()) if n else 0.0
+    sharpe = (
+        daily_mean / daily_std * math.sqrt(_CALENDAR_DAYS) if daily_std > 0.0 else 0.0
     )
-    sharpe = annualized_return / annualized_vol if annualized_vol > 0.0 else 0.0
-    downside = returns[returns < 0].to_numpy(dtype=float)
-    downside_vol = (
-        float(np.std(downside)) * math.sqrt(_TRADING_DAYS) if len(downside) else 0.0
+    downside = np.minimum(returns.to_numpy(dtype=float), 0.0)
+    downside_rms = math.sqrt(float(np.mean(downside**2))) if n else 0.0
+    sortino = (
+        daily_mean / downside_rms * math.sqrt(_CALENDAR_DAYS)
+        if downside_rms > 0.0
+        else 0.0
     )
-    sortino = annualized_return / downside_vol if downside_vol > 0.0 else 0.0
     drawdown = value / value.cummax() - 1.0
-    max_drawdown = float(drawdown.min()) if len(value) else 0.0
+    max_drawdown = float(drawdown.min()) if n else 0.0
     calmar = annualized_return / abs(max_drawdown) if max_drawdown < 0.0 else 0.0
 
     window = value.loc[crisis[0] : crisis[1]]

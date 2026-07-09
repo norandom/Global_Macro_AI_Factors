@@ -318,17 +318,21 @@ class TestEquityMetrics:
         m = equity_metrics(value)
         assert isinstance(m, EquityMetrics)
 
-        returns = value.pct_change().dropna().to_numpy()
+        # Producer (vectorbt) convention: day-0 return included as 0.0,
+        # 365-day calendar-year annualization, arithmetic sharpe, downside-RMS
+        # sortino (see the published pit/nonpit_metrics reproduction, R5.3).
+        returns = value.pct_change().fillna(0.0).to_numpy()
         total = 103.0 / 100.0 - 1.0
-        ann_ret = (1.0 + total) ** (252 / len(returns)) - 1.0
-        ann_vol = float(np.std(returns, ddof=1)) * math.sqrt(252)
+        ann_ret = (1.0 + total) ** (365 / len(value)) - 1.0
+        ann_vol = float(np.std(returns, ddof=1)) * math.sqrt(365)
         assert m.total_return == pytest.approx(total, rel=1e-12)
         assert m.annualized_return == pytest.approx(ann_ret, rel=1e-12)
         assert m.annualized_vol == pytest.approx(ann_vol, rel=1e-12)
-        assert m.sharpe == pytest.approx(ann_ret / ann_vol, rel=1e-12)
-        downside = returns[returns < 0]
-        dstd = float(np.std(downside)) * math.sqrt(252)
-        assert m.sortino == pytest.approx(ann_ret / dstd, rel=1e-12)
+        sharpe = float(np.mean(returns)) / float(np.std(returns, ddof=1)) * math.sqrt(365)
+        assert m.sharpe == pytest.approx(sharpe, rel=1e-12)
+        downside_rms = math.sqrt(float(np.mean(np.minimum(returns, 0.0) ** 2)))
+        sortino = float(np.mean(returns)) / downside_rms * math.sqrt(365)
+        assert m.sortino == pytest.approx(sortino, rel=1e-12)
 
         # Max drawdown from the running max of the value line: peak 110 ->
         # trough 99.
