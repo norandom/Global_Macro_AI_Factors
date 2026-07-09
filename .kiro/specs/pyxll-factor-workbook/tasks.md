@@ -32,7 +32,7 @@
   - _Requirements: 2.6, 3.2, 4.3, 4.4, 5.3, 6.1_
   - _Depends: 2.2_
 
-- [ ] 3.2 (P) Vendored Sharpe-stability computation with parity proof
+- [x] 3.2 (P) Vendored Sharpe-stability computation with parity proof
   - Vendor the existing repo's Sharpe-stability computation verbatim (with a provenance header naming source path and commit) into the lean package
   - Observable: a parity test asserts the vendored copy reproduces the original module's output on the released equity fixture, auto-skipped outside the root environment; the vendored module imports without the heavy environment
   - _Boundary: vendored_ssr_
