@@ -78,7 +78,7 @@
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 7.3_
   - _Depends: 3.1, 3.4_
 
-- [ ] 4.5 Step 5 view — luck versus skill
+- [x] 4.5 Step 5 view — luck versus skill
   - Assemble the paired contrast with premium and paired effect size re-derived from per-date records, the Sharpe-stability table for both lines and the differential re-derived via the vendored computation, the PIT-vs-non-PIT loading-stability comparison, and the mandated conclusion wording (luck-compatible; lookahead/recall bias, never attainable skill)
   - Observable: tests assert the re-derived premium/effect size and stability rows match published values within tolerance and the conclusion wording is present verbatim
   - _Requirements: 6.1, 6.2, 6.3, 7.3_
@@ -119,3 +119,4 @@
 - 3.1: paired_cohens_d uses POPULATION std (ddof=0) + 1e-12 zero-variance guard, matching macro_framework.factor_scoring._paired_cohens_d (the producer of the published 1.9252251) — ddof=1 misses it by ~0.7%. Fixtures are ROW SUBSETS: full-data published-figure agreement is exercised in 4.2/4.4/4.5. REVISED in 4.4 (approved boundary extension into rederive.py): equity_metrics mirrors the vectorbt producer convention — 365-day calendar-year annualization, day-0 zero return included (pct_change().fillna(0)), sharpe = arithmetic mean/std(ddof=1)*sqrt(365), sortino = mean/downside-RMS*sqrt(365), crisis_vol_ann stays 252 (evaluation.crisis_analytics). Verified against published pit/nonpit_metrics at rel err <= 1.71e-6; the earlier 252-day geometric convention fails 10/18 checks. Do NOT revert to 252/geometric. S4 metric tol = 1e-5 (documented).
 - 3.3: full-data reproduction test runs on the REAL local evidence parquet (guarded skip elsewhere) and reproduces all four published values at 1e-9 — tolerance is sklearn-version-sensitive (1.8.0; loosen on upgrade). Do NOT module-level-import macro_framework.factor_scoring in workbook tests (breaks test_factor_scoring's sys.modules assertion) — import lazily inside test bodies.
 - 4.1: gap markers are DATA-DRIVEN (screen_failed -> unscreenable; any other verdict with missing evidence member -> pending_evidence) — phi-4-mini is also pending in fixtures since the fixture tar ships only 20b/120b. Class-count checks flag ok=False on fixture subsets by design (R7.2 renders them); live agreement lands in 6.1.
+- 4.5: SSR re-derivation slices equity at the first contrast date (2019-01-02), mirroring nb14; differential row uses documented _S5_DIFF_TOL=1e-3 (near-zero cancellation amplifies the parquet's ~1e-7 storage rounding to ~1.5e-4 rel) — non-differential rows hold 1e-6. paired_d reproduces exactly (1.9252251).

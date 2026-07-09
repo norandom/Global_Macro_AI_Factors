@@ -19,6 +19,7 @@ from factor_workbook import certification
 from factor_workbook.contract import load_frame, load_json
 from factor_workbook.rederive import (
     EquityMetrics,
+    contamination_premium,
     equity_metrics,
     evidence_class_stats,
     guarded_tilt,
@@ -26,6 +27,7 @@ from factor_workbook.rederive import (
     wilson_ci,
 )
 from factor_workbook.release import ReleaseClient, ReleaseError
+from factor_workbook.vendored_ssr import compute_ssr
 from factor_workbook.verify import Check, compare
 
 _N_SPLITS = 5  # certification_stats default; each arm needs >= this many rows
@@ -489,6 +491,176 @@ def build_s4(client: ReleaseClient) -> StepView:
     return StepView(
         title="S4 — Two-line walk-forward simulation",
         framing=S4_FRAMING,
+        tables=tables,
+        checks=checks,
+    )
+
+
+#: Published->re-derived field mapping of the S5 Sharpe-stability table (R6.2):
+#: ``factor_luck_vs_skill_v1`` columns to vendored ``SSRResult`` attributes.
+_S5_SSR_FIELDS = {
+    "n_obs": "n_obs",
+    "n_rolling": "n_rolling",
+    "sharpe": "sr_full",
+    "mean_rolling_sr": "mean_rolling_sr",
+    "ssr": "ssr",
+    "nw_sigma_hac": "sigma_hac",
+    "nw_bandwidth_L": "L_hac",
+}
+
+#: Relative tolerance of the S5 differential-row checks. The producer (nb14)
+#: built the differential from live portfolio values; the released PIT equity
+#: parquet reproduces those figures at ~1e-7 relative — and the differential
+#: is a near-zero difference of two almost-identical lines, so that
+#: float-level slack amplifies (catastrophic cancellation) to ~1.5e-4
+#: relative on the differential SSR figures. 1e-3 covers it while staying far
+#: inside the 4-decimal display precision; the pit/nonpit rows reproduce at
+#: <= 2.1e-7 and keep the default 1e-6.
+_S5_DIFF_TOL = 1e-3
+
+#: Luck-vs-skill conclusion framing for S5 (R6.3, R7.3) — the recorded terms.
+S5_FRAMING = (
+    "Luck versus skill: the contamination premium is +0.528 (paired Cohen's "
+    "d = 1.93) in MEMORY, while the head-to-head premium is ~0 in P&L "
+    "(total-return differential 0.028). The return differential's SSR = "
+    "0.002 under Newey-West HAC inference is statistically indistinguishable "
+    "from zero: the recall premium is LUCK-COMPATIBLE, not skill. Any excess "
+    "of the recall-enabled line is LOOKAHEAD/RECALL BIAS, never attainable "
+    "skill, and the diagnostic line is never deployable. No "
+    "forecast-accuracy claim is made."
+)
+
+
+def _total_return(value: pd.Series) -> float:
+    """Final over initial value minus one; NaN on an empty series."""
+    return float(value.iloc[-1] / value.iloc[0] - 1.0) if len(value) else float("nan")
+
+
+def build_s5(client: ReleaseClient) -> StepView:
+    """Assemble the S5 luck-versus-skill view (R6.1-6.3).
+
+    The paired per-date memorization contrast verbatim (``contrast``) with the
+    contamination premium and paired effect size re-derived from those records
+    beside the published summary (``premium``, R6.1). The Sharpe-stability
+    table (``ssr``) carries the three published ``factor_luck_vs_skill_v1``
+    rows — deployable line, diagnostic line, return differential, including
+    the Newey-West long-run variance treatment — next to the vendored
+    ``compute_ssr`` re-derivation over the loaded equity series, sliced at
+    the first rebalance date exactly as the producer built them, with the
+    differential as the date-aligned non-PIT-minus-PIT daily returns (R6.2).
+    Per-line SSR and total-return checks compare re-derived against published
+    at the documented tolerances; on fixture-sized subsets the disagreement
+    is a rendered flag, never an exception (R7.2). The PIT-vs-non-PIT
+    loading-stability comparison (``loading_stability``, research.md §5) is
+    re-derived from the loaded loadings tables. The framing states the
+    recorded conclusion: luck-compatible, lookahead/recall bias, never
+    attainable skill (R6.3).
+
+    Args:
+        client: Release client for the pinned data version.
+
+    Returns:
+        The typed S5 view model with the mandated conclusion wording.
+    """
+    contrast, _ = load_frame(client, "factor_contrast_v1")
+    summary, _ = load_json(client, "factor_contrast_summary_v1")
+    published_ssr, _ = load_frame(client, "factor_luck_vs_skill_v1")
+    tables: dict[str, pd.DataFrame] = {"contrast": contrast}
+    checks: list[Check] = []
+
+    premium = contamination_premium(contrast["pit_p"], contrast["nonpit_p"])
+    published_premium = summary["contamination_premium"]
+    tables["premium"] = pd.DataFrame(
+        [
+            {
+                "n_pairs_published": summary["n_pairs"],
+                "n_pairs_rederived": premium.n_pairs,
+                "mean_delta_published": published_premium["p_memorized_mean_delta"],
+                "mean_delta_rederived": premium.mean_delta,
+                "median_delta_published": published_premium["p_memorized_median_delta"],
+                "median_delta_rederived": premium.median_delta,
+                "paired_d_published": published_premium["p_memorized_paired_d"],
+                "paired_d_rederived": premium.paired_d,
+            }
+        ]
+    )
+    checks.append(
+        compare("S5 premium n_pairs vs published", summary["n_pairs"], premium.n_pairs)
+    )
+    for field, published_value in (
+        ("mean_delta", published_premium["p_memorized_mean_delta"]),
+        ("median_delta", published_premium["p_memorized_median_delta"]),
+        ("paired_d", published_premium["p_memorized_paired_d"]),
+    ):
+        checks.append(
+            compare(
+                f"S5 premium {field} vs published",
+                published_value,
+                getattr(premium, field),
+            )
+        )
+
+    # nb14 sliced the equity at the first rebalance date before pct_change
+    # (the equity parquets carry a flat pre-simulation stub from 2014); the
+    # contrast index carries exactly those rebalance dates.
+    sim_start = contrast.index.min()
+    returns: dict[str, pd.Series] = {}
+    total_return: dict[str, float] = {}
+    for line, prefix in (("pit", "factor"), ("nonpit", "factor_nonpit_diagnostic")):
+        values, _ = load_frame(client, f"{prefix}_equity_v1")
+        returns[line] = values["value"].loc[sim_start:].pct_change().dropna()
+        total_return[line] = _total_return(values["value"])
+    # date-aligned subtraction == nb14's intersection-indexed construction
+    returns["differential"] = (returns["nonpit"] - returns["pit"]).dropna()
+    total_return["differential"] = total_return["nonpit"] - total_return["pit"]
+
+    ssr_rows: list[dict] = []
+    for i, line in enumerate(("pit", "nonpit", "differential")):
+        published = published_ssr.iloc[i]
+        result = compute_ssr(returns[line])
+        row: dict = {"line": published_ssr.index[i]}
+        for column, attr in _S5_SSR_FIELDS.items():
+            row[f"{column}_published"] = published[column]
+            row[f"{column}_rederived"] = getattr(result, attr)
+        row["nw_long_run_var_published"] = published["nw_long_run_var"]
+        row["nw_long_run_var_rederived"] = float(result.sigma_hac) ** 2
+        row["total_return_published"] = published["total_return"]
+        row["total_return_rederived"] = total_return[line]
+        row["verdict"] = published["verdict"]
+        ssr_rows.append(row)
+        tol = _S5_DIFF_TOL if line == "differential" else 1e-6
+        checks.append(
+            compare(f"S5 {line} ssr vs published", published["ssr"], result.ssr, tol=tol)
+        )
+        checks.append(
+            compare(
+                f"S5 {line} total_return vs published",
+                published["total_return"],
+                total_return[line],
+                tol=tol,
+            )
+        )
+    tables["ssr"] = pd.DataFrame(ssr_rows)
+
+    stability_rows: list[dict] = []
+    for line, asset in (
+        ("pit", "factor_loadings_v1"),
+        ("nonpit", "factor_nonpit_diagnostic_loadings_v1"),
+    ):
+        loadings, _ = load_frame(client, asset)
+        rederived = loading_stability(loadings[_AXES], loadings["parse_ok"])
+        stability_rows.append(
+            {
+                "line": line,
+                "mean_std": rederived["mean_std"],
+                "mean_mac": rederived["mean_mac"],
+            }
+        )
+    tables["loading_stability"] = pd.DataFrame(stability_rows)
+
+    return StepView(
+        title="S5 — Luck versus skill (contamination premium vs robust inference)",
+        framing=S5_FRAMING,
         tables=tables,
         checks=checks,
     )

@@ -24,11 +24,13 @@ from factor_workbook.steps import (
     S2_FRAMING,
     S3_FRAMING,
     S4_FRAMING,
+    S5_FRAMING,
     StepView,
     build_s1,
     build_s2,
     build_s3,
     build_s4,
+    build_s5,
 )
 from factor_workbook.verify import Check
 
@@ -783,6 +785,195 @@ def test_s4_metric_checks_pass_on_full_data():
     # the full series spans the fixed 2022 crisis window: crisis figures real
     metrics = view.tables["metrics"]
     assert metrics[["crisis_return_rederived", "crisis_return_published"]].notna().all().all()
+
+
+# --------------------------------------------------------------------------- #
+# S5 — luck versus skill (task 4.5)                                            #
+# --------------------------------------------------------------------------- #
+
+# Published full-data contamination premium (factor_contrast_summary_v1, nb14).
+PUBLISHED_PREMIUM_MEAN = 0.5282818618139323
+PUBLISHED_PREMIUM_MEDIAN = 0.5667478504009134
+PUBLISHED_PAIRED_D = 1.9252251066725927
+S5_LINES = ["pit", "nonpit", "differential"]
+S5_SSR_PUBLISHED_COLUMNS = [
+    "n_obs",
+    "n_rolling",
+    "total_return",
+    "sharpe",
+    "mean_rolling_sr",
+    "ssr",
+    "nw_long_run_var",
+    "nw_sigma_hac",
+    "nw_bandwidth_L",
+]
+
+
+@pytest.fixture(scope="module")
+def s5() -> StepView:
+    """One S5 view over the fixture subsets for all read-only assertions."""
+    return build_s5(FakeClient())
+
+
+def test_s5_contrast_table_verbatim(s5):
+    """R6.1: the paired per-date contrast of memorization scores, verbatim."""
+    table = s5.tables["contrast"]
+    for column in ("pit_p", "nonpit_p", "delta"):
+        assert column in table.columns, column
+    expected = pd.read_parquet(FIXTURES / "factor_contrast_v1.parquet")
+    pd.testing.assert_frame_equal(table, expected)
+
+
+def test_s5_premium_table_rederived_beside_published(s5):
+    """R6.1: premium + paired effect size re-derived from the LOADED per-date
+    records, side by side with the published summary figures."""
+    from factor_workbook.rederive import contamination_premium
+
+    premium = s5.tables["premium"]
+    assert len(premium) == 1
+    row = premium.iloc[0]
+    contrast = pd.read_parquet(FIXTURES / "factor_contrast_v1.parquet")
+    expected = contamination_premium(contrast["pit_p"], contrast["nonpit_p"])
+    assert row["n_pairs_rederived"] == expected.n_pairs == 5
+    assert row["mean_delta_rederived"] == pytest.approx(expected.mean_delta)
+    assert row["median_delta_rederived"] == pytest.approx(expected.median_delta)
+    assert row["paired_d_rederived"] == pytest.approx(expected.paired_d)
+    assert row["n_pairs_published"] == 72
+    assert row["mean_delta_published"] == pytest.approx(PUBLISHED_PREMIUM_MEAN)
+    assert row["median_delta_published"] == pytest.approx(PUBLISHED_PREMIUM_MEDIAN)
+    assert row["paired_d_published"] == pytest.approx(PUBLISHED_PAIRED_D)
+
+
+def test_s5_premium_checks_flag_the_fixture_subset(s5):
+    """R6.1/R7.2: on the 5-row fixture the re-derived premium disagrees with
+    the published full-data figures — rendered as flags, never exceptions."""
+    by_name = {c.name: c for c in s5.checks}
+    for field, published in (
+        ("mean_delta", PUBLISHED_PREMIUM_MEAN),
+        ("median_delta", PUBLISHED_PREMIUM_MEDIAN),
+        ("paired_d", PUBLISHED_PAIRED_D),
+    ):
+        check = by_name[f"S5 premium {field} vs published"]
+        assert check.published == pytest.approx(published)
+        assert check.ok is False
+        assert check.message  # visible, human-readable flag
+    n_pairs = by_name["S5 premium n_pairs vs published"]
+    assert n_pairs.published == 72
+    assert n_pairs.rederived == 5
+    assert n_pairs.ok is False
+
+
+def test_s5_ssr_table_three_lines_published_beside_rederived(s5):
+    """R6.2: the Sharpe-stability table — deployable line, diagnostic line,
+    and their return differential — published fields (incl. the Newey-West
+    long-run variance treatment) beside the vendored re-derivation."""
+    table = s5.tables["ssr"]
+    published = pd.read_parquet(FIXTURES / "factor_luck_vs_skill_v1.parquet")
+    assert list(table["line"]) == list(published.index)
+    for column in S5_SSR_PUBLISHED_COLUMNS:
+        assert f"{column}_published" in table.columns, column
+        assert f"{column}_rederived" in table.columns, column
+        for i in range(3):
+            assert table.iloc[i][f"{column}_published"] == pytest.approx(
+                published.iloc[i][column]
+            )
+    assert list(table["verdict"]) == list(published["verdict"])
+    # fixture equity rows predate the sim window: the re-derivation degrades
+    # to the vendored NaN result (n_obs 0), never an exception (R7.2)
+    assert (table["n_obs_rederived"] == 0).all()
+    assert table["ssr_rederived"].isna().all()
+
+
+def test_s5_ssr_and_total_return_checks_flag_the_fixture_subset(s5):
+    """R6.2/R7.2: per line, the re-derived SSR and total return are compared
+    against the published rows — flagged (never raised) on the fixture."""
+    by_name = {c.name: c for c in s5.checks}
+    for line in S5_LINES:
+        for field in ("ssr", "total_return"):
+            check = by_name[f"S5 {line} {field} vs published"]
+            assert check.ok is False
+            assert check.message  # visible, human-readable flag
+    # the differential rows carry the documented cancellation-slack tolerance
+    assert by_name["S5 differential ssr vs published"].tolerance == pytest.approx(1e-3)
+    assert by_name["S5 pit ssr vs published"].tolerance == pytest.approx(1e-6)
+    assert len(s5.checks) == 4 + 2 * len(S5_LINES)
+
+
+def test_s5_loading_stability_pit_vs_nonpit(s5):
+    """research.md §5: the PIT-vs-non-PIT loading-stability comparison,
+    re-derived from the loaded loadings tables."""
+    from factor_workbook.rederive import loading_stability
+
+    table = s5.tables["loading_stability"]
+    assert list(table["line"]) == ["pit", "nonpit"]
+    for line, asset in (
+        ("pit", "factor_loadings_v1.parquet"),
+        ("nonpit", "factor_nonpit_diagnostic_loadings_v1.parquet"),
+    ):
+        loadings = pd.read_parquet(FIXTURES / asset)
+        expected = loading_stability(loadings[AXES], loadings["parse_ok"])
+        row = table[table["line"] == line].iloc[0]
+        assert row["mean_std"] == pytest.approx(expected["mean_std"])
+        assert row["mean_mac"] == pytest.approx(expected["mean_mac"])
+
+
+S5_REAL_ASSETS = [
+    "factor_contrast_v1.parquet",
+    "factor_contrast_summary_v1.json",
+    "factor_luck_vs_skill_v1.parquet",
+    "factor_equity_v1.parquet",
+    "factor_nonpit_diagnostic_equity_v1.parquet",
+    "factor_loadings_v1.parquet",
+    "factor_nonpit_diagnostic_loadings_v1.parquet",
+]
+
+
+@pytest.mark.skipif(
+    not all((REAL_DATA / asset).exists() for asset in S5_REAL_ASSETS),
+    reason="real release assets not present locally",
+)
+def test_s5_checks_pass_on_full_data():
+    """R6.1/R6.2 agreement proof: on the REAL published assets the premium,
+    effect size, per-line SSR, and total returns re-derived from the full
+    series all match the published values within tolerance — every S5 check
+    passes — and the loading-stability comparison reproduces the research.md
+    §5 figures (PIT 0.5437/0.3878 vs non-PIT 0.6370/0.5103)."""
+    overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S5_REAL_ASSETS}
+    view = build_s5(FakeClient(overrides))
+    failing = [check.message for check in view.checks if not check.ok]
+    assert failing == []
+    # nb14's differential construction reproduced: published 0.028024 / 0.001999
+    diff = view.tables["ssr"].iloc[2]
+    assert diff["total_return_rederived"] == pytest.approx(0.028024, abs=5e-6)
+    assert diff["ssr_rederived"] == pytest.approx(0.001999, abs=5e-6)
+    stability = view.tables["loading_stability"].set_index("line")
+    assert stability.loc["pit", "mean_std"] == pytest.approx(0.5437, abs=1e-4)
+    assert stability.loc["pit", "mean_mac"] == pytest.approx(0.3878, abs=1e-4)
+    assert stability.loc["nonpit", "mean_std"] == pytest.approx(0.6370, abs=1e-4)
+    assert stability.loc["nonpit", "mean_mac"] == pytest.approx(0.5103, abs=1e-4)
+
+
+def test_s5_framing_mandated_conclusion_wording(s5):
+    """R6.3/R7.3: the recorded conclusion verbatim — memory-vs-P&L contrast,
+    differential statistically indistinguishable from zero under Newey-West
+    HAC, luck-compatible not skill, any recall-line excess is lookahead/recall
+    bias and never attainable skill, the diagnostic line never deployable."""
+    framing = s5.framing.lower()
+    assert "0.528" in framing and "1.93" in framing  # premium in MEMORY
+    assert "in memory" in framing
+    assert "~0 in p&l" in framing
+    assert "ssr" in framing and "0.002" in framing
+    assert "newey-west" in framing
+    assert "statistically indistinguishable from zero" in framing
+    assert "luck-compatible, not skill" in framing
+    assert "lookahead/recall bias" in framing
+    assert "never attainable skill" in framing
+    assert "never deployable" in framing
+    assert "no forecast-accuracy claim" in framing
+    assert "LUCK-COMPATIBLE" in s5.framing
+    assert "LOOKAHEAD/RECALL BIAS" in s5.framing
+    assert s5.framing == S5_FRAMING
+    assert "luck" in s5.title.lower() and "skill" in s5.title.lower()
 
 
 def test_s4_framing_two_lines_diagnostic_never_deployable(s4):
