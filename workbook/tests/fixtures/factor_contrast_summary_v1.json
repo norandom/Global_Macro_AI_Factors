@@ -1,0 +1,53 @@
+{
+  "contamination_premium": {
+    "annualized_return_delta": 0.002177976457671482,
+    "annualized_vol_delta": 0.0020289209394437763,
+    "avg_turnover_delta": 0.04749432320913671,
+    "calmar_delta": 0.07463781434174255,
+    "crisis_max_drawdown_delta": 0.008494582514643856,
+    "crisis_return_delta": 0.010158251725030598,
+    "max_drawdown_delta": 0.008494582514642302,
+    "n_pairs": 72.0,
+    "p_memorized_mean_delta": 0.5282818618139323,
+    "p_memorized_median_delta": 0.5667478504009134,
+    "p_memorized_paired_d": 1.9252251066725927,
+    "sharpe_delta": -0.003835242834836494,
+    "sortino_delta": -0.01972322888623057,
+    "total_return_delta": 0.028023795334457424
+  },
+  "framing": "The non-PIT variant is a DIAGNOSTIC CONTROL (R7.4). Where it carries higher measured contamination, its head-to-head difference is the contamination premium \u2014 lookahead/recall bias, NEVER attainable skill (R7.5).",
+  "n_pairs": 72,
+  "nim_model": "openai/gpt-oss-20b",
+  "nonpit_metrics": {
+    "annualized_return": 0.08972827662439009,
+    "annualized_vol": 0.07414299939786151,
+    "avg_turnover": 0.3244180585599003,
+    "calmar": 0.8016780789679908,
+    "crisis_max_drawdown": -0.11192557084746257,
+    "crisis_return": -0.023432149966324367,
+    "max_drawdown": -0.11192557084746324,
+    "sharpe": 1.196138479616045,
+    "sortino": 1.772860192051143,
+    "total_return": 0.8957920472784099
+  },
+  "nonpit_p_memorized": {
+    "mean": 0.7643667377761293,
+    "median": 0.7752080166904017
+  },
+  "pit_metrics": {
+    "annualized_return": 0.08755030016671861,
+    "annualized_vol": 0.07211407845841773,
+    "avg_turnover": 0.2769237353507636,
+    "calmar": 0.7270402646262483,
+    "crisis_max_drawdown": -0.12042015336210643,
+    "crisis_return": -0.033590401691354965,
+    "max_drawdown": -0.12042015336210554,
+    "sharpe": 1.1999737224508815,
+    "sortino": 1.7925834209373737,
+    "total_return": 0.8677682519439525
+  },
+  "pit_p_memorized": {
+    "mean": 0.23608487596219696,
+    "median": 0.20846016628948832
+  }
+}

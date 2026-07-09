@@ -1,0 +1,49 @@
+{
+  "adopted_version": "v1",
+  "checks": {
+    "contamination_no_greater": {
+      "mean_p_memorized_v1": 0.23608487596219696,
+      "mean_p_memorized_v2": 0.270941888784604,
+      "pass": false
+    },
+    "max_dd_not_deeper": {
+      "max_dd_v1": -0.12042015336210554,
+      "max_dd_v2": -0.12499203909772627,
+      "pass": true,
+      "tolerance": 0.02
+    },
+    "sharpe_not_worse": {
+      "pass": true,
+      "sharpe_v1": 1.1999737224508815,
+      "sharpe_v2": 1.1955608394838948,
+      "tolerance": 0.05
+    },
+    "stability_not_worse": {
+      "mean_mac_v1": 0.3878,
+      "mean_mac_v2": 0.40625352112676055,
+      "pass": true,
+      "tolerance": 0.05
+    }
+  },
+  "decision": "rejected v2",
+  "head_to_head_deltas_v2_minus_v1": {
+    "annualized_return": -0.0038410556850274613,
+    "annualized_vol": -0.0028613379916661574,
+    "avg_turnover": 0.04100573533631868,
+    "calmar": -0.057323656384964616,
+    "crisis_max_drawdown": -0.004571885735619841,
+    "crisis_return": -0.011283270999140949,
+    "max_drawdown": -0.004571885735620729,
+    "sharpe": -0.00441288296698672,
+    "sortino": -0.03605101185527371,
+    "total_return": -0.04854926083760369
+  },
+  "n_rebalances": 72,
+  "nim_model": "openai/gpt-oss-20b",
+  "parse_rates": {
+    "v1": 0.9861111111111112,
+    "v2": 1.0
+  },
+  "prior_versions_preserved": "v1 artifacts (factor_*_v1) untouched either way (R5.5)",
+  "prompt_v2_suffix": "Respond with ONLY the JSON object \u2014 no other text."
+}

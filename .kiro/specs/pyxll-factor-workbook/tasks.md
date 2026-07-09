@@ -16,7 +16,7 @@
   - Observable: offline tests (mocked transport + fixture files) cover successful fetch with provenance, every error class, the no-stale-substitution rule, and the token lookup order; no live network in the default test run
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ] 2.2 Schema-contract registry and typed loaders
+- [x] 2.2 Schema-contract registry and typed loaders
   - Encode the captured per-asset schema contract (columns, dtypes, index, minimum rows) for every consumed release asset as a typed registry with loader functions returning validated tables plus provenance
   - Fail fast on any mismatch with an asset- and column-specific message (the foundation of the discrepancy detector)
   - Build the offline fixture set: schema-true subsets of every consumed asset, checked into the test tree
@@ -115,3 +115,4 @@
 ## Implementation Notes
 - 1.1: workbook/tests has NO __init__.py (deliberate — with it, pytest maps the dir to package "tests", colliding with the root tests/ package and breaking full-suite collection). Do not reintroduce it. Smoke command: `PYTHONPATH=workbook uv run python -c "import factor_workbook"` (the package is intentionally outside the root uv workspace; root pytest imports it via workbook/tests/conftest.py sys.path insert).
 - 2.1: cache is keyed (tag, asset) and served without re-fetch on hit (tags immutable); the no-stale rule = a FAILED fetch never falls back to any cache entry. Reviewer minors (acceptable, revisit only if the repo goes private): cache-hit provenance replays the public URL even for API-fetched bytes (from_cache=True flags it); cache writes are non-atomic and tag/asset are raw path segments (inputs come from the fixed registry).
+- 2.2: an entirely-null column satisfies its contract dtype (parquet writers persist all-null as object OR float64 — the real 120b evidence raw_ref_delta is all-null float64 while 20b/phi-4 are str). Evidence tests parametrize over EVIDENCE_MODELS; fixture tarball carries both flavors. Registry keys are logical names; evidence loader is model-slug-parameterized.

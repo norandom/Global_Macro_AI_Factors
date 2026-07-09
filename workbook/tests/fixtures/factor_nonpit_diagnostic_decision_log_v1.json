@@ -1,0 +1,144 @@
+{
+ "conviction": {
+  "2019-01-02 00:00:00": 0.7120393247567159,
+  "2019-02-01 00:00:00": 0.7047410872086286,
+  "2019-03-01 00:00:00": 0.6093274981485737
+ },
+ "loadings": {
+  "2019-01-02 00:00:00": {
+   "credit_stress": -0.9,
+   "growth": 0.65,
+   "inflation": 0.55,
+   "policy": -0.8,
+   "risk_appetite": -0.6
+  },
+  "2019-02-01 00:00:00": {
+   "credit_stress": 1.0,
+   "growth": -0.18,
+   "inflation": -0.03,
+   "policy": -0.8,
+   "risk_appetite": -0.9
+  },
+  "2019-03-01 00:00:00": {
+   "credit_stress": -1.0,
+   "growth": -0.4,
+   "inflation": 0.0,
+   "policy": -0.58,
+   "risk_appetite": -0.6
+  }
+ },
+ "meta": {
+  "line": "NON-PIT DIAGNOSTIC CONTROL (real tickers + date + raw levels) \u2014 NEVER the deployable portfolio (R7.4); premium = lookahead/recall bias (R7.5)",
+  "n_rebalances": 72,
+  "n_recall_guarded": 69,
+  "nim_model": "openai/gpt-oss-20b",
+  "variant": "nonpit_diagnostic"
+ },
+ "p_memorized": {
+  "2019-01-02 00:00:00": 0.684810819757869,
+  "2019-02-01 00:00:00": 0.704261937031943,
+  "2019-03-01 00:00:00": 0.7894064212803944
+ },
+ "parse_ok": {
+  "2019-01-02 00:00:00": true,
+  "2019-02-01 00:00:00": true,
+  "2019-03-01 00:00:00": true
+ },
+ "steered": {
+  "2019-01-02 00:00:00": true,
+  "2019-02-01 00:00:00": true,
+  "2019-03-01 00:00:00": true
+ },
+ "views": {
+  "2019-01-02 00:00:00": [
+   {
+    "asset_long": "Asset_A",
+    "asset_short": null,
+    "confidence": 0.7120393247567159,
+    "expected_excess_annualized": 0.3419802605627122,
+    "rationale": "Dimensionless exposure tilt for Asset_A (world_equity) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_B",
+    "asset_short": null,
+    "confidence": 0.7120393247567159,
+    "expected_excess_annualized": 0.274214586810654,
+    "rationale": "Dimensionless exposure tilt for Asset_B (tech_sector) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_C",
+    "asset_short": null,
+    "confidence": 0.7120393247567159,
+    "expected_excess_annualized": -0.07249351145569015,
+    "rationale": "Dimensionless exposure tilt for Asset_C (gold_commodity) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_D",
+    "asset_short": null,
+    "confidence": 0.7120393247567159,
+    "expected_excess_annualized": -0.32937269335302705,
+    "rationale": "Dimensionless exposure tilt for Asset_D (short_treasury_cash) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   }
+  ],
+  "2019-02-01 00:00:00": [
+   {
+    "asset_long": "Asset_A",
+    "asset_short": null,
+    "confidence": 0.7047410872086286,
+    "expected_excess_annualized": -0.37588307803240056,
+    "rationale": "Dimensionless exposure tilt for Asset_A (world_equity) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_B",
+    "asset_short": null,
+    "confidence": 0.7047410872086286,
+    "expected_excess_annualized": -0.3495623904282434,
+    "rationale": "Dimensionless exposure tilt for Asset_B (tech_sector) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_C",
+    "asset_short": null,
+    "confidence": 0.7047410872086286,
+    "expected_excess_annualized": 0.3306351543982877,
+    "rationale": "Dimensionless exposure tilt for Asset_C (gold_commodity) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_D",
+    "asset_short": null,
+    "confidence": 0.7047410872086286,
+    "expected_excess_annualized": 0.17714709971786613,
+    "rationale": "Dimensionless exposure tilt for Asset_D (short_treasury_cash) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   }
+  ],
+  "2019-03-01 00:00:00": [
+   {
+    "asset_long": "Asset_A",
+    "asset_short": null,
+    "confidence": 0.6093274981485737,
+    "expected_excess_annualized": 0.04506702584599562,
+    "rationale": "Dimensionless exposure tilt for Asset_A (world_equity) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_B",
+    "asset_short": null,
+    "confidence": 0.6093274981485737,
+    "expected_excess_annualized": 0.02316529365915659,
+    "rationale": "Dimensionless exposure tilt for Asset_B (tech_sector) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_C",
+    "asset_short": null,
+    "confidence": 0.6093274981485737,
+    "expected_excess_annualized": -0.06275688645844245,
+    "rationale": "Dimensionless exposure tilt for Asset_C (gold_commodity) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_D",
+    "asset_short": null,
+    "confidence": 0.6093274981485737,
+    "expected_excess_annualized": -0.09771542052589699,
+    "rationale": "Dimensionless exposure tilt for Asset_D (short_treasury_cash) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   }
+  ]
+ }
+}

@@ -1,0 +1,14 @@
+{
+  "credit_stress_mac": 0.5157142857142857,
+  "credit_stress_std": 0.6234940038705483,
+  "growth_mac": 0.48828571428571427,
+  "growth_std": 0.5025828942198376,
+  "inflation_mac": 0.1367142857142857,
+  "inflation_std": 0.6362588095762137,
+  "mean_mac": 0.3878,
+  "mean_std": 0.5437447608527022,
+  "policy_mac": 0.5042857142857142,
+  "policy_std": 0.5903897757280938,
+  "risk_appetite_mac": 0.294,
+  "risk_appetite_std": 0.36599832086881745
+}

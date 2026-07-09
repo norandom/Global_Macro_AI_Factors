@@ -1,0 +1,111 @@
+{
+ "conviction": {
+  "2019-01-02 00:00:00": null,
+  "2019-02-01 00:00:00": 0.5625833271614081,
+  "2019-03-01 00:00:00": 0.5
+ },
+ "loadings": {
+  "2019-01-02 00:00:00": null,
+  "2019-02-01 00:00:00": {
+   "credit_stress": -0.3,
+   "growth": -0.8,
+   "inflation": -0.05,
+   "policy": -0.7,
+   "risk_appetite": -0.6
+  },
+  "2019-03-01 00:00:00": {
+   "credit_stress": 0.8,
+   "growth": -0.4,
+   "inflation": 0.0,
+   "policy": -0.3,
+   "risk_appetite": -0.6
+  }
+ },
+ "meta": {
+  "cutoff_date": "2024-06-01",
+  "holdout_auc": 0.9667774086378738,
+  "is_weak": false,
+  "line": "PIT anonymized deployable (recall-guarded); the non-PIT diagnostic line is nb14",
+  "n_rebalances": 72,
+  "n_recall_guarded": 71,
+  "nim_model": "openai/gpt-oss-20b"
+ },
+ "p_memorized": {
+  "2019-01-02 00:00:00": null,
+  "2019-02-01 00:00:00": 0.5536914541968635,
+  "2019-03-01 00:00:00": 0.45456655047769495
+ },
+ "parse_ok": {
+  "2019-01-02 00:00:00": false,
+  "2019-02-01 00:00:00": true,
+  "2019-03-01 00:00:00": true
+ },
+ "steered": {
+  "2019-01-02 00:00:00": false,
+  "2019-02-01 00:00:00": true,
+  "2019-03-01 00:00:00": true
+ },
+ "views": {
+  "2019-01-02 00:00:00": [],
+  "2019-02-01 00:00:00": [
+   {
+    "asset_long": "Asset_A",
+    "asset_short": null,
+    "confidence": 0.5625833271614081,
+    "expected_excess_annualized": -0.3101844393331799,
+    "rationale": "Dimensionless exposure tilt for Asset_A (world_equity) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_B",
+    "asset_short": null,
+    "confidence": 0.5625833271614081,
+    "expected_excess_annualized": -0.3079528966041642,
+    "rationale": "Dimensionless exposure tilt for Asset_B (tech_sector) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_C",
+    "asset_short": null,
+    "confidence": 0.5625833271614081,
+    "expected_excess_annualized": 0.13389256374094097,
+    "rationale": "Dimensionless exposure tilt for Asset_C (gold_commodity) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_D",
+    "asset_short": null,
+    "confidence": 0.5625833271614081,
+    "expected_excess_annualized": 0.03793622639326661,
+    "rationale": "Dimensionless exposure tilt for Asset_D (short_treasury_cash) from the regime loadings on inflation, growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   }
+  ],
+  "2019-03-01 00:00:00": [
+   {
+    "asset_long": "Asset_A",
+    "asset_short": null,
+    "confidence": 0.5,
+    "expected_excess_annualized": -0.7145178188742196,
+    "rationale": "Dimensionless exposure tilt for Asset_A (world_equity) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_B",
+    "asset_short": null,
+    "confidence": 0.5,
+    "expected_excess_annualized": -0.7036091498837734,
+    "rationale": "Dimensionless exposure tilt for Asset_B (tech_sector) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_C",
+    "asset_short": null,
+    "confidence": 0.5,
+    "expected_excess_annualized": 0.539979115027082,
+    "rationale": "Dimensionless exposure tilt for Asset_C (gold_commodity) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   },
+   {
+    "asset_long": "Asset_D",
+    "asset_short": null,
+    "confidence": 0.5,
+    "expected_excess_annualized": 0.45816409759873616,
+    "rationale": "Dimensionless exposure tilt for Asset_D (short_treasury_cash) from the regime loadings on growth, credit_stress, policy, risk_appetite via the documented REGIME_ASSET_EXPOSURE table; not a return forecast."
+   }
+  ]
+ }
+}
