@@ -92,7 +92,7 @@
   - _Requirements: 1.2, 1.3, 1.5, 7.2, 7.4_
   - _Depends: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 5.2 Workbook skeleton generator
+- [x] 5.2 Workbook skeleton generator
   - Generate the five-sheet workbook skeleton (plus a navigation index) on the development machine: titles, mandated framing text, provenance/checks areas, and formulas referencing only the exposed worksheet functions
   - Observable: a test opens the generated file and asserts five step sheets plus index exist, every formula references an existing exposed function name, and the framing text blocks are present; generation runs headlessly on the development machine
   - _Requirements: 2.2, 3.3, 5.2, 6.3, 7.3, 7.4_
@@ -121,3 +121,4 @@
 - 4.1: gap markers are DATA-DRIVEN (screen_failed -> unscreenable; any other verdict with missing evidence member -> pending_evidence) — phi-4-mini is also pending in fixtures since the fixture tar ships only 20b/120b. Class-count checks flag ok=False on fixture subsets by design (R7.2 renders them); live agreement lands in 6.1.
 - 4.5: SSR re-derivation slices equity at the first contrast date (2019-01-02), mirroring nb14; differential row uses documented _S5_DIFF_TOL=1e-3 (near-zero cancellation amplifies the parquet's ~1e-7 storage rounding to ~1.5e-4 rel) — non-differential rows hold 1e-6. paired_d reproduces exactly (1.9252251).
 - 5.1: canonical in-cell error format is '#ERROR <asset>: <cause> — <detail>' (supersedes the design sketch's '#ERROR: <asset>: <cause>'). Surface is 7 functions: the design's five + FW_FRAMING (R7.3 sheet headers) + FW_VERSION (R1.2) — 5.2's formula-name check must target these.
+- 5.2: generator table/title strings are static copies of the steps.py builders (verified matching today); a rename in steps.py surfaces as an honest in-cell #ERROR listing available names, not a CI failure. Fixed 40-row gap between table anchors (ponytail-marked; widen _TABLE_ROW_STEP if a table outgrows it during the Windows checklist).
