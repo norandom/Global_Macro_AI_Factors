@@ -39,7 +39,7 @@
   - _Requirements: 6.2_
   - _Depends: 2.2_
 
-- [ ] 3.3 (P) Optional certification re-derivation (statistics extra)
+- [x] 3.3 (P) Optional certification re-derivation (statistics extra)
   - Vendor the deterministic certification statistics (separation, resampled interval, permutation p) behind the optional statistics extra, importable only when that extra is installed
   - Observable: with the extra installed (root environment), a test reproduces the published controlled separation values from the evidence fixture's standardized feature columns; without it, the package imports and the deeper re-derivation reports itself unavailable rather than failing
   - _Boundary: certification_
@@ -117,3 +117,4 @@
 - 2.1: cache is keyed (tag, asset) and served without re-fetch on hit (tags immutable); the no-stale rule = a FAILED fetch never falls back to any cache entry. Reviewer minors (acceptable, revisit only if the repo goes private): cache-hit provenance replays the public URL even for API-fetched bytes (from_cache=True flags it); cache writes are non-atomic and tag/asset are raw path segments (inputs come from the fixed registry).
 - 2.2: an entirely-null column satisfies its contract dtype (parquet writers persist all-null as object OR float64 — the real 120b evidence raw_ref_delta is all-null float64 while 20b/phi-4 are str). Evidence tests parametrize over EVIDENCE_MODELS; fixture tarball carries both flavors. Registry keys are logical names; evidence loader is model-slug-parameterized.
 - 3.1: paired_cohens_d uses POPULATION std (ddof=0) + 1e-12 zero-variance guard, matching macro_framework.factor_scoring._paired_cohens_d (the producer of the published 1.9252251) — ddof=1 misses it by ~0.7%. equity annualized_return is geometric ((1+total)^(252/n)-1); crisis_vol ddof=1, sortino downside ddof=0. Fixtures are ROW SUBSETS: full-data published-figure agreement (equity metrics vs pit/nonpit_metrics, paired_d vs 1.925) is assigned to tasks 4.2/4.4/4.5 which load full assets.
+- 3.3: full-data reproduction test runs on the REAL local evidence parquet (guarded skip elsewhere) and reproduces all four published values at 1e-9 — tolerance is sklearn-version-sensitive (1.8.0; loosen on upgrade). Do NOT module-level-import macro_framework.factor_scoring in workbook tests (breaks test_factor_scoring's sys.modules assertion) — import lazily inside test bodies.
