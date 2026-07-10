@@ -15,7 +15,7 @@ import pytest
 import build_workbook
 from factor_workbook import addin, steps
 
-_STEP_SHEETS = ["S1", "S2", "S3", "S4", "S5"]
+_STEP_SHEETS = ["S0", "S1", "S2", "S3", "S4", "S5"]
 _FW_NAME = re.compile(r"FW_[A-Z_]+")
 
 
@@ -36,7 +36,8 @@ def _formulas(workbook):
                     yield sheet.title, cell.value
 
 
-def test_sheets_are_index_plus_five_steps(workbook):
+def test_sheets_are_index_plus_six_steps(workbook):
+    """S0 sits between Index and S1 in reading order (task 7.1)."""
     assert workbook.sheetnames == ["Index"] + _STEP_SHEETS
 
 
@@ -72,7 +73,8 @@ def test_each_step_sheet_wires_step_checks_and_tables(workbook):
 
 def test_index_holds_tag_load_provenance_and_nav(workbook):
     index = workbook["Index"]
-    assert index["B1"].value == "data-v1"
+    # data-v2 is the default tag (superset of v1; S0's static assets need it)
+    assert index["B1"].value == "data-v2"
     assert "RELEASE_TAG" in workbook.defined_names
     formulas = [f for s, f in _formulas(workbook) if s == "Index"]
     assert "=FW_LOAD(Index!$B$1)" in formulas
@@ -85,6 +87,14 @@ def test_index_holds_tag_load_provenance_and_nav(workbook):
         if c.hyperlink is not None
     }
     assert links == {f"'{s}'!A1" for s in _STEP_SHEETS}
+
+
+def test_s0_sheet_wires_all_five_static_tables(workbook):
+    """The S0 sheet pre-places one FW_TABLE formula per static view table."""
+    formulas = [f for s, f in _formulas(workbook) if s == "S0"]
+    for table in ("equity_10y", "equity", "targets_drift", "stats", "crisis_episodes"):
+        assert f'=FW_TABLE($B$1, "{table}")' in formulas, table
+    assert '=FW_STEP(Index!$B$2, "S0")' in formulas
 
 
 def test_s1_documents_dynamic_drilldown_pattern(workbook):

@@ -1,7 +1,7 @@
 """Headless openpyxl generator for the factor workbook skeleton (R7.4).
 
-Emits ``factor_workbook.xlsx``: a navigation ``Index`` sheet plus the five
-storyboard step sheets S1-S5. Each step sheet carries its title, the mandated
+Emits ``factor_workbook.xlsx``: a navigation ``Index`` sheet plus the six
+storyboard step sheets S0-S5. Each step sheet carries its title, the mandated
 framing block verbatim (R2.2, R3.3, R6.3, R7.3), and formula cells that
 reference only the worksheet functions exposed by ``factor_workbook.addin``
 (``FW_LOAD``, ``FW_STEP``, ``FW_TABLE``, ``FW_CHECKS``, ``FW_FRAMING``,
@@ -26,11 +26,13 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from factor_workbook import steps
 
-#: Placeholder release tag pre-filled in ``Index!$B$1`` (release.py example).
-_DEFAULT_TAG = "data-v1"
+#: Default release tag pre-filled in ``Index!$B$1``: data-v2 is a superset of
+#: v1 and carries the S0 static assets (task 7.1).
+_DEFAULT_TAG = "data-v2"
 
 #: Sheet titles, mirroring the ``StepView.title`` strings the builders emit.
 _TITLES = {
+    "S0": "S0 — Static buy-and-hold line (hindsight-selected, in-sample)",
     "S1": "S1 — Model certification (no-recall screen)",
     "S2": "S2 — Coin-flip naive prediction",
     "S3": "S3 — AI macro-factor development (recall-guarded)",
@@ -43,6 +45,7 @@ _TITLES = {
 #: ``class_stats:<slug>``); those get a documented drill-down note instead
 #: of pre-placed formulas.
 _TABLES = {
+    "S0": ["equity_10y", "equity", "targets_drift", "stats", "crisis_episodes"],
     "S1": ["certification"],
     "S2": ["naive_eval", "summary"],
     "S3": [

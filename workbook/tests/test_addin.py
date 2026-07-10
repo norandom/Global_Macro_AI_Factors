@@ -29,7 +29,7 @@ from factor_workbook.verify import checks_frame
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
-STEPS = ["S1", "S2", "S3", "S4", "S5"]
+STEPS = ["S0", "S1", "S2", "S3", "S4", "S5"]
 
 FW_FUNCTIONS = [
     addin.fw_load,
@@ -142,6 +142,27 @@ def test_fw_step_release_error_surfaces_as_per_asset_message():
     assert isinstance(result, str)
     assert result.startswith("#ERROR")
     assert "missing" in result and "HTTP 404" in result
+
+
+class DataV1Client(FakeClient):
+    """data-v1 stand-in: the data-v2 static assets do not exist on this tag."""
+
+    def fetch(self, asset: str) -> tuple[bytes, Provenance]:
+        if asset.startswith("static_bh"):
+            raise ReleaseError(
+                FetchError(asset, "missing", f"HTTP 404 at fixture://{asset}")
+            )
+        return super().fetch(asset)
+
+
+def test_fw_step_s0_on_data_v1_surfaces_per_asset_error():
+    """Task 7.1 observable: on data-v1 the S0 step renders the canonical
+    per-asset #ERROR string (the static assets did not exist yet) — never an
+    exception through the UDF boundary (R1.4)."""
+    result = asyncio.run(addin.fw_step(DataV1Client(), "S0"))
+    assert isinstance(result, str)
+    assert result.startswith("#ERROR static_bh_stats.json: missing — ")
+    assert "404" in result
 
 
 def test_fw_table_expands_named_tables_on_demand(views):

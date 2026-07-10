@@ -1,5 +1,6 @@
-"""Storyboard step assembly: typed S1-S5 view models with mandated framing
-text and explicit gap markers (R2-R6, R7.3). Implemented in tasks 4.1-4.5.
+"""Storyboard step assembly: typed S0-S5 view models with mandated framing
+text and explicit gap markers (R2-R6, R7.3). Implemented in tasks 4.1-4.5;
+S0 (the data-v2 static buy-and-hold opener) added by the task 7.1 amendment.
 
 S1 (task 4.1): the certification step. Known upstream gaps are view-model
 states, never exceptions (R2.4, R2.5): a verdict row whose raw-evidence
@@ -71,6 +72,149 @@ class StepView:
     framing: str
     tables: dict[str, pd.DataFrame]
     checks: list[Check]
+
+
+#: Published static_bh metric fields recomputable from the equity series alone
+#: (rederive.equity_metrics is the exact producer — build_static_bh.py used it
+#: to WRITE static_bh_stats.json, so full-data agreement is exact).
+_S0_METRIC_FIELDS = [
+    "total_return",
+    "annualized_return",
+    "annualized_vol",
+    "sharpe",
+    "sortino",
+    "calmar",
+    "max_drawdown",
+]
+
+#: Published static_bh_ssr fields — the vendored ``compute_ssr`` attributes
+#: carry the same names (same producer, exact full-data agreement).
+_S0_SSR_FIELDS = ["ssr", "mean_rolling_sr", "sigma_hac", "L_hac", "n_rolling"]
+
+#: Per-episode crisis fields re-derived via ``equity_metrics(value, crisis=...)``.
+_S0_CRISIS_FIELDS = ["crisis_return", "crisis_max_drawdown", "crisis_vol_ann"]
+
+#: (stats window key, registry key, view table name) — 10y opener first.
+_S0_WINDOWS = (
+    ("2016_2026", "static_bh_equity_2016_2026", "equity_10y"),
+    ("2014_2024", "static_bh_equity_2014_2024", "equity"),
+)
+
+#: Two-claims framing for S0 (R7.3, task 7.1) — displayed with the sheet. The
+#: in-sample caveat is carried verbatim from the published stats["caveat"].
+S0_FRAMING = (
+    "Step 0 — the static buy-and-hold opener, two claims kept separate: the "
+    "crisis-drawdown episodes (COVID 2020, inflation 2022) are REAL "
+    "event-level observables — their timing, depth, and co-movement carry no "
+    "selection artifact — while the performance LEVEL is hindsight-flattered. "
+    "IN-SAMPLE BY CONSTRUCTION: the four ETFs were selected by the Sharpe "
+    "Stability Ratio computed over the same window being simulated "
+    "(nb02/nb03). This line illustrates how strong a hindsight-selected "
+    "static portfolio looks — the lookahead/contamination problem the "
+    "recall-guarded pipeline measures. Its performance is a hindsight "
+    "artifact, never attainable skill. The line's own SSR of 0.147 is far "
+    "below 1.96: LUCK-COMPATIBLE, never attainable skill. This is the "
+    "problem the following steps S1-S5 measure. No forecast-accuracy claim "
+    "is made."
+)
+
+
+def build_s0(client: ReleaseClient) -> StepView:
+    """Assemble the S0 static buy-and-hold view (task 7.1; R1.4, R7.2, R7.3).
+
+    Per published window — notebook 04's original 2016-2026 decade
+    (``equity_10y``) and the walk-forward-aligned 2014-2024 window
+    (``equity``) — the loaded equity value series with its drawdown
+    re-derived (value over running max, minus one). The ``targets_drift``
+    table is the drifting buy-and-hold weights verbatim (shares are held;
+    weights drift). ``stats`` flattens the published per-window metrics —
+    static line beside the SPY reference — and ``crisis_episodes`` carries
+    one row per named macro-crisis episode per window. Every published
+    static-line figure is re-derived from the loaded equity series and
+    attached as a check: the seven equity metrics, the five SSR fields
+    (vendored ``compute_ssr`` over daily returns), and the per-episode
+    crisis figures; on fixture-sized subsets the disagreements are rendered
+    flags, never exceptions (R7.2). On ``data-v1`` the assets are absent and
+    the loaders raise the typed per-asset :class:`ReleaseError`, which the
+    Excel surface renders in-cell (R1.4).
+
+    Args:
+        client: Release client for the pinned data version (``data-v2``+).
+
+    Returns:
+        The typed S0 view model with the mandated two-claims framing.
+    """
+    stats, _ = load_json(client, "static_bh_stats")
+    tables: dict[str, pd.DataFrame] = {}
+    checks: list[Check] = []
+    stats_rows: list[dict] = []
+    episode_rows: list[dict] = []
+    for window, key, table_name in _S0_WINDOWS:
+        values, _ = load_frame(client, key)
+        value = values["value"]
+        tables[table_name] = pd.DataFrame(
+            {"value": value, "drawdown": value / value.cummax() - 1.0}
+        )
+        published = stats[window]
+        metrics = equity_metrics(value)
+        for field in _S0_METRIC_FIELDS:
+            stats_rows.append(
+                {
+                    "window": window,
+                    "metric": field,
+                    "static_bh": published["static_bh"][field],
+                    "spy_bh": published["spy_bh"].get(field),
+                }
+            )
+            checks.append(
+                compare(
+                    f"S0 {window} {field} vs published",
+                    published["static_bh"][field],
+                    getattr(metrics, field),
+                )
+            )
+        ssr = compute_ssr(value.pct_change().dropna())
+        for field in _S0_SSR_FIELDS:
+            stats_rows.append(
+                {
+                    "window": window,
+                    "metric": field,
+                    "static_bh": published["static_bh_ssr"][field],
+                    "spy_bh": None,
+                }
+            )
+            checks.append(
+                compare(
+                    f"S0 {window} {field} vs published",
+                    published["static_bh_ssr"][field],
+                    getattr(ssr, field),
+                )
+            )
+        for episode, record in sorted(published["crisis_episodes"].items()):
+            start, end = record["window"]
+            crisis = equity_metrics(value, crisis=(start, end))
+            row: dict = {"window": window, "episode": episode, "start": start, "end": end}
+            for field in _S0_CRISIS_FIELDS:
+                row[f"static_{field}"] = record["static_bh"][field]
+                row[f"spy_{field}"] = record["spy_bh"][field]
+                checks.append(
+                    compare(
+                        f"S0 {window} {episode} {field} vs published",
+                        record["static_bh"][field],
+                        getattr(crisis, field),
+                    )
+                )
+            episode_rows.append(row)
+    targets, _ = load_frame(client, "static_bh_targets_2014_2024")
+    tables["targets_drift"] = targets
+    tables["stats"] = pd.DataFrame(stats_rows)
+    tables["crisis_episodes"] = pd.DataFrame(episode_rows)
+    return StepView(
+        title="S0 — Static buy-and-hold line (hindsight-selected, in-sample)",
+        framing=S0_FRAMING,
+        tables=tables,
+        checks=checks,
+    )
 
 
 def _slug(model: str) -> str:

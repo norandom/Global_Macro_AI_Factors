@@ -21,11 +21,13 @@ from factor_workbook import certification
 from factor_workbook.rederive import equity_metrics, loading_stability, wilson_ci
 from factor_workbook.release import FetchError, Provenance, ReleaseError
 from factor_workbook.steps import (
+    S0_FRAMING,
     S2_FRAMING,
     S3_FRAMING,
     S4_FRAMING,
     S5_FRAMING,
     StepView,
+    build_s0,
     build_s1,
     build_s2,
     build_s3,
@@ -1049,3 +1051,170 @@ def test_s4_framing_two_lines_diagnostic_never_deployable(s4):
     assert "DIAGNOSTIC CONTROL" in s4.framing
     assert s4.framing == S4_FRAMING
     assert "two-line" in s4.title.lower()
+
+
+# --------------------------------------------------------------------------- #
+# S0 — static buy-and-hold line (task 7.1, data-v2 amendment)                  #
+# --------------------------------------------------------------------------- #
+
+S0_METRIC_FIELDS = [
+    "total_return",
+    "annualized_return",
+    "annualized_vol",
+    "sharpe",
+    "sortino",
+    "calmar",
+    "max_drawdown",
+]
+S0_SSR_FIELDS = ["ssr", "mean_rolling_sr", "sigma_hac", "L_hac", "n_rolling"]
+S0_CRISIS_FIELDS = ["crisis_return", "crisis_max_drawdown", "crisis_vol_ann"]
+S0_WINDOWS = ["2016_2026", "2014_2024"]
+S0_EPISODES = ["covid_2020", "inflation_2022"]
+# 2 windows x (7 metrics + 5 SSR fields + 2 episodes x 3 crisis fields)
+S0_EXPECTED_CHECKS = 2 * (7 + 5 + 2 * 3)
+
+
+@pytest.fixture(scope="module")
+def s0() -> StepView:
+    """One S0 view over the fixture subsets for all read-only assertions."""
+    return build_s0(FakeClient())
+
+
+def _static_stats() -> dict:
+    return json.loads((FIXTURES / "static_bh_stats.json").read_text())
+
+
+def test_s0_equity_tables_value_plus_rederived_drawdown(s0):
+    """Both equity tables carry the loaded value column plus the drawdown
+    re-derived from it (value/cummax - 1), on the Date index."""
+    for table_name, asset in (
+        ("equity_10y", "static_bh_equity_2016_2026.parquet"),
+        ("equity", "static_bh_equity_2014_2024.parquet"),
+    ):
+        table = s0.tables[table_name]
+        assert list(table.columns) == ["value", "drawdown"]
+        assert table.index.name == "Date"
+        expected = pd.read_parquet(FIXTURES / asset)["value"]
+        pd.testing.assert_series_equal(table["value"], expected, check_names=False)
+        pd.testing.assert_series_equal(
+            table["drawdown"], expected / expected.cummax() - 1.0, check_names=False
+        )
+
+
+def test_s0_targets_drift_table_verbatim(s0):
+    """The drifting buy-and-hold weights appear verbatim (shares held, weights
+    drift): the four ETF columns over the Date index."""
+    table = s0.tables["targets_drift"]
+    assert list(table.columns) == ["SWDA.L", "XLK", "IAU", "BIL"]
+    pd.testing.assert_frame_equal(
+        table, pd.read_parquet(FIXTURES / "static_bh_targets_2014_2024.parquet")
+    )
+
+
+def test_s0_stats_table_flattened_per_window(s0):
+    """One row per window per published metric — static_bh beside the SPY
+    reference (NaN where SPY has no published counterpart)."""
+    table = s0.tables["stats"]
+    assert list(table.columns) == ["window", "metric", "static_bh", "spy_bh"]
+    assert set(table["window"]) == set(S0_WINDOWS)
+    stats = _static_stats()
+    for window in S0_WINDOWS:
+        rows = table[table["window"] == window].set_index("metric")
+        assert set(rows.index) == set(S0_METRIC_FIELDS + S0_SSR_FIELDS)
+        published = stats[window]
+        for field in S0_METRIC_FIELDS:
+            assert rows.loc[field, "static_bh"] == pytest.approx(
+                published["static_bh"][field]
+            )
+        for field in S0_SSR_FIELDS:
+            assert rows.loc[field, "static_bh"] == pytest.approx(
+                published["static_bh_ssr"][field]
+            )
+        assert rows.loc["total_return", "spy_bh"] == pytest.approx(
+            published["spy_bh"]["total_return"]
+        )
+        assert pd.isna(rows.loc["sortino", "spy_bh"])  # SPY has no published sortino
+
+
+def test_s0_crisis_episodes_table(s0):
+    """One row per episode per window: window bounds plus static-vs-SPY
+    return/max-drawdown/vol — the real event-level observables."""
+    table = s0.tables["crisis_episodes"]
+    assert len(table) == 4  # 2 windows x 2 episodes
+    stats = _static_stats()
+    for window in S0_WINDOWS:
+        for episode in S0_EPISODES:
+            record = stats[window]["crisis_episodes"][episode]
+            row = table[(table["window"] == window) & (table["episode"] == episode)]
+            assert len(row) == 1
+            row = row.iloc[0]
+            assert row["start"] == record["window"][0]
+            assert row["end"] == record["window"][1]
+            for field in S0_CRISIS_FIELDS:
+                assert row[f"static_{field}"] == pytest.approx(record["static_bh"][field])
+                assert row[f"spy_{field}"] == pytest.approx(record["spy_bh"][field])
+    covid = table[(table["window"] == "2014_2024") & (table["episode"] == "covid_2020")].iloc[0]
+    assert covid["static_crisis_max_drawdown"] == pytest.approx(-0.20671885549987956)
+    assert covid["spy_crisis_max_drawdown"] == pytest.approx(-0.337172644675384)
+
+
+def test_s0_checks_flag_the_fixture_subset(s0):
+    """R7.2: on the 5-row fixture subsets every re-derived figure — metrics,
+    SSR fields, crisis episodes — disagrees with (or degrades to NaN against)
+    the published full-data values: rendered flags, never exceptions."""
+    assert len(s0.checks) == S0_EXPECTED_CHECKS
+    for check in s0.checks:
+        assert check.ok is False, check.name
+        assert check.message  # visible, human-readable flag
+    names = {c.name for c in s0.checks}
+    assert "S0 2014_2024 sharpe vs published" in names
+    assert "S0 2016_2026 ssr vs published" in names
+    assert "S0 2014_2024 covid_2020 crisis_max_drawdown vs published" in names
+
+
+def test_s0_framing_two_claims_separated(s0):
+    """R7.3: crisis episodes are real event-level observables; the performance
+    LEVEL is hindsight-flattered (in-sample SSR selection, caveat verbatim);
+    the line's own SSR 0.147 << 1.96 is luck-compatible, never attainable
+    skill; this is the problem S1-S5 measure."""
+    framing = s0.framing.lower()
+    assert "event-level observables" in framing
+    assert "no selection artifact" in framing
+    assert "in-sample by construction" in framing
+    assert "sharpe stability ratio computed over the same window" in framing
+    assert "hindsight artifact, never attainable skill" in framing
+    assert "0.147" in framing and "1.96" in framing
+    assert "luck-compatible" in framing
+    assert "s1" in framing and "s5" in framing
+    assert "no forecast-accuracy claim" in framing
+    assert "LUCK-COMPATIBLE" in s0.framing
+    assert s0.framing == S0_FRAMING
+    assert s0.title.startswith("S0")
+
+
+S0_REAL_ASSETS = [
+    "static_bh_equity_2014_2024.parquet",
+    "static_bh_equity_2016_2026.parquet",
+    "static_bh_targets_2014_2024.parquet",
+    "static_bh_stats.json",
+]
+
+
+@pytest.mark.skipif(
+    not all((REAL_DATA / asset).exists() for asset in S0_REAL_ASSETS),
+    reason="real release assets not present locally",
+)
+def test_s0_checks_pass_on_full_data():
+    """Agreement proof: build_static_bh.py WROTE the published stats with
+    rederive.equity_metrics and (macro_framework's) compute_ssr over the same
+    series it released — so on the REAL parquets every S0 check reproduces the
+    published metrics, SSR fields, and crisis episodes exactly."""
+    overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S0_REAL_ASSETS}
+    view = build_s0(FakeClient(overrides))
+    assert len(view.checks) == S0_EXPECTED_CHECKS
+    failing = [check.message for check in view.checks if not check.ok]
+    assert failing == []
+    # the published headline: the 10y line's own SSR is far below 1.96
+    ssr_row = view.tables["stats"]
+    ssr_2016 = ssr_row[(ssr_row["window"] == "2016_2026") & (ssr_row["metric"] == "ssr")]
+    assert ssr_2016.iloc[0]["static_bh"] == pytest.approx(0.147, abs=5e-4)

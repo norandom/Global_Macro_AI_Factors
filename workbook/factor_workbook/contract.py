@@ -1,8 +1,9 @@
 """Schema-contract registry (ASSET_SPECS) and typed loaders with fail-fast
 asset+column-specific validation (R1.4, R7.2 base).
 
-Every consumed ``data-v1`` release asset has one :class:`AssetSpec` recording
-the captured schema (columns, dtypes, index, minimum rows). The loaders
+Every consumed release asset — the ``data-v1`` set plus the ``data-v2``
+static buy-and-hold additions — has one :class:`AssetSpec` recording the
+captured schema (columns, dtypes, index, minimum rows). The loaders
 :func:`load_frame` / :func:`load_json` fetch through a
 :class:`~factor_workbook.release.ReleaseClient`, validate against the spec,
 and return the validated table plus its provenance. Any mismatch raises
@@ -70,6 +71,47 @@ _METRIC_KEYS = {
     "n_per_class": "int",
     "verdict": "str",
 }
+
+
+def _static_window_keys(window: str) -> dict[str, str]:
+    """Contract key paths of one published static-B&H window block (task 7.1)."""
+    keys: dict[str, str] = {
+        window: "dict",
+        f"{window}.window": "list",
+        f"{window}.weights_at_inception": "dict",
+        f"{window}.static_bh": "dict",
+        f"{window}.static_bh_ssr": "dict",
+        f"{window}.spy_bh": "dict",
+        f"{window}.crisis_episodes": "dict",
+    }
+    keys |= {
+        f"{window}.static_bh.{metric}": "float"
+        for metric in (
+            "total_return",
+            "annualized_return",
+            "annualized_vol",
+            "sharpe",
+            "sortino",
+            "calmar",
+            "max_drawdown",
+        )
+    }
+    keys |= {
+        f"{window}.static_bh_ssr.ssr": "float",
+        f"{window}.static_bh_ssr.mean_rolling_sr": "float",
+        f"{window}.static_bh_ssr.sigma_hac": "float",
+        f"{window}.static_bh_ssr.L_hac": "int",
+        f"{window}.static_bh_ssr.n_rolling": "int",
+    }
+    keys |= {
+        f"{window}.spy_bh.{metric}": "float"
+        for metric in ("total_return", "annualized_return", "sharpe", "max_drawdown")
+    }
+    keys |= {
+        f"{window}.crisis_episodes.{episode}": "dict"
+        for episode in ("covid_2020", "inflation_2022")
+    }
+    return keys
 
 
 class SchemaError(Exception):
@@ -352,6 +394,31 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         {"model": "str", "cutoff_date": "str", **_METRIC_KEYS},
         min_rows=0,
         member="evidence/{model}/summary.json",
+    ),
+    # -- data-v2 static buy-and-hold line (task 7.1; absent on data-v1) --------
+    "static_bh_equity_2014_2024": _daily(
+        "static_bh_equity_2014_2024.parquet", {"value": "float64"}, 2717
+    ),
+    "static_bh_equity_2016_2026": _daily(
+        "static_bh_equity_2016_2026.parquet", {"value": "float64"}, 2469
+    ),
+    "static_bh_targets_2014_2024": _daily(
+        "static_bh_targets_2014_2024.parquet", dict(_ETF_WEIGHTS), 2717
+    ),
+    "static_bh_stats": AssetSpec(
+        "static_bh_stats.json",
+        "json",
+        None,
+        {
+            **_static_window_keys("2014_2024"),
+            **_static_window_keys("2016_2026"),
+            # published as null for 2016_2026 — contracted for 2014_2024 only
+            "2014_2024.weight_drift_final": "dict",
+            "caveat": "str",
+            "source": "str",
+            "built_at": "str",
+        },
+        min_rows=0,
     ),
 }
 

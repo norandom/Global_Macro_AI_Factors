@@ -166,6 +166,68 @@ def test_decision_log_variant_metas():
     assert "variant" in nonpit["meta"]
 
 
+# --- data-v2 static buy-and-hold assets (task 7.1) ---------------------------
+
+
+def test_static_bh_registry_entries_record_production_shapes():
+    """The four data-v2 static assets are registered with the captured shapes."""
+    assert ASSET_SPECS["static_bh_equity_2014_2024"].expected_rows == 2717
+    assert ASSET_SPECS["static_bh_equity_2016_2026"].expected_rows == 2469
+    assert ASSET_SPECS["static_bh_targets_2014_2024"].expected_rows == 2717
+    for key in ("static_bh_equity_2014_2024", "static_bh_equity_2016_2026"):
+        spec = ASSET_SPECS[key]
+        assert spec.index == "Date"
+        assert spec.columns == {"value": "float64"}
+    targets = ASSET_SPECS["static_bh_targets_2014_2024"]
+    assert set(targets.columns) == {"SWDA.L", "XLK", "IAU", "BIL"}
+    stats = ASSET_SPECS["static_bh_stats"]
+    assert stats.kind == "json"
+    for path in (
+        "2014_2024.static_bh.sharpe",
+        "2014_2024.static_bh_ssr.ssr",
+        "2014_2024.crisis_episodes.covid_2020",
+        "2014_2024.weight_drift_final",
+        "2016_2026.static_bh_ssr.L_hac",
+        "2016_2026.spy_bh.max_drawdown",
+        "caveat",
+        "source",
+        "built_at",
+    ):
+        assert path in stats.columns, path
+    # weight_drift_final is null for 2016_2026 in the published file — never
+    # part of that window's contract
+    assert "2016_2026.weight_drift_final" not in stats.columns
+
+
+def test_static_bh_fixtures_validate_and_keep_the_date_index():
+    """Equity fixtures keep the Date datetime index; stats carries the published
+    per-window blocks and the in-sample caveat verbatim."""
+    client = FakeClient()
+    for key in ("static_bh_equity_2014_2024", "static_bh_equity_2016_2026"):
+        df, _ = load_frame(client, key)
+        assert df.index.name == "Date"
+        assert pd.api.types.is_datetime64_any_dtype(df.index)
+        assert list(df.columns) == ["value"]
+    targets, _ = load_frame(client, "static_bh_targets_2014_2024")
+    assert list(targets.columns) == ["SWDA.L", "XLK", "IAU", "BIL"]
+    stats, _ = load_json(client, "static_bh_stats")
+    assert stats["2014_2024"]["weight_drift_final"]["XLK"] == pytest.approx(0.5264)
+    assert stats["2016_2026"]["weight_drift_final"] is None
+    assert stats["caveat"].startswith("IN-SAMPLE BY CONSTRUCTION")
+    assert stats["2016_2026"]["static_bh_ssr"]["ssr"] == pytest.approx(0.14724753339466584)
+
+
+def test_corrupted_static_stats_names_asset_and_key():
+    stats = json.loads((FIXTURES / "static_bh_stats.json").read_text())
+    del stats["2014_2024"]["static_bh_ssr"]["ssr"]
+    client = FakeClient({"static_bh_stats.json": json.dumps(stats).encode()})
+    with pytest.raises(SchemaError) as exc:
+        load_json(client, "static_bh_stats")
+    message = str(exc.value)
+    assert "static_bh_stats.json" in message
+    assert "2014_2024.static_bh_ssr.ssr" in message
+
+
 # --- fail-fast corrupted-fixture messages -----------------------------------
 
 

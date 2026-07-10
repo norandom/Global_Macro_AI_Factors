@@ -28,10 +28,19 @@ from pyxll import xl_func
 
 from factor_workbook.contract import SchemaError
 from factor_workbook.release import Provenance, ReleaseClient, ReleaseError
-from factor_workbook.steps import StepView, build_s1, build_s2, build_s3, build_s4, build_s5
+from factor_workbook.steps import (
+    StepView,
+    build_s0,
+    build_s1,
+    build_s2,
+    build_s3,
+    build_s4,
+    build_s5,
+)
 from factor_workbook.verify import checks_frame
 
 _STEP_BUILDERS = {
+    "S0": build_s0,
     "S1": build_s1,
     "S2": build_s2,
     "S3": build_s3,
@@ -68,7 +77,7 @@ async def fw_step(client: ReleaseClient, step: str) -> StepView | str:
 
     Args:
         client: Handle from ``FW_LOAD``.
-        step: One of ``"S1"``..``"S5"``.
+        step: One of ``"S0"``..``"S5"`` (``"S0"`` needs ``data-v2`` or later).
 
     Returns:
         The :class:`StepView` handle, or an in-cell error string for an

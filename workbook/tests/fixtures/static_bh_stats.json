@@ -1,0 +1,148 @@
+{
+  "2014_2024": {
+    "window": [
+      "2014-01-02",
+      "2024-12-30"
+    ],
+    "weights_at_inception": {
+      "SWDA.L": 0.25,
+      "XLK": 0.25,
+      "IAU": 0.25,
+      "BIL": 0.25
+    },
+    "static_bh": {
+      "total_return": 2.629538773308123,
+      "annualized_return": 0.18907726544211045,
+      "annualized_vol": 0.14604435264310775,
+      "sharpe": 1.259179855627652,
+      "sortino": 1.7967715133397701,
+      "calmar": 0.9143686683169021,
+      "max_drawdown": -0.20678449731895232
+    },
+    "static_bh_ssr": {
+      "ssr": 0.12473298402597732,
+      "mean_rolling_sr": 1.266106179570538,
+      "sigma_hac": 10.15053227065308,
+      "L_hac": 158,
+      "n_rolling": 2465
+    },
+    "spy_bh": {
+      "total_return": 2.9023303770236852,
+      "annualized_return": 0.1967477739956225,
+      "sharpe": 0.9748088862995284,
+      "max_drawdown": -0.337172644675384
+    },
+    "crisis_episodes": {
+      "covid_2020": {
+        "window": [
+          "2020-02-19",
+          "2020-04-30"
+        ],
+        "static_bh": {
+          "crisis_return": -0.07248277679714166,
+          "crisis_max_drawdown": -0.20671885549987956,
+          "crisis_vol_ann": 0.40088642861665263
+        },
+        "spy_bh": {
+          "crisis_return": -0.13640673508835854,
+          "crisis_max_drawdown": -0.337172644675384,
+          "crisis_vol_ann": 0.6616327724511725
+        }
+      },
+      "inflation_2022": {
+        "window": [
+          "2022-01-01",
+          "2022-12-31"
+        ],
+        "static_bh": {
+          "crisis_return": -0.16129680668526514,
+          "crisis_max_drawdown": -0.20177104278061864,
+          "crisis_vol_ann": 0.18672379499660963
+        },
+        "spy_bh": {
+          "crisis_return": -0.18646401750261354,
+          "crisis_max_drawdown": -0.24496387071508796,
+          "crisis_vol_ann": 0.24282837335023819
+        }
+      }
+    },
+    "weight_drift_final": {
+      "SWDA.L": 0.2501,
+      "XLK": 0.5264,
+      "IAU": 0.1427,
+      "BIL": 0.0807
+    }
+  },
+  "2016_2026": {
+    "window": [
+      "2016-01-31",
+      "2026-01-31"
+    ],
+    "weights_at_inception": {
+      "SWDA.L": 0.25,
+      "XLK": 0.25,
+      "IAU": 0.25,
+      "BIL": 0.25
+    },
+    "static_bh": {
+      "total_return": 3.20069867971619,
+      "annualized_return": 0.2363674799303983,
+      "annualized_vol": 0.15561658863960276,
+      "sharpe": 1.4416699726370674,
+      "sortino": 2.0794984383928563,
+      "calmar": 1.2040750078415918,
+      "max_drawdown": -0.19630627526611266
+    },
+    "static_bh_ssr": {
+      "ssr": 0.14724753339466584,
+      "mean_rolling_sr": 1.3569025701538977,
+      "sigma_hac": 9.215112395241336,
+      "L_hac": 153,
+      "n_rolling": 2217
+    },
+    "spy_bh": {
+      "total_return": 3.2160943187730737,
+      "annualized_return": 0.23223275775682173,
+      "sharpe": 1.0772559695726054,
+      "max_drawdown": -0.3371726446753841
+    },
+    "crisis_episodes": {
+      "covid_2020": {
+        "window": [
+          "2020-02-19",
+          "2020-04-30"
+        ],
+        "static_bh": {
+          "crisis_return": -0.06574159061880103,
+          "crisis_max_drawdown": -0.19365003031883965,
+          "crisis_vol_ann": 0.3722329213791205
+        },
+        "spy_bh": {
+          "crisis_return": -0.13640673508835843,
+          "crisis_max_drawdown": -0.3371726446753841,
+          "crisis_vol_ann": 0.6616327724511721
+        }
+      },
+      "inflation_2022": {
+        "window": [
+          "2022-01-01",
+          "2022-12-31"
+        ],
+        "static_bh": {
+          "crisis_return": -0.15009772718682368,
+          "crisis_max_drawdown": -0.19176259303651733,
+          "crisis_vol_ann": 0.1747519577509153
+        },
+        "spy_bh": {
+          "crisis_return": -0.1864640175026132,
+          "crisis_max_drawdown": -0.24496387071508718,
+          "crisis_vol_ann": 0.24282837335023827
+        }
+      }
+    },
+    "weight_drift_final": null
+  },
+  "caveat": "IN-SAMPLE BY CONSTRUCTION: the four ETFs were selected by the Sharpe Stability Ratio computed over the same window being simulated (nb02/nb03). This line illustrates how strong a hindsight-selected static portfolio looks \u2014 the lookahead/contamination problem the recall-guarded pipeline measures. Its performance is a hindsight artifact, never attainable skill.",
+  "source": "yfinance auto-adjusted Close (documented substitution for the price DB)",
+  "built_at": "2026-07-10T06:20:04.550673+00:00"
+}

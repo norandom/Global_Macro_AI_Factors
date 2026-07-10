@@ -34,9 +34,10 @@ from test_addin import FakeClient  # provenance-recording fixture-backed client
 WORKBOOK_DIR = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = WORKBOOK_DIR / "factor_workbook"
 
-STEPS = ["S1", "S2", "S3", "S4", "S5"]
+STEPS = ["S0", "S1", "S2", "S3", "S4", "S5"]
 # One representative table per step, expanded through FW_TABLE.
 STEP_TABLES = {
+    "S0": "equity",
     "S1": "certification",
     "S2": "naive_eval",
     "S3": "views_v1",
@@ -236,6 +237,24 @@ def test_live_all_five_step_views_agree_on_full_data(tmp_path):
         assert view.tables and view.framing
         failed.extend(c.message for c in view.checks if not c.ok)
     assert not failed, "checks failing on pristine full data:\n" + "\n".join(failed)
+
+
+@pytest.mark.live_network
+@pytest.mark.skipif(
+    os.environ.get("FW_LIVE_NETWORK") != "1",
+    reason="live-network test: set FW_LIVE_NETWORK=1 to run",
+)
+def test_live_s0_agrees_on_full_data_v2(tmp_path):
+    """Opt-in live integration (task 7.1): build S0 against the real data-v2
+    release and require every re-derived metric/SSR/crisis-episode check to
+    agree with the published static_bh_stats figures."""
+    from factor_workbook.steps import build_s0
+
+    client = ReleaseClient("data-v2", cache_dir=tmp_path, token_provider=lambda: None)
+    view = build_s0(client)
+    assert view.tables and view.framing
+    failed = [c.message for c in view.checks if not c.ok]
+    assert not failed, "S0 checks failing on pristine data-v2:\n" + "\n".join(failed)
 
 
 def test_fw_step_renders_schema_error_in_cell():
