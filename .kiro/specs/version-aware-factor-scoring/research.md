@@ -441,3 +441,24 @@ targets/equity/decision-logs gitignored, shipped via the GH data release._
   documented in the release notes; retry command unchanged.
 - Spec `version-aware-factor-scoring` is COMPLETE (15/15, validate-impl GO) and its data
   contract is now live for the follow-up PyXLL spec.
+
+---
+
+## 2026-07-10 — data-v2: the static Step-0 line (thesis-opener data)
+
+- **https://github.com/norandom/Global_Macro_AI_Factors/releases/tag/data-v2** — all 27 data-v1
+  assets byte-identical + 4 new: `static_bh_equity_2016_2026.parquet` (nb04's 10y static B&H,
+  total +320%, Sharpe 1.44 vs SPY 0.96), `static_bh_equity_2014_2024.parquet` (joins the S4
+  lines on Date), `static_bh_targets_2014_2024.parquet` (drifting weights), `static_bh_stats.json`.
+- **Crisis drawdown episodes** (event-level observables, static vs SPY): COVID 2020 maxDD
+  −20.7% vs −33.7%; inflation 2022 maxDD −20.2% vs −24.5% — the episodes are plainly visible and
+  genuinely milder (gold + the T-bill sleeve cushion both).
+- **The two claims separated** (user discussion 2026-07-10): the drawdown EPISODES are real market
+  history — their timing/co-movement carries no selection artifact. The performance LEVEL is
+  in-sample-flattered (assets chosen by SSR over the simulated window; nb04's own caveat) — and
+  the line's OWN SSR is 0.147/0.125 ≪ 1.96: luck-compatible under HAC inference. Thesis opener:
+  gorgeous decade, visible crisis resilience, zero statistical evidence of skill — motivating
+  PIT discipline + recall-guarding for anything AI-touched downstream.
+- Reproducible via `scripts/build_static_bh.py` (yfinance substitution; artifacts gitignored,
+  release-shipped). Workbook compatibility: switching the tag cell to `data-v2` loads directly
+  (v1 assets unchanged; Step-0 assets are additive, not yet consumed by the five views).

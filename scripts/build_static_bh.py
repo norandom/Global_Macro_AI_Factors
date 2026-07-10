@@ -80,6 +80,27 @@ def main() -> None:
         ssr = compute_ssr(equity.pct_change().dropna())
         spy_equity = (window["SPY"].dropna().pct_change().fillna(0).add(1).cumprod() * INIT).rename("value")
         spy_m = equity_metrics(spy_equity)
+
+        # Crisis drawdown episodes — the event-level observables (window
+        # return, max drawdown, annualized vol inside the episode), for the
+        # static line AND the SPY reference, per named macro-crisis window.
+        episodes = {}
+        for name, (c_start, c_end) in {
+            "covid_2020": ("2020-02-19", "2020-04-30"),
+            "inflation_2022": ("2022-01-01", "2022-12-31"),
+        }.items():
+            em = equity_metrics(equity, crisis=(c_start, c_end))
+            es = equity_metrics(spy_equity, crisis=(c_start, c_end))
+            episodes[name] = {
+                "window": [c_start, c_end],
+                "static_bh": {"crisis_return": em.crisis_return,
+                               "crisis_max_drawdown": em.crisis_max_drawdown,
+                               "crisis_vol_ann": em.crisis_vol_ann},
+                "spy_bh": {"crisis_return": es.crisis_return,
+                            "crisis_max_drawdown": es.crisis_max_drawdown,
+                            "crisis_vol_ann": es.crisis_vol_ann},
+            }
+
         stats[tag] = {
             "window": [start, end],
             "weights_at_inception": weights,
@@ -91,6 +112,7 @@ def main() -> None:
                                "n_rolling": ssr.n_rolling},
             "spy_bh": {k: getattr(spy_m, k) for k in (
                 "total_return", "annualized_return", "sharpe", "max_drawdown")},
+            "crisis_episodes": episodes,
             "weight_drift_final": drift.iloc[-1].round(4).to_dict() if tag == "2014_2024" else None,
         }
         print(f"[2/3] {tag}: total_return={m.total_return:.4f} sharpe={m.sharpe:.4f} "
