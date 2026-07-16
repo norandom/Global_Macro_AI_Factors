@@ -225,14 +225,76 @@ one spreadsheet.
 
 ---
 
-## Quick URL index (prepend the prefix)
+## Full URLs (copy-paste ready)
 
-S0: `static_bh_equity_2016_2026_de.csv`, `static_bh_equity_2014_2024_de.csv`,
-`static_bh_targets_2014_2024_de.csv`, `spy_bh_equity_*_de.csv`,
-`active_returns_static_vs_spy_*_de.csv`, `monthly_returns_static_bh_2016_2026_de.csv`
-· Reference: `tear_sheet_de.csv`, `risk_decomposition_de.csv`
-· S1: `norecall_screen_results_de.csv`, `norecall_evidence_<model>_de.csv`
-· S2: `naive_directional_eval_openai_gpt-oss-20b_de.csv`
-· S3: `factor_views_v1_de.csv`, `factor_scores_v1_de.csv`, `factor_scores_v2_de.csv`, `factor_loadings_v1_de.csv`
-· S4: `factor_equity_v1_de.csv`, `factor_nonpit_diagnostic_equity_v1_de.csv`, `factor_decision_log_v1_de.csv`
-· S5: `factor_contrast_v1_de.csv`, `factor_luck_vs_skill_v1_de.csv`
+**Reference (load once)**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/tear_sheet_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/risk_decomposition_de.csv
+```
+
+**S0 — static line**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/static_bh_equity_2016_2026_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/static_bh_equity_2014_2024_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/static_bh_targets_2014_2024_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/spy_bh_equity_2016_2026_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/spy_bh_equity_2014_2024_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/active_returns_static_vs_spy_2016_2026_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/active_returns_static_vs_spy_2014_2024_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/monthly_returns_static_bh_2016_2026_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/static_bh_stats.json
+```
+
+**S1 — model screen**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/norecall_screen_results_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/norecall_evidence_openai_gpt-oss-20b_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/norecall_evidence_openai_gpt-oss-120b_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/norecall_evidence_microsoft_phi-4-mini-instruct_de.csv
+```
+
+**S2 — coin-flip eval**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/naive_directional_eval_openai_gpt-oss-20b_de.csv
+```
+
+**S3 — factor development**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_views_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_scores_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_scores_v2_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_loadings_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_loadings_v2_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/prompt_version_gate_v1.json
+```
+
+**S4 — two lines**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_equity_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_nonpit_diagnostic_equity_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_targets_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_nonpit_diagnostic_targets_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_decision_log_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_nonpit_diagnostic_decision_log_v1_de.csv
+```
+
+**S5 — luck vs skill**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_contrast_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_luck_vs_skill_v1_de.csv
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/factor_contrast_summary_v1.json
+```
+
+**Inputs**
+
+```
+https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/macro_panel_monthly_de.csv
+```
