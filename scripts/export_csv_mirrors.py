@@ -55,37 +55,41 @@ def flatten_decision_log(payload: dict) -> pd.DataFrame:
     return df.sort_index()
 
 
+def _write(df: pd.DataFrame, name: str, index: bool = True) -> None:
+    """Write both locale variants: US (dot decimals) and _de (semicolon+comma)."""
+    df.to_csv(OUT / f"{name}.csv", float_format="%.8f", index=index)
+    df.to_csv(OUT / f"{name}_de.csv", sep=";", decimal=",", float_format="%.8f", index=index)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     n = 0
 
     for name in PLAIN_TABLES:
-        pd.read_parquet(REPO / "data" / f"{name}.parquet").to_csv(
-            OUT / f"{name}.csv", float_format="%.8f")
+        _write(pd.read_parquet(REPO / "data" / f"{name}.parquet"), name)
         n += 1
 
     for name in EQUITY_TABLES:
         eq = pd.read_parquet(REPO / "data" / f"{name}.parquet")
         eq["daily_return"] = eq["value"].pct_change()
         eq["drawdown"] = eq["value"] / eq["value"].cummax() - 1
-        eq.to_csv(OUT / f"{name}.csv", float_format="%.8f")
+        _write(eq, name)
         n += 1
 
     for name in DECISION_LOGS:
         payload = json.loads((REPO / "data" / f"{name}.json").read_text())
-        flatten_decision_log(payload).to_csv(OUT / f"{name}.csv", float_format="%.8f")
+        _write(flatten_decision_log(payload), name)
         n += 1
 
     screen = json.loads((REPO / "data" / "norecall_screen" / "results.json").read_text())
-    pd.DataFrame(screen["results"]).to_csv(OUT / "norecall_screen_results.csv", index=False)
+    _write(pd.DataFrame(screen["results"]), "norecall_screen_results", index=False)
     n += 1
 
     evidence_dir = REPO / "data" / "norecall_screen" / "evidence"
     for model_dir in sorted(evidence_dir.iterdir()) if evidence_dir.exists() else []:
         parquet = model_dir / "evidence.parquet"
         if parquet.exists():
-            pd.read_parquet(parquet).to_csv(
-                OUT / f"norecall_evidence_{model_dir.name}.csv", index=False)
+            _write(pd.read_parquet(parquet), f"norecall_evidence_{model_dir.name}", index=False)
             n += 1
 
     print(f"[done] {n} CSV mirrors -> {OUT.relative_to(REPO)}")
