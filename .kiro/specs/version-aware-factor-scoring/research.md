@@ -485,3 +485,15 @@ targets/equity/decision-logs gitignored, shipped via the GH data release._
   Extended head-to-head: Factor PIT sharpe 1.33 (252-basis), non-PIT 1.31, Track B 1.00, baseline 0.51.
 - Track B linprog degenerate on 5/90 recent all-'normal'-regime months (holds prior weights —
   nb08-inherent). Suite 418 green. Adversarial review: APPROVED.
+
+---
+
+## 2026-07-17 — CORRECTION: "FRED unreachable" claim in the ext2026 run was wrong
+
+User challenged it; verified directly: fredgraph.csv answers HTTP 200 in 0.08s. The true root
+cause: `macro_framework.macro.load_fred_series` does not fetch from FRED's web endpoint — it reads
+the `fred_series` TABLE from the Postgres price DB, and `DATABASE_URL` is not set in this
+environment. The panel "rebuild" therefore fails locally regardless of FRED's availability. The
+run correctly fell back to the committed panel snapshot (to 2026-04-30); results unaffected. Run
+header corrected (repo + data-v3 asset). Lesson recorded: infrastructure claims by implementers
+must be independently verified before entering the log.
