@@ -4,7 +4,7 @@ Extends the nb13/nb14 walk-forward (PIT deployable + non-PIT diagnostic + naive
 directional eval) beyond 2024-12 with the SAME renderer, calibrator
 (``openai/gpt-oss-20b`` @ cutoff 2024-06-01), recall guard and 0.7/0.3 HRP+BL
 blend, as far as the macro panel allows. The 2019-2024 segment REPLAYS the
-persisted v1 loadings/scores (zero NIM calls — the nb11/nb13 pre-scored replay
+persisted v1 loadings/scores (zero NIM calls; the nb11/nb13 pre-scored replay
 pattern); live NIM calls happen ONLY for the new 2025+ monthly rebalances.
 The cheap comparison lines (nb07 baseline, nb08 track B) are re-run over the
 same extended window (no LLM), and the contrast / luck-vs-skill / tear-sheet
@@ -17,7 +17,7 @@ post-cutoff, while return behavior stays comparable.
 
 Data sources: FRED live via ``mf.build_macro_panel()`` with a patched
 web loader (falls back to the committed ``data/macro_panel_monthly.parquet``
-when FRED is unreachable — the source is recorded in the run header);
+when FRED is unreachable; the source is recorded in the run header);
 prices via yfinance (documented DB substitution, mirrors nb11/nb13/nb14).
 
 Reproducible: ``uv run python scripts/extend_stream_2026.py`` (needs

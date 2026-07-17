@@ -1,20 +1,20 @@
-"""Professional tear-sheet data pack for every equity line — Excel-ready CSVs.
+"""Tear-sheet data pack for every equity line, as Excel-ready CSVs.
 
 Per line (static B&H both windows, the factor PIT/non-PIT/v2 lines, and the
 2019-2024 tracks): return/risk metrics under the repo's published conventions
-(365-day annualization, day-0 zero return — mirrors head_to_head_report via
+(365-day annualization, day-0 zero return; mirrors head_to_head_report via
 vectorbt), tail statistics, the Sharpe Stability Ratio block (Newey-West HAC,
-Andrews bandwidth — not reproducible in native Excel, hence precomputed), and
+Andrews bandwidth; not reproducible in native Excel, hence precomputed), and
 a two-level risk decomposition:
 
-- **CAPM vs SPY**: beta, annualized alpha, R² — the systematic share relative
+- CAPM vs SPY: beta, annualized alpha, R², the systematic share relative
   to the broad equity market; residual vol is "idiosyncratic-to-the-market"
   (for a multi-asset book much of it is OTHER systematic factors: gold, rates).
-- **Basket (4-ETF) regression**: R² against the portfolio's own asset-class
-  factors (SWDA.L/XLK/IAU/BIL daily returns). For a static basket this is ~1 —
-  the honest demonstration that single-name idiosyncratic risk is already
-  diversified inside the ETF wrappers; what remains for dynamic lines is
-  allocation-timing residual, not stock-picking risk.
+- Basket (4-ETF) regression: R² against the portfolio's own asset-class
+  factors (SWDA.L/XLK/IAU/BIL daily returns). For a static basket this is ~1:
+  single-name idiosyncratic risk is already diversified inside the ETF
+  wrappers, and what remains for dynamic lines is allocation-timing residual,
+  not stock-picking risk.
 
 Outputs (data/tear_sheet/, gitignored; upload to the data release):
 - tear_sheet.csv            — one row per line, all metrics as columns

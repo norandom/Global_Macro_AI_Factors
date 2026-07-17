@@ -1,4 +1,4 @@
-"""CSV mirrors of the tabular release assets — Excel-without-add-ins access.
+"""CSV mirrors of the tabular release assets: Excel access without add-ins.
 
 Converts every step-relevant tabular asset to CSV so any Excel (no Parquet
 connector, no PyXLL) can load the storyboard data via Data -> From Web:
@@ -13,7 +13,7 @@ connector, no PyXLL) can load the storyboard data via Data -> From Web:
 
 Outputs to ``data/csv_mirrors/`` (gitignored); upload with
 ``gh release upload data-v2 data/csv_mirrors/*.csv``. Derived 1:1 from the
-released assets — mirrors add access, never meaning.
+released assets: mirrors add access, never meaning.
 
 Reproducible: ``uv run python scripts/export_csv_mirrors.py``.
 """

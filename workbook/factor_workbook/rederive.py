@@ -7,7 +7,7 @@ loading-stability measures (R4.4), the equity-line metrics with the fixed
 
 Every function is pure, deterministic, and typed: equal inputs yield equal
 outputs, no I/O, no randomness. This module imports only pandas/numpy and
-the stdlib — never ``release``/``contract`` (architecture layering) and never
+the stdlib, never ``release``/``contract`` (architecture layering) and never
 ``macro_framework`` (the formulas mirror its published semantics instead:
 ``factor_scoring.factor_stability``, ``ContrastResult.contamination_premium``,
 ``evaluation.crisis_analytics``).
@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 _TRADING_DAYS = 252  # crisis_vol_ann only, mirroring evaluation.crisis_analytics
-#: vectorbt's default ``year_freq`` (365 calendar days) — the annualization
+#: vectorbt's default ``year_freq`` (365 calendar days), the annualization
 #: basis behind the published head-to-head metrics (``pit_metrics`` /
 #: ``nonpit_metrics`` in ``factor_contrast_summary_v1``), produced by
 #: ``macro_framework.evaluation.head_to_head_report`` via ``vbt.Portfolio``.

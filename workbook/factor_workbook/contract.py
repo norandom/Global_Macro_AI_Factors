@@ -1,14 +1,14 @@
 """Schema-contract registry (ASSET_SPECS) and typed loaders with fail-fast
 asset+column-specific validation (R1.4, R7.2 base).
 
-Every consumed release asset — the ``data-v1`` set plus the ``data-v2``
-static buy-and-hold additions — has one :class:`AssetSpec` recording the
+Every consumed release asset (the ``data-v1`` set plus the ``data-v2``
+static buy-and-hold additions) has one :class:`AssetSpec` recording the
 captured schema (columns, dtypes, index, minimum rows). The loaders
 :func:`load_frame` / :func:`load_json` fetch through a
 :class:`~factor_workbook.release.ReleaseClient`, validate against the spec,
 and return the validated table plus its provenance. Any mismatch raises
 :class:`SchemaError` naming the asset, the offending column, and the expected
-dtype — the foundation of the discrepancy detector.
+dtype. This is the foundation of the discrepancy detector.
 
 Dtype comparison is deliberately tolerant on datetime resolution: the release
 parquets mix ``datetime64[ms]`` and ``datetime64[ns]``, so datetime columns

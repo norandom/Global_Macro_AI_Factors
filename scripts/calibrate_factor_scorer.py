@@ -6,10 +6,10 @@ anonymized factor prompt, and persists the calibrator (joblib + JSON, no credent
 so nb13/nb14 reuse it without the ~135-call rebuild.
 
 Reproducible: `uv run python scripts/calibrate_factor_scorer.py`. Reads NVIDIA_API_KEY
-from .env. Additive — writes only a new directory under data/. No FMP, no news.
+from .env. Additive: writes only a new directory under data/. No FMP, no news.
 
 Model + cutoff (research.md 2026-06-26): meta/llama-4-maverick-17b-128e-instruct @
-2024-08-01 — logprob-bearing, validated number-native holdout_auc ~0.96.
+2024-08-01; logprob-bearing, validated number-native holdout_auc ~0.96.
 """
 from __future__ import annotations
 

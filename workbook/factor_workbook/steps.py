@@ -75,7 +75,7 @@ class StepView:
 
 
 #: Published static_bh metric fields recomputable from the equity series alone
-#: (rederive.equity_metrics is the exact producer — build_static_bh.py used it
+#: (rederive.equity_metrics is the exact producer; build_static_bh.py used it
 #: to WRITE static_bh_stats.json, so full-data agreement is exact).
 _S0_METRIC_FIELDS = [
     "total_return",
@@ -87,14 +87,14 @@ _S0_METRIC_FIELDS = [
     "max_drawdown",
 ]
 
-#: Published static_bh_ssr fields — the vendored ``compute_ssr`` attributes
+#: Published static_bh_ssr fields; the vendored ``compute_ssr`` attributes
 #: carry the same names (same producer, exact full-data agreement).
 _S0_SSR_FIELDS = ["ssr", "mean_rolling_sr", "sigma_hac", "L_hac", "n_rolling"]
 
 #: Per-episode crisis fields re-derived via ``equity_metrics(value, crisis=...)``.
 _S0_CRISIS_FIELDS = ["crisis_return", "crisis_max_drawdown", "crisis_vol_ann"]
 
-#: (stats window key, registry key, view table name) — 10y opener first.
+#: (stats window key, registry key, view table name); 10y opener first.
 _S0_WINDOWS = (
     ("2016_2026", "static_bh_equity_2016_2026", "equity_10y"),
     ("2014_2024", "static_bh_equity_2014_2024", "equity"),

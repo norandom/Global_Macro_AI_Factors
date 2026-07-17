@@ -6,7 +6,7 @@ logprob-bearing candidate at a CONSERVATIVE COMMON CUTOFF, so the pre-cutoff
 states are trained-on for every candidate and the AUCs are comparable.
 
 Reproducible: `uv run python scripts/screen_norecall_models.py`. Reads
-NVIDIA_API_KEY from .env. Additive — writes only data/norecall_screen/.
+NVIDIA_API_KEY from .env. Additive: writes only data/norecall_screen/.
 No credential is ever persisted. Candidate pool = the 2026-07-03 live probe
 (logprobs confirmed; mistral-large-2 404s, gemma-4/gpt-oss-120b time out).
 """

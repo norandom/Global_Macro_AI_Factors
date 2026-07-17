@@ -1,10 +1,10 @@
 # Step-by-step assessment in Excel (Power Query, German locale)
 
-A didactic walkthrough of the whole storyboard — S0 (the static problem) through
-S5 (luck vs skill) — using one reusable Excel sheet fed from the versioned
+A didactic walkthrough of the whole storyboard, from S0 (the static problem)
+through S5 (luck vs skill), using one reusable Excel sheet fed from the versioned
 [data-v2 release](https://github.com/norandom/Global_Macro_AI_Factors/releases/tag/data-v2).
-Every file referenced here is a `_de` variant: **semicolon-separated, comma
-decimals — loads correctly in German Excel with zero transform steps.**
+Every file referenced here is a `_de` variant: semicolon-separated with comma
+decimals, so it loads correctly in German Excel with zero transform steps.
 
 URL prefix for everything (prepend to every filename below):
 
@@ -16,12 +16,13 @@ https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/
 
 ## Part 1 — One-time setup: the reusable Power Query
 
-You need **two sheets**, because the data comes in two shapes:
+You need two sheets, because the data comes in two shapes:
 
-- **Sheet "TS"** (time series): columns `Date; value; daily_return; drawdown` —
-  all equity lines share this shape, so charts and formulas survive a data swap.
-- **Sheet "REF"** (reference tables): `tear_sheet_de.csv`, `risk_decomposition_de.csv`
-  and the per-step tables (each has its own columns — load side by side, don't swap).
+- Sheet "TS" (time series): columns `Date; value; daily_return; drawdown`.
+  All equity lines share this shape, so charts and formulas survive a data swap.
+- Sheet "REF" (reference tables): `tear_sheet_de.csv`, `risk_decomposition_de.csv`
+  and the per-step tables. Each has its own columns; load them side by side,
+  don't swap.
 
 **Create the reusable TS query once:**
 
@@ -30,7 +31,7 @@ You need **two sheets**, because the data comes in two shapes:
 2. Name the query `TS` (*Abfragen und Verbindungen* → Rechtsklick → Umbenennen).
 3. Build your charts and formulas against that table (`TS[value]`, `TS[daily_return]`, …).
 
-**To iterate to the next dataset — the whole trick:**
+**To iterate to the next dataset** (the whole trick):
 
 1. *Daten → Abfragen und Verbindungen* → Doppelklick auf `TS` (opens Power Query)
 2. Click the ⚙ next to the **Quelle** step → replace only the filename in the URL
@@ -38,13 +39,13 @@ You need **two sheets**, because the data comes in two shapes:
 
 Sanity checks after every load: equity files start at `value = 10000`;
 `daily_return`/`drawdown` are small fractions (−0,008 = −0,8 %). If you see
-9-digit integers, you loaded a non-`_de` file — switch to the `_de` variant.
+9-digit integers, you loaded a non-`_de` file; switch to the `_de` variant.
 
-**Charts to build once on "TS"** (they survive every swap):
+Charts to build once on "TS" (they survive every swap):
 
 - *Equity*: Linie, `Date` × `value`
-- *Drawdown*: Fläche, `Date` × `drawdown` (place under the equity chart — crisis
-  episodes become self-evident)
+- *Drawdown*: Fläche, `Date` × `drawdown` (place it under the equity chart and
+  the crisis episodes become self-evident)
 
 ---
 
@@ -92,7 +93,11 @@ $\sigma^2_{total} = \beta'\Omega_f\beta + \sigma^2_\epsilon$.
 | α (regression) | intercept ×365 | `=ACHSENABSCHNITT(r_p;r_spy)*365` / `INTERCEPT` | "One model's alpha is another model's beta. Re-run with the full factor set before calling it skill." |
 | Appraisal ratio | $\alpha/\sigma_\epsilon$ | combine the two above | "Grinold/Kahn's IR. Spectacular under a bad model, honest under a good one — the model IS the claim." |
 
-### 2.4 Stability (the honesty instrument — not computable in Excel)
+### 2.4 Stability (the honesty instrument, not computable in Excel)
+
+The SSR is from Bajo Traver & Rodríguez Domínguez (2026), "The Sharpe Stability
+Ratio: Temporal Consistency of Risk-Adjusted Performance", SSRN 6344658; the full
+reference and BibTeX are in the repository README's Citation section.
 
 | Metric | What it is | PM feedback point |
 |---|---|---|
@@ -111,7 +116,7 @@ numbers are just row-lookups here) and `risk_decomposition_de.csv`.
 
 **TS query →** `static_bh_equity_2016_2026_de.csv` · **also load:**
 `active_returns_static_vs_spy_2016_2026_de.csv` (aligned static/SPY/active
-returns — the live-regression playground), optional `spy_bh_equity_2016_2026_de.csv`
+returns, the live-regression playground), optional `spy_bh_equity_2016_2026_de.csv`
 for the benchmark line, `monthly_returns_static_bh_2016_2026_de.csv` for the heatmap.
 
 Walk through, in seduction order:
@@ -179,11 +184,11 @@ Compute live:
 - Memorization distribution: `=MITTELWERT(p_memorized)` → v1 **0,236**, v2 **0,271**;
   p90 via `=QUANTIL.INKL(...;0,9)`.
 
-Narrative: prompt v2 was **rejected** by the accept-gate — every performance
+Narrative: prompt v2 was **rejected** by the accept-gate: every performance
 check passed but contamination rose (0,271 > 0,236). The pipeline turns memory
 into a measured, priced quantity.
 
-**PM point**: "show me the discipline that REJECTS an improvement" — a gate that
+**PM point**: "show me the discipline that REJECTS an improvement". A gate that
 only ever accepts is marketing. Here is a documented rejection on contamination.
 
 ### S4 — Two portfolio lines: guarded vs recall-enabled
@@ -194,7 +199,7 @@ Per-date guard detail: `factor_decision_log_v1_de.csv` (p_memorized / steered / 
 
 Read from `tear_sheet_de.csv` rows (active-span, consistent basis):
 factor_pit_v1 Sharpe **1,63**, nonpit **1,62**; `risk_decomposition_de.csv`:
-**corr_spy 0,57 / β 0,23** — the factor book is only ⅓ market risk (vs the
+**corr_spy 0,57 / β 0,23**. The factor book is only ⅓ market risk (vs the
 static line's ρ 0,84 / β 0,61): the AI-factor tilt genuinely de-correlates from
 the S&P, mostly via gold/rates exposure.
 
@@ -210,17 +215,17 @@ the way a placebo arm exists to measure a drug.
 `delta`) and `factor_luck_vs_skill_v1_de.csv` (the SSR table with verdict text).
 
 Compute live: contamination premium `=MITTELWERT(delta)` → **+0,528**
-(memorization: PIT 0,236 vs non-PIT 0,764 — the model *demonstrably recognizes*
+(memorization: PIT 0,236 vs non-PIT 0,764; the model *demonstrably recognizes*
 dated, named data). Paired Cohen's d: `=MITTELWERT(delta)/STABW.S(delta)` → **1,93**.
 
 Read from the SSR table: PIT **0,124**, non-PIT **0,130**, and the
-**differential 0,002** — the recall premium in *returns* is statistically
+**differential 0,002**: the recall premium in *returns* is statistically
 indistinguishable from zero. Huge in memory, nil in P&L, and the honest
 instrument (same SSR that judged S0) says: luck-compatible, never attainable skill.
 
 **PM summary S5 / thesis close**: S0 showed hindsight making a dumb portfolio
 look brilliant. S1–S5 built the machinery to *measure* hindsight inside an AI
-pipeline — and priced it at zero. The seduction and its audit, end to end, in
+pipeline, and priced it at zero. The seduction and its audit, end to end, in
 one spreadsheet.
 
 ---

@@ -8,12 +8,12 @@ formulas as object-cache handles, keeping the UI live during loads. Outside
 Excel the PyPI stub makes ``@xl_func`` a pass-through, so every function is
 importable and callable end-to-end in the root test run (R7.4).
 
-Version semantics (R1.5): ``FW_LOAD`` constructs a NEW client on every call —
+Version semantics (R1.5): ``FW_LOAD`` constructs a NEW client on every call;
 the tag cell feeding it is the only version state. Editing that cell re-loads
 everything downstream; nothing is remembered across tags.
 
-Error semantics (R1.4): data errors never raise through the UDF boundary —
-a failed fetch renders in-cell as ``#ERROR <asset>: <cause> — <detail>``.
+Error semantics (R1.4): data errors never raise through the UDF boundary.
+A failed fetch renders in-cell as ``#ERROR <asset>: <cause> — <detail>``.
 
 Token rule (R1.3): no worksheet function accepts a token argument; the
 dormant authenticated path lives entirely inside the release client.
@@ -59,7 +59,7 @@ async def fw_load(tag: str) -> ReleaseClient:
     """Load one release version, returning the client handle (R1.5).
 
     Constructs a NEW :class:`ReleaseClient` per call: the tag cell drives
-    the version, and editing it re-loads everything — no hidden version
+    the version, and editing it re-loads everything with no hidden version
     state. Asynchronous so Excel's UI stays live.
 
     Args:

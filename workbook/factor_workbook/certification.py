@@ -12,7 +12,7 @@
 extra is not installed (R2.6 deepening).
 
 The full separation statistics (cross-validated AUC point estimate, per-class
-bootstrap CI, permutation p) are the deeper, optional half of R2.6 — the
+bootstrap CI, permutation p) are the deeper, optional half of R2.6; the
 always-available half (class counts + feature summary stats) lives in
 ``rederive.evidence_class_stats``. Install ``factor-workbook[stats]`` to
 enable :func:`certification_stats`; :func:`available` reports whether it is.

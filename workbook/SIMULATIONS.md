@@ -10,8 +10,10 @@ originally, yfinance substitution in later runs (documented per entry).
 ## Universe (fixed by nb02/nb03)
 
 Top Sharpe-Stability-Ratio ETF per category over 2016–2026: SWDA.L (world
-equity), XLK (tech), IAU (gold), BIL (1–3M T-bills). **This selection is
-in-sample** — the central caveat carried by every run below.
+equity), XLK (tech), IAU (gold), BIL (1–3M T-bills). This selection is
+in-sample, the central caveat carried by every run below. The SSR itself is
+from Bajo Traver & Rodríguez Domínguez (2026), SSRN 6344658; full reference
+and BibTeX in the repository README's Citation section.
 
 ## The three time frames and their reasons
 
@@ -25,7 +27,7 @@ in-sample** — the central caveat carried by every run below.
 
 ### 1. nb04 — Static buy-and-hold (S0, "the problem")
 - **What**: 25% equal weight at inception, 4 trades total, no rebalancing. Benchmark SPY B&H.
-- **Window**: 2016-01-31 → 2026-01-31 — the full SSR-selection decade, *deliberately* in-sample: this run exists to show how good hindsight selection looks.
+- **Window**: 2016-01-31 → 2026-01-31, the full SSR-selection decade, *deliberately* in-sample: this run exists to show how good hindsight selection looks.
 - **Engine**: vectorbt `buy_and_hold`; re-implemented as plain share arithmetic in `scripts/build_static_bh.py` (matches to ~3 decimals; residual = yfinance-vs-DB prices).
 - **Artifacts**: `static_bh_equity_2016_2026*`, `static_bh_stats.json`; headline: Sharpe 1.44, maxDD −19.6%, IR vs SPY 0.05, SSR 0.147 (luck-compatible).
 
@@ -84,7 +86,7 @@ in-sample** — the central caveat carried by every run below.
 
 ## Standing caveats (apply to every run)
 
-1. Universe selection is in-sample (SSR over 2016–2026) — quantified in S0 (IR 0.05, SSR 0.147).
+1. Universe selection is in-sample (SSR over 2016–2026); S0 quantifies the damage (IR 0.05, SSR 0.147).
 2. No fees/slippage/taxes; monthly rebalancing at close prices.
 3. SWDA.L is priced in GBp on the LSE; series are mixed-currency in local terms (consistent across all lines, so comparisons are fair; absolute levels are idealized).
 4. yfinance auto-adjusted closes substitute the original price DB in later runs; cross-checked deltas are ~1e-3 on decade-level stats.

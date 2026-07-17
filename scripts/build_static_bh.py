@@ -1,4 +1,4 @@
-"""Static buy-and-hold line of the 4-ETF portfolio — persisted data artifacts.
+"""Static buy-and-hold line of the 4-ETF portfolio, persisted as data artifacts.
 
 Reproduces notebook 04's static run (25% per top-SSR-per-category ETF, bought
 once, never rebalanced) and persists it as tidy artifacts for the data release
@@ -13,10 +13,10 @@ and the Excel workbook's comparison lines:
   convention, matching the published head-to-head figures) + the Sharpe
   Stability Ratio of the static line, + the in-sample caveat verbatim.
 
-Prices: yfinance (auto-adjusted Close) — the documented substitution for the
+Prices: yfinance (auto-adjusted Close), the documented substitution for the
 absent Postgres price DB, matching notebooks 11/13/14. In-sample caveat
 (nb04, carried verbatim): the four ETFs were SELECTED by SSR computed over the
-same window being simulated — a hindsight test, not an out-of-sample result.
+same window being simulated. A hindsight test, not an out-of-sample result.
 
 Reproducible: ``uv run python scripts/build_static_bh.py``. Additive: writes
 only the four artifacts above (gitignored; shipped via the GH data release).

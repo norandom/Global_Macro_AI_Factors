@@ -5,10 +5,10 @@ for the chosen NIM model, records held-out AUC / is_weak, smoke-tests that the
 directional prompt parses, and persists a calibration header under a new filename.
 
 Reproducible: `uv run python scripts/calibrate_nim_scorer.py`. Reads keys from .env
-(NVIDIA_API_KEY, FMP_API_KEY). Additive — writes only new files under data/.
+(NVIDIA_API_KEY, FMP_API_KEY). Additive: writes only new files under data/.
 
 Model + cutoff (see .kiro/specs/track-a-macro-steering/research.md 2026-06-26):
-  meta/llama-4-maverick-17b-128e-instruct, cutoff 2024-08-01 — logprobs-capable,
+  meta/llama-4-maverick-17b-128e-instruct, cutoff 2024-08-01; logprobs-capable,
   emits a clean Direction/Confidence answer, and its ~2024-08 cutoff puts both the
   IS (pre-cutoff) and OOS (post-cutoff) corpora inside FMP's dense news window.
 """

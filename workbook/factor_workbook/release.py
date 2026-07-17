@@ -4,14 +4,14 @@ provenance records, and the dormant token path (R1.1–R1.6).
 Assets are addressed exclusively by an explicit release tag via the public
 download URL ``https://github.com/norandom/Global_Macro_AI_Factors/releases/
 download/<tag>/<asset>``. Release tags are immutable, so the on-disk cache is
-keyed by ``(tag, asset)`` and a cache hit is exact — never stale. A failed
+keyed by ``(tag, asset)`` and a cache hit is exact, never stale. A failed
 fetch raises a typed :class:`ReleaseError` and never serves substitute data
 (R1.4). Switching versions constructs a new client (R1.5); the client only
 ever writes its own cache directory (R1.6).
 
 Dormant authenticated path (R1.3): when the unauthenticated address is
 refused (HTTP 403/404) and a token provider yields a token, the client
-retries once through the GitHub API — it resolves the release by tag
+retries once through the GitHub API: it resolves the release by tag
 (``/repos/<owner>/<repo>/releases/tags/<tag>``) and downloads the matching
 asset endpoint with headers ``Authorization: Bearer <token>`` and
 ``Accept: application/octet-stream``. The token never appears in provenance,

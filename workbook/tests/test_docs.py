@@ -80,7 +80,7 @@ def test_readme_documents_install_and_usage(readme: str) -> None:
     assert "pyxll install" in lower
     assert "build_workbook.py" in readme
     assert "Index!B1" in readme or "Index!$B$1" in readme
-    assert "data-v1" in readme
+    assert "data-v2" in readme
 
 
 def test_cfg_example_lists_addin_module_and_no_secrets(cfg: str) -> None:
