@@ -87,3 +87,23 @@ working paper 6344658, posted January 15, 2026.
   url          = {https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6344658}
 }
 ```
+
+The memorization-detection layer builds on the MemGuard-Alpha paper, implemented
+here through the [recall-guard](https://github.com/norandom/memguard_alpha)
+package (arXiv preprint 2603.26797):
+
+> Roy, A., & Roy, D. (2026). *MemGuard-Alpha: Detecting and Filtering
+> Memorization-Contaminated Signals in LLM-Based Financial Forecasting via
+> Membership Inference and Cross-Model Disagreement.* arXiv:2603.26797.
+
+```bibtex
+@misc{roy2026memguardalpha,
+  title  = {MemGuard-Alpha: Detecting and Filtering Memorization-Contaminated
+            Signals in LLM-Based Financial Forecasting via Membership Inference
+            and Cross-Model Disagreement},
+  author = {Roy, Anisha and Roy, Dip},
+  year   = {2026},
+  eprint = {2603.26797},
+  archivePrefix = {arXiv}
+}
+```
