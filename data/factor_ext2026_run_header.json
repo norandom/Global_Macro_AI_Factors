@@ -91,7 +91,7 @@
   "nim_model": "openai/gpt-oss-20b",
   "panel": {
     "rows": 196,
-    "source": "committed data/macro_panel_monthly.parquet (FRED live rebuild unavailable: ConnectionError)",
+    "source": "committed data/macro_panel_monthly.parquet (live rebuild failed locally (load_fred_series reads the Postgres fred_series table; DATABASE_URL unset) — NOT a FRED outage (fredgraph.csv verified HTTP 200); corrected 2026-07-17)",
     "span": "2010-01-31..2026-04-30"
   },
   "parse": {
