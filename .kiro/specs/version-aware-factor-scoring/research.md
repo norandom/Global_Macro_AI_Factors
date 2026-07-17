@@ -462,3 +462,26 @@ targets/equity/decision-logs gitignored, shipped via the GH data release._
 - Reproducible via `scripts/build_static_bh.py` (yfinance substitution; artifacts gitignored,
   release-shipped). Workbook compatibility: switching the tag cell to `data-v2` loads directly
   (v1 assets unchanged; Step-0 assets are additive, not yet consumed by the five views).
+
+---
+
+## 2026-07-17 — Task 8.1: post-cutoff extension — PREDICTION FALSIFIED, and the falsification is informative
+
+- Stream extended to 90 rebalances (2019-01..2026-06): 72 replayed bit-exact from v1 artifacts
+  (equity consistency 1.1e-3 rel, price-source drift only), 18 live (gpt-oss-20b, same
+  calibrator/guard/blend). FRED unreachable from this host → committed panel (to 2026-04) used,
+  recorded in the run header.
+- **Split table** (factor_contrast_split_ext2026.json): in-training (n=65) premium **+0.5355**
+  (d=1.89, reproduces published +0.528 ± 0.007); post-cutoff (n=25) premium **+0.3592** (d=1.08).
+  Under the pre-registered collapse rule (<25% of in-training) the prediction is **FALSIFIED**:
+  the premium attenuates ~33% but persists.
+- **Interpretation (the useful part)**: the calibrator was trained on the identifying-vs-anonymized
+  FORM boundary — it responds partly to the recall-enabling *form* (dates/tickers/raw levels)
+  independent of content recall. Post-cutoff isolates that form component (+0.359); the
+  in-training EXCESS over it (~+0.18, and the d gap 1.89→1.08) is the memorization-specific part.
+  The measured premium = form-sensitivity + true recall; the natural experiment decomposes them.
+- Out-of-training checks hold: naive eval accuracy 0.438, Wilson CI [0.340, 0.542] ∋ 0.5
+  (coin-flip preserved on unseen data); return differential |SSR| 0.02 — luck-compatible.
+  Extended head-to-head: Factor PIT sharpe 1.33 (252-basis), non-PIT 1.31, Track B 1.00, baseline 0.51.
+- Track B linprog degenerate on 5/90 recent all-'normal'-regime months (holds prior weights —
+  nb08-inherent). Suite 418 green. Adversarial review: APPROVED.

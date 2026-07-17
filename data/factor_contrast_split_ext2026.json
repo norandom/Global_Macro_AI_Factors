@@ -1,0 +1,26 @@
+{
+  "collapse_rule": "post-cutoff |mean_delta| < 0.25 * in-training |mean_delta|",
+  "cutoff_date": "2024-06-01",
+  "full_stream": {
+    "mean_delta": 0.48656215183807167,
+    "median_delta": 0.5164967630514579,
+    "n_pairs": 90,
+    "paired_d": 1.5794956331889165
+  },
+  "in_training": {
+    "mean_delta": 0.5355328122053578,
+    "median_delta": 0.5245121239756236,
+    "n_pairs": 65,
+    "paired_d": 1.8915714131525443
+  },
+  "in_training_reproduction_abs_diff": 0.007250950391425426,
+  "nim_model": "openai/gpt-oss-20b",
+  "post_cutoff": {
+    "mean_delta": 0.3592384348831278,
+    "median_delta": 0.46221065619417323,
+    "n_pairs": 25,
+    "paired_d": 1.0793654019451489
+  },
+  "prediction_outcome": "PREDICTION FALSIFIED: the p_memorized premium did NOT collapse post-cutoff (in-training +0.5355 -> post-cutoff +0.3592) \u2014 reported either way per task 8.1.",
+  "published_v1_full_stream_premium": 0.5282818618139323
+}

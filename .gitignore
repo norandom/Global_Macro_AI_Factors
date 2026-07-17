@@ -55,3 +55,16 @@ workbook/uv.lock
 data/static_bh_*
 data/csv_mirrors/
 data/tear_sheet/
+
+# Task 8.1 post-cutoff extension: price-dependent (yfinance) ext2026 outputs —
+# regenerable via scripts/extend_stream_2026.py; shipped via the GH data release (data-v3).
+data/factor_targets_ext2026.parquet
+data/factor_equity_ext2026.parquet
+data/factor_decision_log_ext2026.json
+data/factor_nonpit_diagnostic_targets_ext2026.parquet
+data/factor_nonpit_diagnostic_equity_ext2026.parquet
+data/factor_nonpit_diagnostic_decision_log_ext2026.json
+data/baseline_targets_ext2026.parquet
+data/baseline_equity_ext2026.parquet
+data/track_b_targets_ext2026.parquet
+data/track_b_equity_ext2026.parquet

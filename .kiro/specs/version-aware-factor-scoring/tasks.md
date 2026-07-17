@@ -122,7 +122,7 @@
 - 2026-07-03 amendment: the 103-note's "validated holdout_auc≈0.96" was the prose-confounded probe; the controlled 3.2 run came back weak (holdout_auc=0.338 on a 30-prompt holdout — statistically consistent with chance). R8 + task 3.3 formalize this: screen candidates with bootstrap CI + permutation p (offline on gathered features), positive-control (prose-confounded) framing must fire, n_per_class raised (panel has ~168 pre-2024 months → up to ~120/class, holdout ~60). API rename (e9b1ed9): `honesty_*` → `recall_guarded_*` — spec prose "honesty/recall-guarded adjustment" refers to the `recall_guarded_*` API.
 
 - [ ] 8. Amendment 2026-07-17 (user directive): post-cutoff extension
-- [ ] 8.1 Extend the stream to 2026-06 — the post-cutoff natural experiment (data-v3)
+- [x] 8.1 Extend the stream to 2026-06 — the post-cutoff natural experiment (data-v3)
   - Extend the factor walk-forward (PIT deployable + non-PIT diagnostic + naive directional eval) from 2025-01 to 2026-06 (~18 new monthly rebalances) with the SAME renderer, calibrator (gpt-oss-20b @ 2024-06-01), guard, and blend; extend the cheap comparison lines (baseline, track B) over the same added months; re-cut the contrast, luck-vs-skill, and tear-sheet artifacts with an explicit in-training (<=2024-06) vs post-cutoff (>2024-06) split table
   - Falsifiable prediction to report either way: the PIT-vs-non-PIT p_memorized premium (+0.528 in-training) collapses toward zero post-cutoff (the model cannot recall unseen dates), while return behavior stays comparable
   - Publish data-v3 (all extended artifacts + _de CSV mirrors + updated tear sheet; data-v2 immutable); append a dated research-log entry with the split results
