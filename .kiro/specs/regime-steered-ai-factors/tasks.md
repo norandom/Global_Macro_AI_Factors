@@ -37,7 +37,7 @@
   - Observable: the cash pin is monotonically non-decreasing in measured correlation, bounded within the base pin and one, and unchanged when future rows are appended to the window.
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.2_
   - _Boundary: regime_overlay_
-- [ ] 3.2 Unit tests for the overlay
+- [x] 3.2 Unit tests for the overlay
   - Verify monotonic, bounded cash-pin behavior and the never-lift-risky invariant.
   - Verify walk-forward point-in-time cleanliness: the pin computed on a pre-date window is unchanged when future rows are appended.
   - Observable: a passing test module asserting monotonicity, bounds, never-lift-risky, and PIT invariance.
@@ -133,3 +133,4 @@
 
 ## Implementation Notes
 - 2.3: satisfied by the test-first tests written under TDD in 2.1 and 2.2 (tests/test_skill_metric.py, 20 tests). Coverage map — 1.1/1.2: test_recovers_injected_alpha_and_reports_hac_t; 1.5: test_appraisal_none_when_residual_below_floor; 2.1-2.6: the gate truth-table suite (all-pass, per-gate flips, NaN/None degenerates, first_failure precedence, relative-mode). Both prior tasks were independently reviewed as genuine; no additional code needed.
+- 3.2: satisfied by the test-first tests written under TDD in 3.1 (tests/test_regime_overlay.py, 9 tests). Coverage map — 6.1/6.3: test_crisis_market_scale_near_min_and_pin_raised; 6.2: test_pin_bounded_and_never_lifts_risky_above_no_overlay; 6.4: test_pit_clean_future_rows_do_not_change_pin; plus monotonicity, degenerate-window, and column-scoping. Reviewed as genuine in 3.1; no additional code needed.
