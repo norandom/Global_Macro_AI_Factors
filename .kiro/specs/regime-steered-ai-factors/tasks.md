@@ -23,7 +23,7 @@
   - Observable: a verdict object where flipping any single gate input below threshold sets the overall result to FAIL with the correct failing-gate identifier.
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
   - _Boundary: skill_metric_
-- [ ] 2.3 Unit tests for the metric and gate verdict
+- [x] 2.3 Unit tests for the metric and gate verdict
   - Verify alpha recovery and the HAC t-statistic on a known synthetic series, and the residual-floor undefined case.
   - Verify the gate truth table: each gate individually failing flips the verdict; all-pass yields PASS.
   - Observable: a passing test module covering metric math and the gate truth table.
@@ -130,3 +130,6 @@
   - Observable: a recorded experiment outcome showing whether the regime-conditioned view beats the control and unconditioned view under the gates (expected net-neutral or negative per the sibling-project precedent).
   - _Requirements: 7.1, 7.2, 7.3_
   - _Depends: 6.4_
+
+## Implementation Notes
+- 2.3: satisfied by the test-first tests written under TDD in 2.1 and 2.2 (tests/test_skill_metric.py, 20 tests). Coverage map — 1.1/1.2: test_recovers_injected_alpha_and_reports_hac_t; 1.5: test_appraisal_none_when_residual_below_floor; 2.1-2.6: the gate truth-table suite (all-pass, per-gate flips, NaN/None degenerates, first_failure precedence, relative-mode). Both prior tasks were independently reviewed as genuine; no additional code needed.
