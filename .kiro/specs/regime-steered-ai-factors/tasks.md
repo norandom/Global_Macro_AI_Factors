@@ -101,7 +101,7 @@
   - _Requirements: 7.1, 7.2, 7.3, 7.4_
   - _Depends: 6.3, 3.1, 4.2_
 
-- [ ] 7. Reproducibility: run header, artifact schemas, and deterministic replay
+- [x] 7. Reproducibility: run header, artifact schemas, and deterministic replay
   - Write a run header disclosing model, cutoff, out-of-sample window, seed, gate configuration, and annualization basis; register the ledger and ablation artifacts against the schema contract; provide locale csv mirrors.
   - Guarantee that re-running with the same inputs and configuration reproduces the same metric values, replaying persisted scores where live inference is not repeated, and never overwriting published outputs.
   - Observable: a second run with identical inputs reproduces the ledger metric values and writes additive, schema-valid artifacts with a disclosed annualization basis.
@@ -109,7 +109,7 @@
   - _Depends: 5.2, 6.3_
 
 - [ ] 8. Validation
-- [ ] 8.1 Loop keep/revert and loop-until-dry integration test
+- [x] 8.1 Loop keep/revert and loop-until-dry integration test
   - Verify a worsening mutation is reverted with the best configuration unchanged, a synthetic improving-gated-and-beats-control mutation is adopted, and both are recorded in the ledger.
   - Verify the loop stops after the configured dry-round count.
   - Observable: a passing integration test asserting keep/revert semantics and loop-until-dry termination via the ledger.
@@ -134,3 +134,4 @@
 ## Implementation Notes
 - 2.3: satisfied by the test-first tests written under TDD in 2.1 and 2.2 (tests/test_skill_metric.py, 20 tests). Coverage map — 1.1/1.2: test_recovers_injected_alpha_and_reports_hac_t; 1.5: test_appraisal_none_when_residual_below_floor; 2.1-2.6: the gate truth-table suite (all-pass, per-gate flips, NaN/None degenerates, first_failure precedence, relative-mode). Both prior tasks were independently reviewed as genuine; no additional code needed.
 - 3.2: satisfied by the test-first tests written under TDD in 3.1 (tests/test_regime_overlay.py, 9 tests). Coverage map — 6.1/6.3: test_crisis_market_scale_near_min_and_pin_raised; 6.2: test_pin_bounded_and_never_lifts_risky_above_no_overlay; 6.4: test_pit_clean_future_rows_do_not_change_pin; plus monotonicity, degenerate-window, and column-scoping. Reviewed as genuine in 3.1; no additional code needed.
+- 8.1: satisfied by the 6.3 loop tests (real run_loop + registry + apply_mutation + ledger, injected verify_fn) — keep-on-improved-gated-beats-control, revert-on-gate-fail, revert-on-loses-to-control, loop-until-dry with dry-counter reset, deterministic serializable ledger — plus the task-7 run_loop→build_loop_payload→write_loop_ledger round-trip. All independently reviewed; the loop integration is covered end-to-end, no additional code needed.

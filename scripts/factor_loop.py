@@ -30,7 +30,9 @@ change the prompt/axes/view and require live NIM calls.
 from __future__ import annotations
 
 import dataclasses
+import json
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Literal
 
 # --- lever bounds ------------------------------------------------------------
@@ -422,6 +424,111 @@ def regime_view_recommended(
     if _is_bad(regime_view_appraisal) or _is_bad(control_appraisal) or _is_bad(unconditioned_appraisal):
         return False
     return regime_view_appraisal > control_appraisal and regime_view_appraisal > unconditioned_appraisal
+
+
+# --- Task 7: reproducibility — run header, ledger artifact schema, replay -----
+# Mirrors the ARTIFACT CONVENTION in scripts/ablation_ladder.py (build_*_payload
+# takes an injected `built_at` — never datetime.now at import; write_* is additive
+# and RAISES FileExistsError rather than overwrite a published artifact, 8.5).
+
+
+def _entry_to_dict(entry: LedgerEntry) -> dict:
+    """JSON-serializable view of one ledger entry (verdict → its key fields)."""
+    v = entry.verdict
+    return {
+        "iteration": entry.iteration,
+        "mutation": None if entry.mutation is None else dataclasses.asdict(entry.mutation),
+        "appraisal": entry.appraisal,
+        "verdict": {
+            "passed": v.passed,
+            "first_failure": v.first_failure,
+            "values": dict(v.values),
+        },
+        "decision": entry.decision,
+    }
+
+
+def build_loop_payload(
+    entries: list[LedgerEntry],
+    *,
+    seed_config: FactorConfig,
+    best_config: FactorConfig,
+    built_at: str,
+    run_id: str,
+    oos_window: list[str] | None,
+    seed: int | None,
+    gate_config: GateConfig,
+    model: str | None = None,
+    cutoff: str | None = None,
+    periods_per_year: int = 252,
+) -> dict:
+    """Build the loop ledger artifact as a plain, JSON-serializable dict.
+
+    Shape (design.md Data Models): ``{run_header, config, entries, best_config}``.
+    ``built_at`` is caller-supplied (this module never calls ``datetime.now`` at
+    import/module level). The ``run_header`` discloses model, cutoff, oos_window,
+    seed, the gate config (as a dict), and the annualization basis (8.1).
+    """
+    return {
+        "run_header": {
+            "model": model,
+            "cutoff": cutoff,
+            "oos_window": oos_window,
+            "seed": seed,
+            "gate_config": dataclasses.asdict(gate_config),
+            "annualization_basis": f"calendar/sqrt-{periods_per_year}",
+            "periods_per_year": periods_per_year,
+            "run_id": run_id,
+            "built_at": built_at,
+        },
+        "config": config_to_dict(seed_config),
+        "entries": [_entry_to_dict(e) for e in entries],
+        "best_config": config_to_dict(best_config),
+    }
+
+
+def write_loop_ledger(
+    payload: dict,
+    out_dir: str | Path,
+    run_id: str,
+    *,
+    csv_mirror: bool = True,
+) -> Path:
+    """Write ``payload`` additively to ``factor_loop_ledger_<run_id>.json``.
+
+    Refuses to overwrite an existing artifact (raises ``FileExistsError``) so
+    published outputs stay immutable and versioned by ``run_id`` (Req 8.5). JSON
+    is written ``sort_keys=True`` per the repo convention; an optional csv mirror
+    of the per-iteration entries table is written alongside (8.3). Mirrors
+    ``ablation_ladder.write_ablation_artifact`` (duplicated ~10 lines rather than
+    reaching across the module boundary).
+    """
+    out_dir = Path(out_dir)
+    path = out_dir / f"factor_loop_ledger_{run_id}.json"
+    if path.exists():
+        raise FileExistsError(f"refusing to overwrite published artifact: {path}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str))
+    if csv_mirror:
+        import pandas as pd  # local: keep top-level import light
+
+        rows = [
+            {
+                "iteration": e["iteration"],
+                "kind": None if e["mutation"] is None else e["mutation"]["kind"],
+                "param": None if e["mutation"] is None else e["mutation"]["param"],
+                "value": None if e["mutation"] is None else e["mutation"]["value"],
+                "appraisal": e["appraisal"],
+                "passed": e["verdict"]["passed"],
+                "first_failure": e["verdict"]["first_failure"],
+                "decision": e["decision"],
+            }
+            for e in payload["entries"]
+        ]
+        pd.DataFrame(rows).to_csv(
+            out_dir / f"factor_loop_ledger_{run_id}.csv", index=False
+        )
+    return path
 
 
 if __name__ == "__main__":  # pragma: no cover - stub; heavy wiring is task 6.3

@@ -452,3 +452,117 @@ def test_regime_view_mutation_stays_within_blend_bound():
     out = fl.apply_mutation(base, fl.Mutation("regime_view", "regime_view", 5.0, True))
     assert out.regime_view <= fl.MAX_VIEW_INFLUENCE
 
+
+# --- Task 7: run header, ledger artifact schema, deterministic replay ---------
+# Pure + tmp_path, still NO DB/NIM. built_at is INJECTED (never datetime.now).
+
+GATE_CFG = fl.GateConfig()
+
+
+def _demo_ledger():
+    """A small, deterministic ledger from a scripted run_loop (one KEEP)."""
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("tau", 0.10): (0.50, _pass_verdict(), 0.20),
+    })
+    return seed, fl.run_loop(seed, verify_fn, dry_rounds=1,
+                             registry_fn=_single_mutation_registry([m]))
+
+
+def test_build_loop_payload_run_header_discloses_all_fields():
+    seed, ledger = _demo_ledger()
+    payload = fl.build_loop_payload(
+        ledger, seed_config=seed, best_config=fl.FactorConfig(tau=0.10),
+        built_at="2026-07-20T00:00:00+00:00", run_id="t7demo",
+        oos_window=["2025-01-01", "2025-12-31"], seed=42,
+        gate_config=GATE_CFG, model="nim-x", cutoff="2024-12-31",
+    )
+    h = payload["run_header"]
+    assert h["model"] == "nim-x"
+    assert h["cutoff"] == "2024-12-31"
+    assert h["oos_window"] == ["2025-01-01", "2025-12-31"]
+    assert h["seed"] == 42
+    assert h["built_at"] == "2026-07-20T00:00:00+00:00"  # injected, not datetime.now
+    assert h["annualization_basis"] == "calendar/sqrt-252"
+    assert h["periods_per_year"] == 252
+    assert isinstance(h["gate_config"], dict)  # gate config disclosed as a dict
+
+
+def test_build_loop_payload_entries_round_trip_and_configs_present():
+    import json
+
+    seed, ledger = _demo_ledger()
+    best = fl.FactorConfig(tau=0.10)
+    payload = fl.build_loop_payload(
+        ledger, seed_config=seed, best_config=best,
+        built_at="2026-07-20", run_id="t7rt",
+        oos_window=None, seed=None, gate_config=GATE_CFG,
+    )
+    # JSON-serializable end to end
+    round = json.loads(json.dumps(payload, default=str))
+    assert round["config"] == fl.config_to_dict(seed)  # seed config snapshot
+    assert round["best_config"] == fl.config_to_dict(best)  # winning config snapshot
+    assert len(round["entries"]) == len(ledger)
+    e0 = round["entries"][0]
+    assert e0["iteration"] == 0 and e0["mutation"] is None and e0["decision"] == "KEEP"
+    e1 = round["entries"][1]
+    assert e1["mutation"]["param"] == "tau" and e1["mutation"]["value"] == 0.10
+    # verdict serializes to its key fields
+    assert set(e1["verdict"]) >= {"passed", "first_failure", "values"}
+    assert e1["appraisal"] == pytest.approx(0.50)
+
+
+def test_write_loop_ledger_additive_and_never_overwrites(tmp_path):
+    import json
+
+    seed, ledger = _demo_ledger()
+    payload = fl.build_loop_payload(
+        ledger, seed_config=seed, best_config=fl.FactorConfig(tau=0.10),
+        built_at="2026-07-20", run_id="run1", oos_window=None, seed=None,
+        gate_config=GATE_CFG,
+    )
+    path = fl.write_loop_ledger(payload, tmp_path, "run1")
+    assert path.name == "factor_loop_ledger_run1.json"
+    assert path.exists()
+    # JSON round-trips
+    assert json.loads(path.read_text())["run_header"]["periods_per_year"] == 252
+    # csv mirror of the entries table (8.3)
+    assert (tmp_path / "factor_loop_ledger_run1.csv").exists()
+    # 8.5: refuses to overwrite a published artifact
+    with pytest.raises(FileExistsError):
+        fl.write_loop_ledger(payload, tmp_path, "run1")
+
+
+def test_write_loop_ledger_no_csv_when_disabled(tmp_path):
+    seed, ledger = _demo_ledger()
+    payload = fl.build_loop_payload(
+        ledger, seed_config=seed, best_config=seed,
+        built_at="2026-07-20", run_id="nocsv", oos_window=None, seed=None,
+        gate_config=GATE_CFG,
+    )
+    fl.write_loop_ledger(payload, tmp_path, "nocsv", csv_mirror=False)
+    assert not (tmp_path / "factor_loop_ledger_nocsv.csv").exists()
+
+
+def test_deterministic_replay_reproduces_metric_values():
+    # R8.4: re-running with identical inputs reproduces the ledger metric values.
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    script = {None: (0.30, _pass_verdict(), 0.10), ("tau", 0.10): (0.50, _pass_verdict(), 0.20)}
+    reg = _single_mutation_registry([m])
+
+    def build(run_id):
+        ledger = fl.run_loop(seed, _scripted_verify(script), dry_rounds=1, registry_fn=reg)
+        return fl.build_loop_payload(
+            ledger, seed_config=seed, best_config=fl.FactorConfig(tau=0.10),
+            built_at="2026-07-20T00:00:00+00:00",  # injected equal across runs
+            run_id=run_id, oos_window=None, seed=None, gate_config=GATE_CFG,
+        )
+
+    a, b = build("r1"), build("r2")
+    # run_id differs, but the ledger entries + appraisals are byte-identical
+    assert a["entries"] == b["entries"]
+    assert [e["appraisal"] for e in a["entries"]] == [e["appraisal"] for e in b["entries"]]
+
