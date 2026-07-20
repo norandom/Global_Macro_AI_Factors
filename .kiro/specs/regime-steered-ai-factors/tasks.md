@@ -44,7 +44,7 @@
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
 - [ ] 4. Integration: package exports and the weight seam
-- [ ] 4.1 Register the new library modules for import
+- [x] 4.1 Register the new library modules for import
   - Wire the skill-metric and regime-overlay modules into the package's public import surface so downstream scripts import them through the package.
   - Observable: both modules are importable through the package entry point and existing imports remain unbroken.
   - _Requirements: 8.2_

@@ -29,6 +29,22 @@ from .rebalance import annual_rebalance_dates, build_target_weights, run_rebalan
 from .returns import daily_returns
 from .scoring import score_universe, select_top_per_category
 from .ssr import compute_ssr, rolling_sharpe
+from .skill_metric import (
+    IDIO_FLOOR,
+    BasketResidual,
+    GateConfig,
+    GateVerdict,
+    MarketAttribution,
+    basket_residual,
+    evaluate_gates,
+    market_attribution,
+)
+from .regime_overlay import (
+    avg_pairwise_correlation,
+    correlation_scale,
+    derisk_cash_pin,
+    ewma_correlation_matrix,
+)
 
 __all__ = [
     "get_engine",
@@ -80,4 +96,16 @@ __all__ = [
     "turnover_stats",
     "view_stability",
     "head_to_head_report",
+    "basket_residual",
+    "market_attribution",
+    "BasketResidual",
+    "MarketAttribution",
+    "GateConfig",
+    "GateVerdict",
+    "evaluate_gates",
+    "IDIO_FLOOR",
+    "ewma_correlation_matrix",
+    "avg_pairwise_correlation",
+    "correlation_scale",
+    "derisk_cash_pin",
 ]
