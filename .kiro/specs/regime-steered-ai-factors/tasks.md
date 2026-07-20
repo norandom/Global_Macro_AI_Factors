@@ -120,7 +120,7 @@
   - Observable: a passing integration test where the recall gate fails on a high-premium non-PIT input and a future-data mutation is rejected.
   - _Requirements: 2.4, 3.1, 3.3_
   - _Depends: 6.2, 5.1_
-- [ ] 8.3 Cost-control and no-regression integration test
+- [x] 8.3 Cost-control and no-regression integration test
   - Verify a cache-reusing mutation completes with zero live model calls, and that the overlay-absent path reproduces the published extended-stream weights byte-for-byte.
   - Observable: a passing test confirming zero live calls on a cache-reusing mutation and unchanged published weights with the overlay off.
   - _Requirements: 8.4_
@@ -135,3 +135,4 @@
 - 2.3: satisfied by the test-first tests written under TDD in 2.1 and 2.2 (tests/test_skill_metric.py, 20 tests). Coverage map — 1.1/1.2: test_recovers_injected_alpha_and_reports_hac_t; 1.5: test_appraisal_none_when_residual_below_floor; 2.1-2.6: the gate truth-table suite (all-pass, per-gate flips, NaN/None degenerates, first_failure precedence, relative-mode). Both prior tasks were independently reviewed as genuine; no additional code needed.
 - 3.2: satisfied by the test-first tests written under TDD in 3.1 (tests/test_regime_overlay.py, 9 tests). Coverage map — 6.1/6.3: test_crisis_market_scale_near_min_and_pin_raised; 6.2: test_pin_bounded_and_never_lifts_risky_above_no_overlay; 6.4: test_pit_clean_future_rows_do_not_change_pin; plus monotonicity, degenerate-window, and column-scoping. Reviewed as genuine in 3.1; no additional code needed.
 - 8.1: satisfied by the 6.3 loop tests (real run_loop + registry + apply_mutation + ledger, injected verify_fn) — keep-on-improved-gated-beats-control, revert-on-gate-fail, revert-on-loses-to-control, loop-until-dry with dry-counter reset, deterministic serializable ledger — plus the task-7 run_loop→build_loop_payload→write_loop_ledger round-trip. All independently reviewed; the loop integration is covered end-to-end, no additional code needed.
+- 8.4 (optional, DEFERRED): the regime-conditioned-view end-to-end experiment requires live NIM inference + the price/macro DB over the OOS window and is explicitly optional (`[ ]*`). The design expects a net-neutral/harmful result (facdrone precedent). Its gating logic (`regime_view_recommended`, PIT label, identical gate path) is unit-tested in task 6.4; running the live experiment is a post-MVP research step, deferred to preserve NIM budget.
