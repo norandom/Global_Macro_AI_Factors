@@ -22,6 +22,7 @@ artifact writing are task 5.2, not this module.
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -51,6 +52,11 @@ OVERLAY_CONTROL = "OVERLAY_CONTROL"
 
 #: Canonical row order for the ladder table.
 RUNG_ORDER = (HRP_ONLY, HRP_BL_FIXED, HRP_BL_AI_PIT, HRP_BL_AI_NONPIT, OVERLAY_CONTROL)
+
+#: Rungs that are diagnostic-only and excluded from any deployable recommendation
+#: (4.4). The non-PIT AI view is look-ahead-contaminated: a research diagnostic, not
+#: deployable. Kept as a set so the exclusion is one authoritative list.
+DIAGNOSTIC_RUNGS = frozenset({HRP_BL_AI_NONPIT})
 
 
 def _equity_from_returns(returns: pd.Series) -> pd.Series:
@@ -111,6 +117,83 @@ def ai_minus_control(table: pd.DataFrame) -> float:
     return float(table.loc[HRP_BL_AI_PIT, "appraisal"] - table.loc[OVERLAY_CONTROL, "appraisal"])
 
 
+def deployable_rungs(table: pd.DataFrame) -> list[str]:
+    """Rungs eligible for a deployable recommendation, in ladder order.
+
+    Never includes ``HRP_BL_AI_NONPIT`` (or any :data:`DIAGNOSTIC_RUNGS`): the
+    non-point-in-time AI view is diagnostic-only and excluded from any
+    deployable recommendation (Req 4.4).
+    """
+    return [r for r in table.index if r not in DIAGNOSTIC_RUNGS]
+
+
+def build_ablation_payload(
+    table: pd.DataFrame,
+    *,
+    built_at: str,
+    run_id: str | None = None,
+    oos_window: list[str] | None = None,
+    seed: int | None = None,
+    periods_per_year: int = 252,
+) -> dict:
+    """Build the ablation artifact as a plain, JSON-serializable dict.
+
+    ``built_at`` is a caller-supplied timestamp/label (this module never calls
+    ``datetime.now`` at import). The ``run_header`` discloses the annualization
+    basis (8.1) plus optional window/seed; each per-rung entry carries a
+    ``diagnostic_only`` flag, true only for :data:`DIAGNOSTIC_RUNGS` (4.4); the
+    AI-view deltas travel with the artifact (8.3).
+    """
+    rungs: dict[str, dict] = {}
+    for name, row in table.iterrows():
+        entry = {c: (float(v) if pd.notna(v) else None) for c, v in row.items()}
+        entry["diagnostic_only"] = name in DIAGNOSTIC_RUNGS
+        rungs[name] = entry
+    return {
+        "run_header": {
+            "built_at": built_at,
+            "run_id": run_id,
+            "oos_window": oos_window,
+            "seed": seed,
+            "annualization_basis": f"calendar/sqrt-{periods_per_year}",
+            "periods_per_year": periods_per_year,
+        },
+        "rungs": rungs,
+        "deltas": {
+            "ai_view_marginal_delta": ai_view_marginal_delta(table),
+            "ai_minus_control": ai_minus_control(table),
+        },
+        "deployable_rungs": deployable_rungs(table),
+    }
+
+
+def write_ablation_artifact(
+    payload: dict,
+    out_dir: str | Path,
+    run_id: str,
+    *,
+    csv_mirror: bool = True,
+) -> Path:
+    """Write ``payload`` additively to ``factor_ablation_<run_id>.json``.
+
+    Refuses to overwrite an existing artifact (raises ``FileExistsError``) so
+    published outputs stay immutable and versioned by ``run_id`` (Req 8.5).
+    JSON is written ``sort_keys=True`` per the repo convention; an optional csv
+    mirror of the per-rung table is written alongside.
+    """
+    out_dir = Path(out_dir)
+    path = out_dir / f"factor_ablation_{run_id}.json"
+    if path.exists():
+        raise FileExistsError(f"refusing to overwrite published artifact: {path}")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str))
+    if csv_mirror:
+        pd.DataFrame.from_dict(payload["rungs"], orient="index").to_csv(
+            out_dir / f"factor_ablation_{run_id}.csv"
+        )
+    return path
+
+
 if __name__ == "__main__":  # pragma: no cover -- DB/NIM data run; NOT unit-tested
     # ponytail: the full 5-rung walk-forward reuses the extend_stream_2026 pipeline
     # (build_walk_forward_targets + the combine closure + _ReplayScorer for the AI
@@ -118,9 +201,7 @@ if __name__ == "__main__":  # pragma: no cover -- DB/NIM data run; NOT unit-test
     # block only wires already-built rung return series into score_ladder and prints
     # the table. All heavy imports stay lazy so `import ablation_ladder` needs no DB.
     import argparse
-    import json
-
-    import numpy as np
+    from datetime import datetime, timezone
 
     parser = argparse.ArgumentParser(description="Score the ablation ladder on one OOS window.")
     parser.add_argument(
@@ -131,6 +212,15 @@ if __name__ == "__main__":  # pragma: no cover -- DB/NIM data run; NOT unit-test
         "--factor-returns", required=True,
         help="JSON {etf: {isodate: daily_return}} of the own 4-ETF factors.",
     )
+    parser.add_argument(
+        "--run-id", default=None,
+        help="Additive artifact id -> data/factor_ablation_<run-id>.json (never overwrites).",
+    )
+    parser.add_argument(
+        "--out-dir", default=str(Path(__file__).resolve().parents[1] / "data"),
+        help="Directory for the additive ablation artifact (default: repo data/).",
+    )
+    parser.add_argument("--seed", type=int, default=None, help="Seed to disclose in run_header.")
     args = parser.parse_args()
 
     def _load_series_frame(path: str) -> pd.DataFrame:
@@ -148,3 +238,13 @@ if __name__ == "__main__":  # pragma: no cover -- DB/NIM data run; NOT unit-test
         print(ladder.to_string())
     print(f"\nAI-view marginal delta (AI-PIT - BL-fixed):   {ai_view_marginal_delta(ladder): .4f}")
     print(f"AI-minus-control skill diff (AI-PIT - overlay): {ai_minus_control(ladder): .4f}")
+    print(f"\nDeployable rungs (non-PIT excluded, 4.4): {deployable_rungs(ladder)}")
+
+    if args.run_id:
+        oos = [str(factors.index.min().date()), str(factors.index.max().date())]
+        payload = build_ablation_payload(
+            ladder, built_at=datetime.now(timezone.utc).isoformat(),
+            run_id=args.run_id, oos_window=oos, seed=args.seed,
+        )
+        out = write_ablation_artifact(payload, args.out_dir, args.run_id)
+        print(f"[done] additive ablation artifact -> {out}")

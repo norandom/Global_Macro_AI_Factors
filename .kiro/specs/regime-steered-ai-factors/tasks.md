@@ -65,7 +65,7 @@
   - _Requirements: 4.1, 4.2, 4.3, 6.5_
   - _Boundary: ablation_ladder_
   - _Depends: 2.1, 4.2_
-- [ ] 5.2 Diagnostic labeling and additive artifact
+- [x] 5.2 Diagnostic labeling and additive artifact
   - Label the non-point-in-time rung as diagnostic-only and exclude it from any deployable recommendation.
   - Write the ladder result to a durable, versioned artifact that does not overwrite published outputs, following the repository's naming and schema conventions.
   - Observable: an additive ladder artifact on disk with the non-PIT rung flagged diagnostic-only.

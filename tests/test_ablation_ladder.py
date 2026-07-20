@@ -10,11 +10,13 @@ delta, and the AI-minus-control skill difference (Req 4.1-4.3, 6.5).
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 ablation_ladder = importlib.import_module("ablation_ladder")
@@ -111,3 +113,61 @@ def test_imports_without_db():
     # The module must import and expose the pure core without any DB/API key.
     assert hasattr(ablation_ladder, "score_ladder")
     assert callable(ablation_ladder.score_ladder)
+
+
+# --- Task 5.2: diagnostic labeling + additive artifact -----------------------
+
+deployable_rungs = ablation_ladder.deployable_rungs
+build_ablation_payload = ablation_ladder.build_ablation_payload
+write_ablation_artifact = ablation_ladder.write_ablation_artifact
+
+
+def _table():
+    factors = _factor_frame()
+    return score_ladder(_rung_returns(factors), factors)
+
+
+def test_nonpit_excluded_from_deployable_recommendation():
+    # The non-PIT rung is diagnostic-only and must NOT be deployable (4.4);
+    # the PIT AI rung and the overlay control ARE eligible.
+    rungs = deployable_rungs(_table())
+    assert HRP_BL_AI_NONPIT not in rungs
+    assert HRP_BL_AI_PIT in rungs
+    assert OVERLAY_CONTROL in rungs
+    assert HRP_ONLY in rungs
+    assert HRP_BL_FIXED in rungs
+
+
+def test_payload_flags_nonpit_diagnostic_and_discloses_basis():
+    payload = build_ablation_payload(
+        _table(), built_at="run-A", oos_window=["2024-01-01", "2024-12-31"],
+        seed=20260720, periods_per_year=252,
+    )
+    # run_header discloses the annualization basis + a passed-in built_at (8.1, 8.3)
+    assert "run_header" in payload
+    assert payload["run_header"]["built_at"] == "run-A"
+    assert "252" in str(payload["run_header"]["annualization_basis"])
+    assert payload["run_header"]["seed"] == 20260720
+    # per-rung diagnostic flag: only the non-PIT rung is diagnostic-only (4.4)
+    assert payload["rungs"][HRP_BL_AI_NONPIT]["diagnostic_only"] is True
+    assert payload["rungs"][HRP_BL_AI_PIT]["diagnostic_only"] is False
+    assert payload["rungs"][OVERLAY_CONTROL]["diagnostic_only"] is False
+    # deltas travel with the artifact
+    assert "ai_view_marginal_delta" in payload["deltas"]
+    assert "ai_minus_control" in payload["deltas"]
+    assert HRP_BL_AI_NONPIT not in payload["deployable_rungs"]
+
+
+def test_write_is_additive_and_refuses_overwrite(tmp_path):
+    payload = build_ablation_payload(_table(), built_at="run-B")
+    path = write_ablation_artifact(payload, tmp_path, "runB")
+    assert path.exists()
+    # round-trips with the diagnostic flag intact
+    reloaded = json.loads(path.read_text())
+    assert reloaded["rungs"][HRP_BL_AI_NONPIT]["diagnostic_only"] is True
+    # re-writing the SAME runid must NOT silently overwrite a published artifact (8.5)
+    with pytest.raises(FileExistsError):
+        write_ablation_artifact(payload, tmp_path, "runB")
+    # a distinct runid writes a distinct file (additive)
+    path2 = write_ablation_artifact(payload, tmp_path, "runC")
+    assert path2 != path and path2.exists()
