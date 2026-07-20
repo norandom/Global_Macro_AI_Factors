@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Foundation: declare the HAC-statistics dependency and prove it loads
+- [x] 1. Foundation: declare the HAC-statistics dependency and prove it loads
   - Add the statistical-modelling library used for the Newey-West HAC regression t-statistic as a declared direct dependency (it is currently only transitively present); reuse it rather than re-implementing HAC coefficient covariance.
   - Provide a minimal smoke check that the HAC-covariance regression path imports and fits on a tiny synthetic series.
   - Observable: the dependency resolves in the locked environment and a one-line HAC fit returns a finite t-statistic.

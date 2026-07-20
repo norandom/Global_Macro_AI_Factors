@@ -762,6 +762,7 @@ dependencies = [
     { name = "recall-guard" },
     { name = "riskfolio-lib" },
     { name = "sqlalchemy" },
+    { name = "statsmodels" },
     { name = "vectorbt" },
 ]
 
@@ -791,6 +792,7 @@ requires-dist = [
     { name = "recall-guard", git = "https://github.com/norandom/memguard_alpha.git?rev=v0.1.0" },
     { name = "riskfolio-lib", specifier = ">=7.2.1" },
     { name = "sqlalchemy" },
+    { name = "statsmodels", specifier = ">=0.14" },
     { name = "vectorbt", specifier = ">=0.28.2" },
 ]
 

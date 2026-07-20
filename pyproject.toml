@@ -20,6 +20,7 @@ dependencies = [
     "recall-guard",
     "riskfolio-lib>=7.2.1",
     "sqlalchemy",
+    "statsmodels>=0.14",
     "vectorbt>=0.28.2",
 ]
 
