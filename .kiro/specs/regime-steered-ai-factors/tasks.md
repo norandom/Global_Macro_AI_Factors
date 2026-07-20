@@ -57,7 +57,7 @@
   - _Depends: 3.1_
 
 - [ ] 5. Ablation ladder and non-LLM control leg
-- [ ] 5.1 (P) Score the rungs and the overlay control on one out-of-sample window
+- [x] 5.1 (P) Score the rungs and the overlay control on one out-of-sample window
   - Run HRP-only, HRP+BL with a fixed view, HRP+BL with the point-in-time AI view, and HRP+BL with the non-point-in-time diagnostic AI view over the same out-of-sample window.
   - Add the non-LLM regime de-risk overlay as an additional control rung, scored on the same skill and risk-shape metrics as the AI rungs.
   - Report the own-basket skill metric per rung, the AI-view marginal delta for adjacent AI/non-AI rungs, and the AI-versus-control comparison on the skill metric.
