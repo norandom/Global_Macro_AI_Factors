@@ -300,8 +300,80 @@ def verify(
     return VerifyResult(appraisal=residual.appraisal, verdict=verdict, recall_premium=recall_premium)
 
 
-def run_loop(config: object) -> list[LedgerEntry]:  # pragma: no cover - task 6.3
-    raise NotImplementedError("keep/revert loop + ledger is task 6.3")
+@dataclass(frozen=True)
+class LoopEval:
+    """One injected verify result: skill appraisal, gate verdict, and the non-LLM
+    control's appraisal on the same skill metric (R6.5/R6.6).
+
+    Injected so ``run_loop`` is unit-testable with NO walk-forward/NIM; the real
+    loop wires ``verify_fn`` to the OOS eval + ``verify(...)`` + the ablation
+    control number (see ``__main__``)."""
+
+    appraisal: float | None
+    verdict: GateVerdict
+    control_appraisal: float
+
+
+def run_loop(
+    seed_config: FactorConfig,
+    verify_fn,  # Callable[[FactorConfig, Mutation | None], LoopEval]
+    *,
+    dry_rounds: int,
+    registry_fn=mutation_registry,
+    max_iters: int = 1000,
+) -> list[LedgerEntry]:
+    """Iterate-verify-keep loop with a control gate, loop-until-dry, and ledger.
+
+    The seed config is evaluated first to establish the baseline appraisal + risk
+    shape; it is the seeded starting best and ledger iteration 0 (5.x). Each
+    iteration applies exactly one mutation (5.1) and adopts it as the new best iff
+    it (a) improves the skill metric over the current best, (b) passes every gate,
+    AND (c) out-earns the non-LLM control on the skill metric (5.3 + 6.6);
+    otherwise it reverts to the prior best (5.4). Stops after ``dry_rounds``
+    CONSECUTIVE non-adoptions (5.5), when the search space is exhausted, or at
+    ``max_iters`` (backstop). A ``LedgerEntry`` is appended every iteration (5.6).
+
+    Deterministic: fixed ``registry_fn`` order + injected ``verify_fn`` -> identical
+    ledger for identical inputs (no clock/random in the loop).
+    """
+    if dry_rounds < 1:
+        raise ValueError(f"dry_rounds must be >= 1, got {dry_rounds}")
+
+    base = verify_fn(seed_config, None)
+    best_config = seed_config
+    best_appraisal = base.appraisal
+    ledger: list[LedgerEntry] = [
+        LedgerEntry(0, None, base.appraisal, base.verdict, "KEEP")
+    ]
+
+    consecutive_reverts = 0
+    iteration = 1
+    pending = list(registry_fn(best_config))
+    while consecutive_reverts < dry_rounds and iteration <= max_iters:
+        if not pending:
+            break  # search space exhausted; nothing left to try
+        mutation = pending.pop(0)
+        candidate = apply_mutation(best_config, mutation)
+        ev = verify_fn(candidate, mutation)
+        adopt = (
+            ev.appraisal is not None
+            and (best_appraisal is None or ev.appraisal > best_appraisal)  # improves (5.3)
+            and ev.verdict.passed  # every gate passes (5.3)
+            and ev.appraisal > ev.control_appraisal  # out-earns non-LLM control (6.6)
+        )
+        if adopt:
+            best_config = candidate
+            best_appraisal = ev.appraisal
+            consecutive_reverts = 0
+            pending = list(registry_fn(best_config))  # fresh registry over the new best
+            decision: Literal["KEEP", "REVERT"] = "KEEP"
+        else:
+            consecutive_reverts += 1
+            decision = "REVERT"
+        ledger.append(LedgerEntry(iteration, mutation, ev.appraisal, ev.verdict, decision))
+        iteration += 1
+
+    return ledger
 
 
 if __name__ == "__main__":  # pragma: no cover - stub; heavy wiring is task 6.3

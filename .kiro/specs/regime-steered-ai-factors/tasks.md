@@ -87,7 +87,7 @@
   - Observable: a verify call returns a gate verdict on the OOS window and a mutation requiring future data is rejected with a logged reason.
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 5.2_
   - _Depends: 6.1, 4.2_
-- [ ] 6.3 Keep/revert with control gate, loop-until-dry, and ledger
+- [x] 6.3 Keep/revert with control gate, loop-until-dry, and ledger
   - Establish the baseline strategy returns and its risk-shape as the seeded starting best configuration and the gate baseline.
   - Adopt a mutation as the new best only when it improves the skill metric, passes every gate, and out-earns the non-LLM control on the skill metric; otherwise revert to the prior best.
   - Stop after a configured number of consecutive non-adoptions and append a ledger entry for every iteration recording the mutation, metric values, gate outcomes, and the keep/revert decision.

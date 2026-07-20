@@ -218,3 +218,153 @@ def test_verify_signature_has_no_in_sample_metric_input():
     params = set(inspect.signature(fl.verify).parameters)
     assert not any("in_sample" in p or "insample" in p for p in params), params
 
+
+# --- Task 6.3: keep/revert + control gate + loop-until-dry + ledger -----------
+# Pure/deterministic: verify_fn is INJECTED (scripted evals), so NO DB/NIM.
+
+from macro_framework.skill_metric import GateVerdict  # noqa: E402
+
+
+def _pass_verdict() -> GateVerdict:
+    return GateVerdict(True, True, True, True, True, None, {})
+
+
+def _fail_verdict(reason: str = "skill: t=0.1 < 2") -> GateVerdict:
+    return GateVerdict(False, False, True, True, True, reason, {})
+
+
+def _scripted_verify(script):
+    """Build a verify_fn keyed by (param, value); mutation=None -> baseline entry.
+
+    `script[key]` -> (appraisal, verdict, control_appraisal). Baseline key is None.
+    """
+    def verify_fn(config, mutation):
+        key = None if mutation is None else (mutation.param, mutation.value)
+        appraisal, verdict, control = script[key]
+        return fl.LoopEval(appraisal=appraisal, verdict=verdict, control_appraisal=control)
+    return verify_fn
+
+
+def _single_mutation_registry(mutations):
+    """registry_fn over a fixed candidate list, excluding no-ops vs the given config
+    (mimics the real ``mutation_registry`` so a KEEP does not re-offer itself)."""
+    return lambda config: [m for m in mutations if getattr(config, m.param) != m.value]
+
+
+def test_loop_records_seeded_baseline_as_iteration_zero():
+    seed = fl.FactorConfig()
+    verify_fn = _scripted_verify({None: (0.5, _pass_verdict(), 0.2)})
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=1, registry_fn=_single_mutation_registry([]))
+    assert len(ledger) == 1
+    base = ledger[0]
+    assert base.iteration == 0
+    assert base.mutation is None  # baseline has no mutation
+    assert base.appraisal == pytest.approx(0.5)
+    assert base.decision == "KEEP"  # seeded starting best
+
+
+def test_loop_keeps_on_improved_gated_beats_control():
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("tau", 0.10): (0.50, _pass_verdict(), 0.20),  # improves, gated, beats control
+    })
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=1, registry_fn=_single_mutation_registry([m]))
+    kept = ledger[1]
+    assert kept.decision == "KEEP"
+    assert kept.mutation == m
+    assert kept.appraisal == pytest.approx(0.50)
+
+
+def test_loop_reverts_when_improves_but_fails_gate():
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("tau", 0.10): (0.90, _fail_verdict(), 0.20),  # improves + beats control but FAILS gate
+    })
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=1, registry_fn=_single_mutation_registry([m]))
+    assert ledger[1].decision == "REVERT"
+    assert ledger[1].verdict.passed is False
+
+
+def test_loop_reverts_when_gated_improves_but_loses_to_control():
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("tau", 0.10): (0.50, _pass_verdict(), 0.60),  # improves + gated but control out-earns it
+    })
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=1, registry_fn=_single_mutation_registry([m]))
+    assert ledger[1].decision == "REVERT"  # 6.6: must beat non-LLM control
+
+
+def test_loop_stops_after_dry_rounds_consecutive_reverts():
+    seed = fl.FactorConfig()
+    muts = [fl.Mutation("tau", "tau", v, False) for v in (0.10, 0.20, 0.025)]
+    # every mutation fails the gate -> all REVERT
+    script = {None: (0.30, _pass_verdict(), 0.10)}
+    for mm in muts:
+        script[(mm.param, mm.value)] = (0.90, _fail_verdict(), 0.20)
+    verify_fn = _scripted_verify(script)
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=2, registry_fn=_single_mutation_registry(muts))
+    # baseline + exactly 2 reverts, then stop (third mutation never tried)
+    assert [e.decision for e in ledger] == ["KEEP", "REVERT", "REVERT"]
+
+
+def test_loop_resets_dry_counter_on_keep():
+    seed = fl.FactorConfig()
+    m_revert = fl.Mutation("tau", "tau", 0.20, False)
+    m_keep = fl.Mutation("blend", "blend", 0.40, False)
+    m_revert2 = fl.Mutation("tau", "tau", 0.025, False)
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("tau", 0.20): (0.20, _pass_verdict(), 0.10),   # worse -> REVERT (dry=1)
+        ("blend", 0.40): (0.80, _pass_verdict(), 0.10),  # better -> KEEP (dry resets)
+        ("tau", 0.025): (0.10, _pass_verdict(), 0.10),   # worse -> REVERT (dry=1)
+    })
+    ledger = fl.run_loop(
+        seed, verify_fn, dry_rounds=2,
+        registry_fn=_single_mutation_registry([m_revert, m_keep, m_revert2]),
+    )
+    # The KEEP resets the dry counter: it takes TWO reverts AFTER the keep to stop.
+    # Without a reset, the pre-keep revert would have counted and the loop would
+    # have terminated one iteration earlier.
+    assert [e.decision for e in ledger] == ["KEEP", "REVERT", "KEEP", "REVERT", "REVERT"]
+
+
+def test_loop_is_deterministic():
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    script = {None: (0.30, _pass_verdict(), 0.10), ("tau", 0.10): (0.50, _pass_verdict(), 0.20)}
+    reg = _single_mutation_registry([m])
+    a = fl.run_loop(seed, _scripted_verify(script), dry_rounds=1, registry_fn=reg)
+    b = fl.run_loop(seed, _scripted_verify(script), dry_rounds=1, registry_fn=reg)
+    assert a == b
+
+
+def test_loop_ledger_entries_are_serializable():
+    import json
+
+    seed = fl.FactorConfig()
+    m = fl.Mutation("tau", "tau", 0.10, False)
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("tau", 0.10): (0.50, _pass_verdict(), 0.20),
+    })
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=1, registry_fn=_single_mutation_registry([m]))
+    # ledger entries reduce to JSON-able primitives (mutation fields + verdict values)
+    rows = [
+        {
+            "iteration": e.iteration,
+            "mutation": None if e.mutation is None else dataclasses.asdict(e.mutation),
+            "appraisal": e.appraisal,
+            "passed": e.verdict.passed,
+            "first_failure": e.verdict.first_failure,
+            "decision": e.decision,
+        }
+        for e in ledger
+    ]
+    json.dumps(rows)
+
