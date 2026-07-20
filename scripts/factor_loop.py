@@ -174,6 +174,132 @@ def mutation_registry(config: FactorConfig) -> list[Mutation]:
     return out
 
 
+# --- Task 6.2: point-in-time verify step + look-ahead guards -----------------
+# Pure/testable core. Reuses the released skill_metric + ssr; NO DB/NIM here (the
+# loop wires the real PIT-vs-non-PIT contrast for `recall_premium` in task 6.3).
+
+import pandas as pd
+
+from macro_framework.skill_metric import (
+    GateConfig,
+    GateVerdict,
+    basket_residual,
+    evaluate_gates,
+)
+from macro_framework.ssr import compute_ssr
+
+
+class ConfigurationError(RuntimeError):
+    """Fail-fast config error (mirrors ``factor_scoring.ConfigurationError``).
+
+    Defined locally so ``import factor_loop`` stays free of recall_guard/NIM.
+    """
+
+
+@dataclass(frozen=True)
+class VerifyResult:
+    """Appraisal + composite gate verdict + injected recall premium (OOS only)."""
+
+    appraisal: float | None
+    verdict: GateVerdict
+    recall_premium: float
+
+
+def assert_oos_disjoint(
+    oos_window: tuple, tuning_window: tuple
+) -> None:
+    """Raise ``ConfigurationError`` if the OOS window overlaps the tuning/cutoff
+    window (R3.1). Called BEFORE any evaluation — fail-fast."""
+    oos_lo, oos_hi = (pd.Timestamp(x) for x in oos_window)
+    tun_lo, tun_hi = (pd.Timestamp(x) for x in tuning_window)
+    if oos_lo <= tun_hi and tun_lo <= oos_hi:
+        raise ConfigurationError(
+            f"OOS window {oos_window} overlaps tuning/cutoff window {tuning_window}; "
+            "the objective metric must be evaluated on a disjoint out-of-sample window (R3.1)."
+        )
+
+
+def _marker(value: object, key: str):
+    """Read ``key`` from a mapping (dict) or object attribute; None if absent."""
+    if isinstance(value, dict):
+        return value.get(key)
+    return getattr(value, key, None)
+
+
+def check_lookahead(mutation: Mutation) -> str | None:
+    """Return a look-ahead reason if a mutation would need post-decision info (R3.3).
+
+    Concrete, testable rules:
+    - any component carrying a truthy ``requires_future`` marker, or
+    - a ``regime_view``/``overlay`` fit explicitly flagged non-walk-forward
+      (``walk_forward=False``) — a detector refit on full history is a look-ahead
+      vector as real as an LLM recalling a ticker (requirements non-negotiable).
+    """
+    val = mutation.value
+    if _marker(val, "requires_future"):
+        return f"{mutation.kind}:{mutation.param} requires post-decision (future) data"
+    if mutation.kind in {"regime_view", "overlay"} and _marker(val, "walk_forward") is False:
+        return f"{mutation.kind} fitted on a non-walk-forward window (uses post-decision data)"
+    return None
+
+
+def _lookahead_verdict(reason: str) -> GateVerdict:
+    """A FAIL verdict for a look-ahead-rejected mutation — never a silent pass (R3.3)."""
+    return GateVerdict(
+        passed=False,
+        skill_pass=False,
+        stability_pass=False,
+        recall_pass=False,
+        risk_shape_pass=False,
+        first_failure=f"lookahead: {reason}",
+        values={},
+    )
+
+
+def verify(
+    config: FactorConfig,
+    oos_strategy_returns: pd.Series,
+    factor_returns: pd.DataFrame,
+    *,
+    recall_premium: float,
+    baseline_calmar: float,
+    baseline_maxdd: float,
+    oos_calmar: float,
+    oos_maxdd: float,
+    gate_config: GateConfig = GateConfig(),
+    lookahead_reason: str | None = None,
+) -> VerifyResult:
+    """Point-in-time verify of one candidate on the OOS window only (R3, R5.2).
+
+    Evaluated strictly on the supplied OOS series — there is NO in-sample window
+    input, so nothing here can rank on in-sample Sharpe/return (R3.5). The recall
+    premium (PIT-vs-non-PIT memorization delta) is injected so this stays unit-
+    testable without NIM; the loop supplies the real contrast (6.3).
+
+    If ``lookahead_reason`` is set, short-circuits to a FAIL verdict with
+    ``first_failure="lookahead: <reason>"`` rather than evaluating gates (R3.3).
+    """
+    if lookahead_reason is not None:
+        return VerifyResult(
+            appraisal=None,
+            verdict=_lookahead_verdict(lookahead_reason),
+            recall_premium=recall_premium,
+        )
+    residual = basket_residual(oos_strategy_returns, factor_returns)
+    ssr = compute_ssr(oos_strategy_returns)
+    verdict = evaluate_gates(
+        residual,
+        ssr,
+        recall_premium,
+        oos_calmar,
+        baseline_calmar,
+        oos_maxdd,
+        baseline_maxdd,
+        config=gate_config,
+    )
+    return VerifyResult(appraisal=residual.appraisal, verdict=verdict, recall_premium=recall_premium)
+
+
 def run_loop(config: object) -> list[LedgerEntry]:  # pragma: no cover - task 6.3
     raise NotImplementedError("keep/revert loop + ledger is task 6.3")
 

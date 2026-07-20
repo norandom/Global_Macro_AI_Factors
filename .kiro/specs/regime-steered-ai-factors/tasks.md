@@ -80,7 +80,7 @@
   - _Requirements: 5.1, 7.4_
   - _Boundary: factor_loop_
   - _Depends: 2.2_
-- [ ] 6.2 Point-in-time verify step with gates and look-ahead rejection
+- [x] 6.2 Point-in-time verify step with gates and look-ahead rejection
   - Evaluate each mutation on the out-of-sample point-in-time window, computing the skill metric, the recall/memorization premium via the existing PIT-vs-non-PIT contrast, and the composite gate verdict.
   - Assert the out-of-sample window is disjoint from any tuning/cutoff window and never rank candidates on in-sample Sharpe or return.
   - Reject and record any mutation or component that would require post-decision information, with the look-ahead reason.

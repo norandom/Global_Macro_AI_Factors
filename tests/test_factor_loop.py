@@ -122,3 +122,99 @@ def test_conviction_clamped_to_unit_interval():
 def test_apply_mutation_rejects_unknown_kind():
     with pytest.raises(ValueError):
         fl.apply_mutation(fl.FactorConfig(), fl.Mutation("bogus", "blend", 0.4, False))
+
+
+# --- Task 6.2: point-in-time verify step + look-ahead guards ------------------
+# Pure/synthetic, still NO DB/NIM. The recall premium is injected (the loop wires
+# the real PIT-vs-non-PIT contrast later).
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+
+def _synth_oos(seed: int = 7, n: int = 400):
+    """OOS strategy returns (stable positive drift) + own-4-ETF factor frame.
+
+    Stable drift -> high SSR; tiny residual noise -> defined appraisal + huge HAC t.
+    """
+    rng = np.random.default_rng(seed)
+    idx = pd.bdate_range("2020-01-01", periods=n)
+    fac = pd.DataFrame(
+        rng.normal(0, 0.01, (n, 4)), index=idx, columns=["SWDA", "XLK", "IAU", "BIL"]
+    )
+    strat = pd.Series(0.0005 + rng.normal(0, 0.0001, n), index=idx)
+    return strat, fac
+
+
+def test_assert_oos_disjoint_rejects_overlap():
+    # OOS [2024-07..2025-12] overlaps tuning [2016-01..2024-12]
+    with pytest.raises(fl.ConfigurationError):
+        fl.assert_oos_disjoint(("2024-07-01", "2025-12-31"), ("2016-01-01", "2024-12-31"))
+
+
+def test_assert_oos_disjoint_accepts_disjoint():
+    assert fl.assert_oos_disjoint(("2025-01-01", "2025-12-31"), ("2016-01-01", "2024-12-31")) is None
+
+
+def test_check_lookahead_flags_future_data_marker():
+    m = fl.Mutation("regime_view", "regime_view", {"requires_future": True}, True)
+    reason = fl.check_lookahead(m)
+    assert reason is not None and "future" in reason.lower()
+
+
+def test_check_lookahead_flags_non_walk_forward_fit():
+    m = fl.Mutation("overlay", "overlay", {"kind": "correlation", "walk_forward": False}, False)
+    assert fl.check_lookahead(m) is not None
+
+
+def test_check_lookahead_passes_normal_cache_reusing_mutation():
+    assert fl.check_lookahead(fl.Mutation("tau", "tau", 0.10, False)) is None
+
+
+def test_verify_passes_on_clean_oos_window():
+    strat, fac = _synth_oos()
+    res = fl.verify(
+        fl.FactorConfig(), strat, fac,
+        recall_premium=0.0,
+        baseline_calmar=1.0, baseline_maxdd=-0.10,
+        oos_calmar=2.0, oos_maxdd=-0.10,
+    )
+    assert res.verdict.passed is True
+    assert res.verdict.first_failure is None
+    assert res.appraisal is not None and res.appraisal > 0
+    assert res.recall_premium == 0.0
+
+
+def test_verify_recall_gate_fails_on_large_premium():
+    strat, fac = _synth_oos()
+    res = fl.verify(
+        fl.FactorConfig(), strat, fac,
+        recall_premium=0.9,  # memorization premium far from zero
+        baseline_calmar=1.0, baseline_maxdd=-0.10,
+        oos_calmar=2.0, oos_maxdd=-0.10,
+    )
+    assert res.verdict.passed is False
+    assert res.verdict.first_failure.startswith("recall:")
+
+
+def test_verify_lookahead_returns_fail_never_silent_pass():
+    strat, fac = _synth_oos()
+    res = fl.verify(
+        fl.FactorConfig(), strat, fac,
+        recall_premium=0.0,
+        baseline_calmar=1.0, baseline_maxdd=-0.10,
+        oos_calmar=2.0, oos_maxdd=-0.10,
+        lookahead_reason="regime detector refit on full history",
+    )
+    assert res.verdict.passed is False
+    assert res.verdict.first_failure.startswith("lookahead:")
+
+
+def test_verify_signature_has_no_in_sample_metric_input():
+    # R3.5: selection MUST NOT use in-sample Sharpe/return. Guard against a future
+    # regression re-introducing an in-sample lever into the verify surface.
+    import inspect
+
+    params = set(inspect.signature(fl.verify).parameters)
+    assert not any("in_sample" in p or "insample" in p for p in params), params
+
