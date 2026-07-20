@@ -72,7 +72,7 @@
   - _Requirements: 4.4, 8.3, 8.5_
 
 - [ ] 6. Iterate-verify-keep loop
-- [ ] 6.1 (P) Mutation registry and single-mutation application
+- [x] 6.1 (P) Mutation registry and single-mutation application
   - Define the mutation registry over the located levers (blend weight, BL calibration, conviction, exposure table, prompt, axes, overlay, regime-conditioned view) and apply exactly one mutation per iteration to the current best configuration.
   - Mark each mutation as cache-reusing or re-scoring so cache-reusing mutations reuse persisted scores.
   - Bound any view-affecting mutation within the existing blend so it cannot become an unconstrained directional bet.
