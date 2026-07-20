@@ -7,7 +7,7 @@
   - _Requirements: 8.2_
 
 - [ ] 2. Skill metric and gate verdict
-- [ ] 2.1 (P) Own-basket appraisal ratio and market attribution
+- [x] 2.1 (P) Own-basket appraisal ratio and market attribution
   - Regress strategy daily returns on the four own-factor ETF returns with a constant beta over the window; report annualized alpha, its Newey-West HAC t-statistic, R-squared, and residual volatility.
   - Compute the own-basket appraisal ratio as annualized alpha over annualized residual volatility, returning it as undefined when residual volatility falls below the defined floor.
   - Where a market benchmark is supplied, additionally report single-factor market alpha, beta, and R-squared for comparison.
