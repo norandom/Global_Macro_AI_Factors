@@ -16,7 +16,7 @@
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.1, 8.2_
   - _Boundary: skill_metric_
   - _Depends: 1_
-- [ ] 2.2 Composite gate configuration and PASS/FAIL verdict
+- [x] 2.2 Composite gate configuration and PASS/FAIL verdict
   - Combine the four gates — skill t-statistic, Sharpe Stability Ratio, recall/memorization premium, and risk-shape (Calmar and max-drawdown non-regression) — into one verdict.
   - Emit PASS only when every gate passes; otherwise report which gate failed and the value that missed its threshold.
   - Expose configurable thresholds whose defaults encode the requirement (skill t greater than 2, SSR at least 1.96), plus an alternative relative-improvement mode.

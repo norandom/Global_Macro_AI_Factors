@@ -9,10 +9,14 @@ import pytest
 from macro_framework.skill_metric import (
     IDIO_FLOOR,
     BasketResidual,
+    GateConfig,
+    GateVerdict,
     MarketAttribution,
     basket_residual,
+    evaluate_gates,
     market_attribution,
 )
+from macro_framework.ssr import SSRResult
 
 RNG = np.random.default_rng(20260720)
 FACTORS = ("SWDA.L", "XLK", "IAU", "BIL")
@@ -88,3 +92,150 @@ def test_deterministic():
     a = basket_residual(strat, factors)
     b = basket_residual(strat, factors)
     assert a == b
+
+
+# --- Gate verdict truth table (Requirement 2) ------------------------------------
+
+
+def _residual(t=4.0, appraisal=0.9):
+    return BasketResidual(
+        alpha_ann=0.1,
+        t_alpha_hac=t,
+        r2=0.9,
+        idio_vol_ann=0.11,
+        appraisal=appraisal,
+        n_obs=500,
+        hac_maxlags=5,
+    )
+
+
+def _ssr(value=2.5):
+    return SSRResult(
+        n_obs=500,
+        n_rolling=250,
+        sr_full=1.0,
+        mean_rolling_sr=1.0,
+        sigma_hac=0.4,
+        L_hac=5,
+        ssr=value,
+    )
+
+
+# baseline all-pass gate inputs
+_PASS = dict(
+    recall_premium=0.0,
+    oos_calmar=1.2,
+    baseline_calmar=1.0,
+    oos_maxdd=-0.10,
+    baseline_maxdd=-0.15,
+)
+
+
+def test_all_gates_pass():
+    v = evaluate_gates(_residual(), _ssr(), **_PASS)
+    assert isinstance(v, GateVerdict)
+    assert v.passed is True
+    assert (v.skill_pass, v.stability_pass, v.recall_pass, v.risk_shape_pass) == (
+        True,
+        True,
+        True,
+        True,
+    )
+    assert v.first_failure is None
+    assert v.values["skill_t"] == 4.0
+    assert v.values["ssr"] == 2.5
+
+
+def test_skill_gate_flip():
+    v = evaluate_gates(_residual(t=1.5), _ssr(), **_PASS)
+    assert v.passed is False
+    assert v.skill_pass is False
+    assert v.stability_pass and v.recall_pass and v.risk_shape_pass
+    assert v.first_failure.startswith("skill:")
+
+
+def test_stability_gate_flip():
+    v = evaluate_gates(_residual(), _ssr(0.14), **_PASS)
+    assert v.passed is False
+    assert v.stability_pass is False
+    assert v.first_failure.startswith("stability:")
+    assert "0.14" in v.first_failure and "1.96" in v.first_failure
+
+
+def test_recall_gate_flip():
+    args = {**_PASS, "recall_premium": 0.30}
+    v = evaluate_gates(_residual(), _ssr(), **args)
+    assert v.passed is False
+    assert v.recall_pass is False
+    assert v.first_failure.startswith("recall:")
+
+
+def test_recall_gate_symmetric():
+    args = {**_PASS, "recall_premium": -0.30}
+    v = evaluate_gates(_residual(), _ssr(), **args)
+    assert v.recall_pass is False  # |premium| tested, sign-independent
+
+
+def test_risk_shape_calmar_flip():
+    args = {**_PASS, "oos_calmar": 0.5}  # below baseline 1.0
+    v = evaluate_gates(_residual(), _ssr(), **args)
+    assert v.passed is False
+    assert v.risk_shape_pass is False
+    assert v.first_failure.startswith("risk_shape:")
+
+
+def test_risk_shape_maxdd_flip():
+    args = {**_PASS, "oos_maxdd": -0.40}  # worse than baseline -0.15
+    v = evaluate_gates(_residual(), _ssr(), **args)
+    assert v.passed is False
+    assert v.risk_shape_pass is False
+    assert v.first_failure.startswith("risk_shape:")
+
+
+def test_first_failure_reports_skill_before_stability():
+    # both skill and stability fail; skill is reported first
+    v = evaluate_gates(_residual(t=0.5), _ssr(0.1), **_PASS)
+    assert v.first_failure.startswith("skill:")
+
+
+def test_nan_ssr_fails_stability():
+    v = evaluate_gates(_residual(), _ssr(np.nan), **_PASS)
+    assert v.passed is False
+    assert v.stability_pass is False
+    assert v.first_failure.startswith("stability:")
+
+
+def test_nan_tstat_fails_skill():
+    v = evaluate_gates(_residual(t=np.nan), _ssr(), **_PASS)
+    assert v.passed is False
+    assert v.skill_pass is False
+    assert v.first_failure.startswith("skill:")
+
+
+def test_none_appraisal_fails_skill():
+    v = evaluate_gates(_residual(appraisal=None), _ssr(), **_PASS)
+    assert v.passed is False
+    assert v.skill_pass is False
+    assert v.first_failure.startswith("skill:")
+
+
+def test_relative_mode_passes_where_absolute_fails():
+    res = _residual(t=1.5, appraisal=0.4)  # 0 < t < 2, positive appraisal
+    assert evaluate_gates(res, _ssr(), **_PASS).skill_pass is False  # absolute default
+    cfg = GateConfig(mode="relative_improvement")
+    v = evaluate_gates(res, _ssr(), **_PASS, config=cfg)
+    assert v.skill_pass is True
+    assert v.passed is True
+
+
+def test_relative_mode_fails_on_negative_t():
+    res = _residual(t=-0.5, appraisal=-0.2)
+    v = evaluate_gates(res, _ssr(), **_PASS, config=GateConfig(mode="relative_improvement"))
+    assert v.skill_pass is False
+
+
+def test_custom_thresholds():
+    cfg = GateConfig(skill_t_min=3.0, ssr_min=1.0)
+    v = evaluate_gates(_residual(t=2.5), _ssr(1.5), **_PASS, config=cfg)
+    assert v.skill_pass is False  # 2.5 < 3.0
+    assert v.stability_pass is True  # 1.5 >= 1.0
