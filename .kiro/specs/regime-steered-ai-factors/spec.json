@@ -1,0 +1,22 @@
+{
+  "feature_name": "regime-steered-ai-factors",
+  "created_at": "2026-07-20T13:54:36Z",
+  "updated_at": "2026-07-20T14:34:30Z",
+  "language": "en",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": true
+}

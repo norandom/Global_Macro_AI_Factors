@@ -1,0 +1,132 @@
+# Implementation Plan
+
+- [ ] 1. Foundation: declare the HAC-statistics dependency and prove it loads
+  - Add the statistical-modelling library used for the Newey-West HAC regression t-statistic as a declared direct dependency (it is currently only transitively present); reuse it rather than re-implementing HAC coefficient covariance.
+  - Provide a minimal smoke check that the HAC-covariance regression path imports and fits on a tiny synthetic series.
+  - Observable: the dependency resolves in the locked environment and a one-line HAC fit returns a finite t-statistic.
+  - _Requirements: 8.2_
+
+- [ ] 2. Skill metric and gate verdict
+- [ ] 2.1 (P) Own-basket appraisal ratio and market attribution
+  - Regress strategy daily returns on the four own-factor ETF returns with a constant beta over the window; report annualized alpha, its Newey-West HAC t-statistic, R-squared, and residual volatility.
+  - Compute the own-basket appraisal ratio as annualized alpha over annualized residual volatility, returning it as undefined when residual volatility falls below the defined floor.
+  - Where a market benchmark is supplied, additionally report single-factor market alpha, beta, and R-squared for comparison.
+  - Disclose the annualization basis used, reusing the repository's existing metric and returns conventions rather than a divergent re-implementation.
+  - Observable: on a synthetic series with a known injected timing alpha the function recovers alpha within tolerance and returns undefined appraisal when the residual is below the floor.
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 8.1, 8.2_
+  - _Boundary: skill_metric_
+  - _Depends: 1_
+- [ ] 2.2 Composite gate configuration and PASS/FAIL verdict
+  - Combine the four gates — skill t-statistic, Sharpe Stability Ratio, recall/memorization premium, and risk-shape (Calmar and max-drawdown non-regression) — into one verdict.
+  - Emit PASS only when every gate passes; otherwise report which gate failed and the value that missed its threshold.
+  - Expose configurable thresholds whose defaults encode the requirement (skill t greater than 2, SSR at least 1.96), plus an alternative relative-improvement mode.
+  - Observable: a verdict object where flipping any single gate input below threshold sets the overall result to FAIL with the correct failing-gate identifier.
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
+  - _Boundary: skill_metric_
+- [ ] 2.3 Unit tests for the metric and gate verdict
+  - Verify alpha recovery and the HAC t-statistic on a known synthetic series, and the residual-floor undefined case.
+  - Verify the gate truth table: each gate individually failing flips the verdict; all-pass yields PASS.
+  - Observable: a passing test module covering metric math and the gate truth table.
+  - _Requirements: 1.1, 1.2, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
+
+- [ ] 3. Regime de-risk overlay library
+- [ ] 3.1 (P) Correlation stress scale and walk-forward cash pin
+  - Compute an EWMA average pairwise correlation across the risky sleeve and a continuous de-risk scale bounded between a floor and one.
+  - Convert the scale to a cash-sleeve pin that only raises cash in stress and never lifts the risky sleeve above its no-overlay level, staying strictly below one so the fixed-weight sum guard holds.
+  - Fit and read only the strictly-pre-rebalance return window so the regime signal uses no post-decision information (walk-forward by construction).
+  - Observable: the cash pin is monotonically non-decreasing in measured correlation, bounded within the base pin and one, and unchanged when future rows are appended to the window.
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.2_
+  - _Boundary: regime_overlay_
+- [ ] 3.2 Unit tests for the overlay
+  - Verify monotonic, bounded cash-pin behavior and the never-lift-risky invariant.
+  - Verify walk-forward point-in-time cleanliness: the pin computed on a pre-date window is unchanged when future rows are appended.
+  - Observable: a passing test module asserting monotonicity, bounds, never-lift-risky, and PIT invariance.
+  - _Requirements: 6.1, 6.2, 6.3, 6.4_
+
+- [ ] 4. Integration: package exports and the weight seam
+- [ ] 4.1 Register the new library modules for import
+  - Wire the skill-metric and regime-overlay modules into the package's public import surface so downstream scripts import them through the package.
+  - Observable: both modules are importable through the package entry point and existing imports remain unbroken.
+  - _Requirements: 8.2_
+  - _Depends: 2.1, 3.1_
+- [ ] 4.2 Optional de-risk hook in the weight-combination step
+  - Add an optional overlay parameter to the weight-combination closure that, when supplied, replaces the constant cash pin with the dynamic pin from the overlay; default absence preserves byte-identical published behavior.
+  - Route the reduced risky budget to the cash sleeve through the existing fixed-weight allocation path without modifying the allocation math.
+  - Observable: with the overlay enabled the cash pin rises in a synthetic high-correlation window; with it absent the existing extended-stream weights reproduce unchanged.
+  - _Requirements: 6.1, 6.3_
+  - _Depends: 3.1_
+
+- [ ] 5. Ablation ladder and non-LLM control leg
+- [ ] 5.1 (P) Score the rungs and the overlay control on one out-of-sample window
+  - Run HRP-only, HRP+BL with a fixed view, HRP+BL with the point-in-time AI view, and HRP+BL with the non-point-in-time diagnostic AI view over the same out-of-sample window.
+  - Add the non-LLM regime de-risk overlay as an additional control rung, scored on the same skill and risk-shape metrics as the AI rungs.
+  - Report the own-basket skill metric per rung, the AI-view marginal delta for adjacent AI/non-AI rungs, and the AI-versus-control comparison on the skill metric.
+  - Observable: a table of every rung's skill and risk-shape metrics including the overlay control, plus the AI-view marginal delta and the AI-minus-control skill difference over one OOS window.
+  - _Requirements: 4.1, 4.2, 4.3, 6.5_
+  - _Boundary: ablation_ladder_
+  - _Depends: 2.1, 4.2_
+- [ ] 5.2 Diagnostic labeling and additive artifact
+  - Label the non-point-in-time rung as diagnostic-only and exclude it from any deployable recommendation.
+  - Write the ladder result to a durable, versioned artifact that does not overwrite published outputs, following the repository's naming and schema conventions.
+  - Observable: an additive ladder artifact on disk with the non-PIT rung flagged diagnostic-only.
+  - _Requirements: 4.4, 8.3, 8.5_
+
+- [ ] 6. Iterate-verify-keep loop
+- [ ] 6.1 (P) Mutation registry and single-mutation application
+  - Define the mutation registry over the located levers (blend weight, BL calibration, conviction, exposure table, prompt, axes, overlay, regime-conditioned view) and apply exactly one mutation per iteration to the current best configuration.
+  - Mark each mutation as cache-reusing or re-scoring so cache-reusing mutations reuse persisted scores.
+  - Bound any view-affecting mutation within the existing blend so it cannot become an unconstrained directional bet.
+  - Observable: applying one iteration mutates exactly one lever of the best configuration and records whether re-scoring is required.
+  - _Requirements: 5.1, 7.4_
+  - _Boundary: factor_loop_
+  - _Depends: 2.2_
+- [ ] 6.2 Point-in-time verify step with gates and look-ahead rejection
+  - Evaluate each mutation on the out-of-sample point-in-time window, computing the skill metric, the recall/memorization premium via the existing PIT-vs-non-PIT contrast, and the composite gate verdict.
+  - Assert the out-of-sample window is disjoint from any tuning/cutoff window and never rank candidates on in-sample Sharpe or return.
+  - Reject and record any mutation or component that would require post-decision information, with the look-ahead reason.
+  - Observable: a verify call returns a gate verdict on the OOS window and a mutation requiring future data is rejected with a logged reason.
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 5.2_
+  - _Depends: 6.1, 4.2_
+- [ ] 6.3 Keep/revert with control gate, loop-until-dry, and ledger
+  - Establish the baseline strategy returns and its risk-shape as the seeded starting best configuration and the gate baseline.
+  - Adopt a mutation as the new best only when it improves the skill metric, passes every gate, and out-earns the non-LLM control on the skill metric; otherwise revert to the prior best.
+  - Stop after a configured number of consecutive non-adoptions and append a ledger entry for every iteration recording the mutation, metric values, gate outcomes, and the keep/revert decision.
+  - Observable: a completed run whose ledger shows the seeded baseline, keeps only on improved-gated-and-beats-control mutations, reverts otherwise, and termination after the dry-round count.
+  - _Requirements: 5.3, 5.4, 5.5, 5.6, 6.6_
+  - _Depends: 6.2, 5.1_
+- [ ] 6.4 Regime-conditioned AI view as a gated mutation
+  - Add a mutation that supplies only point-in-time regime information into the view construction and subject it to the same gates as any other mutation.
+  - Do not recommend it for deployment unless it out-earns both the non-LLM control and the unconditioned AI view on the skill metric.
+  - Observable: the regime-conditioned mutation runs through the identical gate path and is marked non-recommended when it fails to beat the control and the unconditioned view.
+  - _Requirements: 7.1, 7.2, 7.3, 7.4_
+  - _Depends: 6.3, 3.1, 4.2_
+
+- [ ] 7. Reproducibility: run header, artifact schemas, and deterministic replay
+  - Write a run header disclosing model, cutoff, out-of-sample window, seed, gate configuration, and annualization basis; register the ledger and ablation artifacts against the schema contract; provide locale csv mirrors.
+  - Guarantee that re-running with the same inputs and configuration reproduces the same metric values, replaying persisted scores where live inference is not repeated, and never overwriting published outputs.
+  - Observable: a second run with identical inputs reproduces the ledger metric values and writes additive, schema-valid artifacts with a disclosed annualization basis.
+  - _Requirements: 8.1, 8.3, 8.4, 8.5_
+  - _Depends: 5.2, 6.3_
+
+- [ ] 8. Validation
+- [ ] 8.1 Loop keep/revert and loop-until-dry integration test
+  - Verify a worsening mutation is reverted with the best configuration unchanged, a synthetic improving-gated-and-beats-control mutation is adopted, and both are recorded in the ledger.
+  - Verify the loop stops after the configured dry-round count.
+  - Observable: a passing integration test asserting keep/revert semantics and loop-until-dry termination via the ledger.
+  - _Requirements: 5.3, 5.4, 5.5, 5.6_
+  - _Depends: 6.3_
+- [ ] 8.2 Recall-gate and point-in-time integration test
+  - Verify a non-point-in-time rung with a large contamination premium fails the recall gate, and that the OOS-disjointness and look-ahead-rejection paths trigger as designed.
+  - Observable: a passing integration test where the recall gate fails on a high-premium non-PIT input and a future-data mutation is rejected.
+  - _Requirements: 2.4, 3.1, 3.3_
+  - _Depends: 6.2, 5.1_
+- [ ] 8.3 Cost-control and no-regression integration test
+  - Verify a cache-reusing mutation completes with zero live model calls, and that the overlay-absent path reproduces the published extended-stream weights byte-for-byte.
+  - Observable: a passing test confirming zero live calls on a cache-reusing mutation and unchanged published weights with the overlay off.
+  - _Requirements: 8.4_
+  - _Depends: 4.2, 6.2_
+- [ ]* 8.4 Optional regime-conditioned view experiment
+  - Run the regime-conditioned AI view mutation end-to-end on the out-of-sample window and record its verdict against the control and the unconditioned view.
+  - Observable: a recorded experiment outcome showing whether the regime-conditioned view beats the control and unconditioned view under the gates (expected net-neutral or negative per the sibling-project precedent).
+  - _Requirements: 7.1, 7.2, 7.3_
+  - _Depends: 6.4_
