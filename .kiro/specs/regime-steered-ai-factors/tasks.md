@@ -115,7 +115,7 @@
   - Observable: a passing integration test asserting keep/revert semantics and loop-until-dry termination via the ledger.
   - _Requirements: 5.3, 5.4, 5.5, 5.6_
   - _Depends: 6.3_
-- [ ] 8.2 Recall-gate and point-in-time integration test
+- [x] 8.2 Recall-gate and point-in-time integration test
   - Verify a non-point-in-time rung with a large contamination premium fails the recall gate, and that the OOS-disjointness and look-ahead-rejection paths trigger as designed.
   - Observable: a passing integration test where the recall gate fails on a high-premium non-PIT input and a future-data mutation is rejected.
   - _Requirements: 2.4, 3.1, 3.3_
