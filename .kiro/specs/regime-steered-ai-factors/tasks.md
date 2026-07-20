@@ -49,7 +49,7 @@
   - Observable: both modules are importable through the package entry point and existing imports remain unbroken.
   - _Requirements: 8.2_
   - _Depends: 2.1, 3.1_
-- [ ] 4.2 Optional de-risk hook in the weight-combination step
+- [x] 4.2 Optional de-risk hook in the weight-combination step
   - Add an optional overlay parameter to the weight-combination closure that, when supplied, replaces the constant cash pin with the dynamic pin from the overlay; default absence preserves byte-identical published behavior.
   - Route the reduced risky budget to the cash sleeve through the existing fixed-weight allocation path without modifying the allocation math.
   - Observable: with the overlay enabled the cash pin rises in a synthetic high-correlation window; with it absent the existing extended-stream weights reproduce unchanged.

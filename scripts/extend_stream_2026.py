@@ -63,6 +63,29 @@ PRICE_FETCH_END = "2026-07-01"
 LOOKBACK_DAYS = 756
 TILT = 0.30  # nb09 final blend = 0.7*HRP + 0.3*BL
 
+# task 4.2: OFF by default -> byte-identical published behavior. When set to a
+# dict (e.g. {"min_scale": 0.20}) the combine seam swaps the constant BIL 0.25
+# pin for the regime-steered pin from macro_framework.derisk_cash_pin.
+REGIME_OVERLAY: dict | None = None
+
+
+def _regime_cash_pin(returns_hist, overlay, base_cash_pin: float = 0.25) -> float:
+    """BIL cash pin for the HRP-CVaR base.
+
+    ``overlay is None`` -> exactly ``base_cash_pin`` (the published constant;
+    byte-identical). Otherwise return the correlation-de-risk pin, which rises
+    in high-correlation windows and equals ``base_cash_pin`` in calm ones. The
+    allocation math is untouched: the result still flows through
+    ``hrp_cvar_weights_with_fixed({"BIL": pin})``.
+    """
+    if overlay is None:
+        return base_cash_pin
+    risky = overlay.get("base_risky_symbols") or tuple(
+        c for c in returns_hist.columns if c != "BIL")
+    return mf.derisk_cash_pin(
+        returns_hist, base_risky_symbols=tuple(risky),
+        base_cash_pin=base_cash_pin, min_scale=overlay.get("min_scale", 0.20))
+
 NIM_MODEL = "openai/gpt-oss-20b"
 CUTOFF = date(2024, 6, 1)
 SLUG = NIM_MODEL.replace("/", "_")
@@ -627,7 +650,8 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
     def combine(ctx, P, Q):
         """nb09's allocation UNCHANGED: HRP-CVaR base (BIL 25%) + BL, 0.7/0.3 blend."""
         returns_hist = ctx["returns"]
-        w_hrp = mf.hrp_cvar_weights_with_fixed(returns_hist, {"BIL": 0.25})
+        w_hrp = mf.hrp_cvar_weights_with_fixed(
+            returns_hist, {"BIL": _regime_cash_pin(returns_hist, REGIME_OVERLAY)})
         if P is None:
             return w_hrp
         try:
