@@ -368,3 +368,87 @@ def test_loop_ledger_entries_are_serializable():
     ]
     json.dumps(rows)
 
+
+# --- Task 6.4: regime-conditioned AI view as a gated mutation -----------------
+# Pure/synthetic, still NO DB/NIM. The label uses only PIT regime info; the
+# recommendation rule + bound are pure functions.
+
+RISKY = ("SWDA", "XLK", "IAU")
+
+
+def _corr_hist(seed: int = 3, n: int = 60):
+    """Risky-sleeve return history (index of business days)."""
+    rng = np.random.default_rng(seed)
+    idx = pd.bdate_range("2020-01-01", periods=n)
+    return pd.DataFrame(
+        rng.normal(0, 0.01, (n, len(RISKY))), index=idx, columns=list(RISKY)
+    )
+
+
+def test_regime_label_is_point_in_time():
+    # R7.1: the label uses ONLY rows at/before as_of. The appended "future" is a
+    # HIGHLY-CORRELATED crisis (common shock) so an unsliced computation would drop
+    # correlation_scale below 1.0 — proving the <= as_of slice is load-bearing and
+    # that a look-ahead regression (reading future rows) would change the label.
+    from macro_framework.regime_overlay import correlation_scale
+
+    hist = _corr_hist()  # calm iid -> scale ~1.0
+    as_of = hist.index[-1]
+    label = fl.regime_label_as_of(hist, base_risky_symbols=RISKY, as_of=as_of)
+    assert label == pytest.approx(1.0)  # calm history
+
+    future_idx = pd.bdate_range(as_of + pd.Timedelta(days=1), periods=30)
+    shock = np.random.default_rng(99).normal(0, 0.04, 30)  # common crisis shock
+    future = pd.DataFrame(
+        {s: shock + np.random.default_rng(i).normal(0, 0.002, 30) for i, s in enumerate(RISKY)},
+        index=future_idx,
+    )
+    with_future = pd.concat([hist, future])
+
+    # PIT: sliced-at-as_of label is unchanged by the appended future rows.
+    label_after = fl.regime_label_as_of(with_future, base_risky_symbols=RISKY, as_of=as_of)
+    assert label_after == pytest.approx(label)
+    # The unsliced value WOULD differ (crisis pulls the scale below 1.0), so
+    # dropping the `<= as_of` slice would flip the label — no false positive.
+    assert correlation_scale(with_future[list(RISKY)]) < label
+
+
+def test_regime_view_recommended_only_when_beats_both():
+    # R7.3: recommended iff it out-earns BOTH control AND unconditioned view.
+    assert fl.regime_view_recommended(0.50, 0.30, 0.40) is True
+    assert fl.regime_view_recommended(0.35, 0.30, 0.40) is False  # loses to unconditioned
+    assert fl.regime_view_recommended(0.25, 0.30, 0.20) is False  # loses to control
+    assert fl.regime_view_recommended(0.30, 0.30, 0.20) is False  # ties control
+    assert fl.regime_view_recommended(0.40, 0.20, 0.40) is False  # ties unconditioned
+
+
+def test_regime_view_recommended_handles_none_and_nan():
+    assert fl.regime_view_recommended(None, 0.1, 0.1) is False
+    assert fl.regime_view_recommended(0.5, None, 0.1) is False
+    assert fl.regime_view_recommended(0.5, 0.1, None) is False
+    assert fl.regime_view_recommended(float("nan"), 0.1, 0.1) is False
+    assert fl.regime_view_recommended(0.5, float("nan"), 0.1) is False
+
+
+def test_regime_view_mutation_flows_through_identical_gate_path():
+    # R7.2: a regime_view mutation is gated by the SAME run_loop path — reverted
+    # when it fails a gate, kept only when it passes AND beats the control.
+    seed = fl.FactorConfig()
+    m = fl.Mutation("regime_view", "regime_view", 0.30, True)
+    # fails its gate -> reverted, exactly like any other mutation
+    verify_fn = _scripted_verify({
+        None: (0.30, _pass_verdict(), 0.10),
+        ("regime_view", 0.30): (0.90, _fail_verdict(), 0.20),
+    })
+    ledger = fl.run_loop(seed, verify_fn, dry_rounds=1, registry_fn=_single_mutation_registry([m]))
+    assert ledger[1].mutation == m
+    assert ledger[1].decision == "REVERT"
+    assert ledger[1].verdict.passed is False
+
+
+def test_regime_view_mutation_stays_within_blend_bound():
+    # R7.4: an out-of-range regime_view value is clamped within the blend bound.
+    base = fl.FactorConfig()
+    out = fl.apply_mutation(base, fl.Mutation("regime_view", "regime_view", 5.0, True))
+    assert out.regime_view <= fl.MAX_VIEW_INFLUENCE
+

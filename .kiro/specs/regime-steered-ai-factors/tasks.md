@@ -94,7 +94,7 @@
   - Observable: a completed run whose ledger shows the seeded baseline, keeps only on improved-gated-and-beats-control mutations, reverts otherwise, and termination after the dry-round count.
   - _Requirements: 5.3, 5.4, 5.5, 5.6, 6.6_
   - _Depends: 6.2, 5.1_
-- [ ] 6.4 Regime-conditioned AI view as a gated mutation
+- [x] 6.4 Regime-conditioned AI view as a gated mutation
   - Add a mutation that supplies only point-in-time regime information into the view construction and subject it to the same gates as any other mutation.
   - Do not recommend it for deployment unless it out-earns both the non-LLM control and the unconditioned AI view on the skill metric.
   - Observable: the regime-conditioned mutation runs through the identical gate path and is marked non-recommended when it fails to beat the control and the unconditioned view.

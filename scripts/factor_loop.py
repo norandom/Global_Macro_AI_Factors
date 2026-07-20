@@ -376,6 +376,54 @@ def run_loop(
     return ledger
 
 
+# --- Task 6.4: regime-conditioned AI view as a gated mutation ----------------
+# Pure/testable core: a PIT regime label that conditions the view, and the
+# recommendation rule (7.3). The `regime_view` mutation itself is already emitted
+# by `mutation_registry`, clamped by `apply_mutation` (7.4), and gated by the same
+# `run_loop`/`verify` path as any other mutation (7.2) — no special-casing here.
+# The actual LLM prompt conditioning on this label is wired in the untested loop.
+
+from macro_framework.regime_overlay import correlation_scale
+
+
+def regime_label_as_of(
+    returns_hist: pd.DataFrame,
+    *,
+    base_risky_symbols: tuple[str, ...],
+    as_of,
+) -> float:
+    """Point-in-time regime signal that conditions the AI view (R7.1).
+
+    Reads ONLY rows dated at/before ``as_of`` (rows after it are dropped), then
+    returns the risky-sleeve ``correlation_scale`` over that strictly-PIT window
+    (1.0 = calm, ``min_scale`` = crisis). Feeding future-dated rows cannot change
+    the label, so nothing here uses post-decision information.
+    """
+    risky = [s for s in base_risky_symbols if s in returns_hist.columns]
+    window = returns_hist.loc[:pd.Timestamp(as_of), risky]
+    return correlation_scale(window)
+
+
+def _is_bad(x) -> bool:
+    """True if an appraisal is missing/NaN (treated as not-recommended)."""
+    return x is None or x != x  # noqa: PLR0124 — NaN self-inequality
+
+
+def regime_view_recommended(
+    regime_view_appraisal: float,
+    control_appraisal: float,
+    unconditioned_appraisal: float,
+) -> bool:
+    """Recommend the regime-conditioned view iff it out-earns BOTH baselines (R7.3).
+
+    True ONLY when it strictly beats the non-LLM control AND the unconditioned AI
+    view on the skill metric. Any None/NaN appraisal -> not recommended.
+    """
+    if _is_bad(regime_view_appraisal) or _is_bad(control_appraisal) or _is_bad(unconditioned_appraisal):
+        return False
+    return regime_view_appraisal > control_appraisal and regime_view_appraisal > unconditioned_appraisal
+
+
 if __name__ == "__main__":  # pragma: no cover - stub; heavy wiring is task 6.3
     base = FactorConfig()
     print(f"default config: {config_to_dict(base)}")
