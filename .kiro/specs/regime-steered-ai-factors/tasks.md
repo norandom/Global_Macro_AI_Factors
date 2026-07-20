@@ -30,7 +30,7 @@
   - _Requirements: 1.1, 1.2, 1.5, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
 - [ ] 3. Regime de-risk overlay library
-- [ ] 3.1 (P) Correlation stress scale and walk-forward cash pin
+- [x] 3.1 (P) Correlation stress scale and walk-forward cash pin
   - Compute an EWMA average pairwise correlation across the risky sleeve and a continuous de-risk scale bounded between a floor and one.
   - Convert the scale to a cash-sleeve pin that only raises cash in stress and never lifts the risky sleeve above its no-overlay level, staying strictly below one so the fixed-weight sum guard holds.
   - Fit and read only the strictly-pre-rebalance return window so the regime signal uses no post-decision information (walk-forward by construction).
