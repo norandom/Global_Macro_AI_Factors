@@ -54,38 +54,48 @@ Every major episode except 2026-06 began with the absorption ratio in the **top 
 The search reused the shipped `factor_loop.run_loop` engine (one deterministic mutation per iteration, keep-or-revert, auditable ledger):
 
 - **Objective**: shallowest dev-window max drawdown (the stated goal).
-- **Constraint**: CAGR cost ≤ **2pp** vs the unhedged Factor PIT (budget approved after the initial 1pp run refused the frontier candidate).
-- **Control gate**: the candidate must beat the *dumb* correlation-overlay control (`derisk_cash_pin`, task 3.1) on the same objective — the SJM/crowding machinery has to out-earn simplicity to be adopted.
-- **Hygiene**: tuned **only** on the dev window (2019-01 → 2024-06); the holdout (2024-07 → 2026-06) was never consulted by any keep/revert decision. Ledger: `data/factor_loop_ledger_sjm_crowding_v1_2pp.json`.
+- **Constraint**: CAGR cost ≤ **3.5pp** vs the unhedged Factor PIT. (History: a 1pp budget refused everything; 2pp exposed the frontier — deep DD cuts cost ~3pp — and the user approved 3.5pp.)
+- **Control gate**: the candidate must beat the *dumb* correlation-overlay control (`derisk_cash_pin`, task 3.1) on the same objective.
+- **Hygiene**: tuned **only** on the dev window (2019-01 → 2024-06); the holdout (2024-07 → 2026-06) was evaluated exactly once, for the adopted configuration. Ledgers: `data/factor_loop_ledger_sjm_crowding_v1_2pp.json` (2pp run, 0 kept) and `..._35pp.json` (final run).
 
-**Dev-window frontier** (baseline: CAGR 10.73%, maxDD −12.1%, Calmar 0.89; control: maxDD −11.0%, Calmar 0.92):
+**Final run (3.5pp budget): 15 iterations, 2 adopted.**
 
-| candidate | dev maxDD | dev CAGR | cost | verdict |
+| it | mutation | dev maxDD | dev CAGR | decision |
 |---|---|---|---|---|
-| seed (AI table, λ=50) | −8.8% | 7.21% | 3.5pp | over budget |
-| **λ=20** | **−8.3%** | 7.58% | 3.2pp | over budget |
-| turbulence signal | −8.7% | 7.40% | 3.3pp | over budget |
-| scale 1.2 (milder caps) | −10.5% | 8.61% | 2.1pp | over budget (by 0.1pp) |
-| scale 1.3 | −11.0% | 9.07% | 1.7pp | within budget — **ties the control's −11.0%**, not adopted |
+| 00 | seed (AI table, λ=50, absorption) | −8.8% | 7.21% | baseline |
+| 01 | **λ=20** | −8.3% | 7.58% | **KEEP** |
+| 05 | **+ turbulence signal** | **−8.2%** | **7.78%** | **KEEP** |
+| 10 | + scale 0.9 | −7.4% | 7.01% | revert (cost 3.7pp, over budget) |
+| 13 | + scale 1.3 | −10.3% | 9.74% | revert (shallower cut than best) |
 
-**Verdict: 0 of 11 mutations adopted — the dev trade-off frontier runs through the control point.** Under a 2pp budget, no SJM×crowding configuration *dominates* the simple correlation dampener: candidates within budget don't cut the drawdown more than the control; candidates that cut it decisively (λ=20: −8.3%, a 3.8pp reduction) cost ~3pp of CAGR. The loop refused to adopt a tie. This mirrors the facdrone finding at a different scale: regime machinery must clear the simplest alternative, and mostly it doesn't.
+Adopted configuration: **λ=20 (fast regime switching), turbulence crowding signal, window 252, AI cap table at scale 1.0, floor 0.4** — dev maxDD −8.2% (from −12.1%), CAGR cost 2.95pp, Calmar 0.95 vs baseline 0.89 and control 0.92.
 
-**Full-span reference (2019-01 → 2026-06, seed variant shown for transparency):**
+**Holdout verdict (2024-07 → 2026-06, evaluated once, post-adoption):**
+
+| | dev CAGR / maxDD / Calmar | holdout CAGR / maxDD / Calmar | full CAGR / maxDD / Calmar |
+|---|---|---|---|
+| Factor PIT (unhedged) | 10.73% / −12.1% / 0.89 | 23.69% / −11.8% / 2.02 | 14.0% / −12.1% / 1.16 |
+| **SJM×crowding variant** | 7.78% / **−8.2%** / **0.95** | 18.41% / **−9.5%** / 1.94 | 10.5% / **−9.5%** / 1.11 |
+| Corr-overlay control | 10.09% / −11.0% / 0.92 | 20.79% / −11.8% / 1.77 | 12.8% / −11.8% / 1.09 |
+
+The overlay **generalized**: on the unseen holdout it still cut the max drawdown by 2.3pp and beat the control on both drawdown and Calmar. The cost concentrated in the holdout bull run (−5.3pp CAGR there), which is exactly what a de-risk overlay is expected to do; the full-span **Sharpe is identical to unhedged (1.43)** with vol 9.7%→7.3%, CVaR-95 −1.4%→−1.0%, SPY beta 0.23→0.16, and the own-basket timing-alpha t-stat rises 0.86→1.47 (still <2 — the overlay is risk-shaping, not skill).
+
+**Full-span tear sheet (2019-01 → 2026-06, adopted variant):**
 
 | | Factor PIT | SJM×crowding | Corr control |
 |---|---|---|---|
-| CAGR | 14.0% | 10.0% | 12.8% |
-| Ann. vol | 9.7% | 7.1% | 9.1% |
-| Sharpe | 1.43 | 1.39 | 1.39 |
+| CAGR | 14.0% | 10.5% | 12.8% |
+| Ann. vol | 9.7% | **7.3%** | 9.1% |
+| Sharpe | 1.43 | 1.43 | 1.39 |
 | Max DD | −12.1% | **−9.5%** | −11.8% |
-| Calmar | **1.16** | 1.05 | 1.09 |
+| Calmar | **1.16** | 1.11 | 1.09 |
 | CVaR 95 (daily) | −1.4% | **−1.0%** | −1.3% |
-| Beta (SPY) | 0.23 | **0.15** | 0.22 |
-| Basket t(α) HAC | 0.86 | 1.26 | 0.49 |
+| Beta (SPY) | 0.23 | **0.16** | 0.22 |
+| Basket t(α) HAC | 0.86 | 1.47 | 0.49 |
 
 ## 5. What would change the answer
 
-1. **A bigger budget.** At ~3pp of CAGR, λ=20 delivers a −8.3% dev maxDD (vs −12.1%) and clearly dominates the control. If the mandate prioritises drawdown over return, rerun the loop with a 3pp budget.
+1. ~~A bigger budget~~ — **done**: the 3.5pp budget was approved and the loop adopted λ=20 + turbulence (results above).
 2. **A better-calibrated table.** The dominant regime cell (bull × crowded, 736 of ~1380 dev days) carries cap 0.8 — most of the return cost. A second AI calibration round fed the *loop's own frontier evidence* (cap that cell nearer 0.9–1.0, keep bear × crowded at 0.5) is the obvious next mutation class.
 3. **Real crowding data.** Holdings-overlap from `fmp_etf_holdings`, short interest, or flows would replace the return-space proxy with actual positioning — the biggest methodological upgrade available.
 4. **Denser regime × crowding variation.** Most dev days sit in one cell; a 2-bucket crowding split or vol-scaled continuous caps would give the optimiser more usable variation.
@@ -94,5 +104,5 @@ The search reused the shipped `factor_loop.run_loop` engine (one deterministic m
 
 - All signals are PIT by construction (walk-forward SJM refits; expanding-quantile buckets; trailing-window AR/turbulence) with biting unit tests (suite: 520 passing).
 - The AI table is called once and replayed from the persisted artifact; the loop ledger records every candidate's mutation, metrics, gate outcomes, and decision.
-- Artifacts: `data/sjm_crowding_limits_sjm_crowding_v1.json`, `data/factor_loop_ledger_sjm_crowding_v1_2pp.json` (+ CSV mirror), `reports/nb17_sjm_crowding_tearsheet.csv`.
+- Artifacts: `data/sjm_crowding_limits_sjm_crowding_v1.json`, `data/factor_loop_ledger_sjm_crowding_v1_2pp.json` and `..._35pp.json` (+ CSV mirrors), `reports/nb17_sjm_crowding_tearsheet.csv`.
 - Rebuild: run `notebooks/17_sjm_crowding_derisk.ipynb` top-to-bottom (needs `DATABASE_URL`; the NIM key is only needed if the limits artifact is absent).
