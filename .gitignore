@@ -68,3 +68,8 @@ data/baseline_targets_ext2026.parquet
 data/baseline_equity_ext2026.parquet
 data/track_b_targets_ext2026.parquet
 data/track_b_equity_ext2026.parquet
+
+# nb17 SJM x crowding de-risk: price-dependent outputs (Postgres close panel +
+# derived variant equity) — regenerable via notebooks/17; shipped via GH data release.
+data/etf_prices_wide_2013_2026.parquet
+data/sjm_crowding_derisk_equity_ext2026.parquet
