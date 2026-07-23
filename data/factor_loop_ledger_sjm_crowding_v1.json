@@ -1,0 +1,374 @@
+{
+  "best_config": {
+    "axes": [
+      "growth",
+      "inflation",
+      "policy",
+      "risk"
+    ],
+    "blend": 0.3,
+    "conviction": 1.0,
+    "exposure": "default",
+    "overlay": {
+      "floor": 0.4,
+      "lam": 50.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 252
+    },
+    "prompt": "default",
+    "regime_view": 0.0,
+    "tau": 0.05
+  },
+  "config": {
+    "axes": [
+      "growth",
+      "inflation",
+      "policy",
+      "risk"
+    ],
+    "blend": 0.3,
+    "conviction": 1.0,
+    "exposure": "default",
+    "overlay": {
+      "floor": 0.4,
+      "lam": 50.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 252
+    },
+    "prompt": "default",
+    "regime_view": 0.0,
+    "tau": 0.05
+  },
+  "entries": [
+    {
+      "appraisal": 0.8188552871631659,
+      "decision": "KEEP",
+      "iteration": 0,
+      "mutation": null,
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 7.21% vs floor 9.73% / maxDD -8.8%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.07206889566821939,
+          "dev_calmar": 0.8188552871631659,
+          "dev_maxdd": -0.08801176080561701
+        }
+      }
+    },
+    {
+      "appraisal": 0.9179906502486143,
+      "decision": "REVERT",
+      "iteration": 1,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 7.58% vs floor 9.73% / maxDD -8.3%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.07582521894742622,
+          "dev_calmar": 0.9179906502486143,
+          "dev_maxdd": -0.08259911898546124
+        }
+      }
+    },
+    {
+      "appraisal": 0.7028869203613449,
+      "decision": "REVERT",
+      "iteration": 2,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 7.00% vs floor 9.73% / maxDD -10.0%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.06998999235130143,
+          "dev_calmar": 0.7028869203613449,
+          "dev_maxdd": -0.09957503877767493
+        }
+      }
+    },
+    {
+      "appraisal": 0.8118843316572546,
+      "decision": "REVERT",
+      "iteration": 3,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "floor": 0.4,
+          "lam": 50.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 7.15% vs floor 9.73% / maxDD -8.8%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.07145536959964716,
+          "dev_calmar": 0.8118843316572546,
+          "dev_maxdd": -0.08801176080561779
+        }
+      }
+    },
+    {
+      "appraisal": 0.6533325982268396,
+      "decision": "REVERT",
+      "iteration": 4,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "floor": 0.4,
+          "lam": 50.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 6.67% vs floor 9.73% / maxDD -10.2%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.06669529034020205,
+          "dev_calmar": 0.6533325982268396,
+          "dev_maxdd": -0.1020847429337135
+        }
+      }
+    },
+    {
+      "appraisal": 0.8509447912714944,
+      "decision": "REVERT",
+      "iteration": 5,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "floor": 0.4,
+          "lam": 50.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 7.40% vs floor 9.73% / maxDD -8.7%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.07403634927941183,
+          "dev_calmar": 0.8509447912714944,
+          "dev_maxdd": -0.087004879798119
+        }
+      }
+    },
+    {
+      "appraisal": 0.8187232352269095,
+      "decision": "REVERT",
+      "iteration": 6,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "floor": 0.4,
+          "lam": 50.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": "risk_shape: CAGR 6.50% vs floor 9.73% / maxDD -7.9%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.06497226863513461,
+          "dev_calmar": 0.8187232352269095,
+          "dev_maxdd": -0.07935803680608566
+        }
+      }
+    }
+  ],
+  "run_header": {
+    "annualization_basis": "calendar/sqrt-252",
+    "built_at": "2026-07-21T06:47:21.771230+00:00",
+    "cutoff": null,
+    "gate_config": {
+      "calmar_tolerance": 0.0,
+      "maxdd_tolerance": 0.0,
+      "mode": "absolute",
+      "recall_premium_max": 0.05,
+      "skill_t_min": 2.0,
+      "ssr_min": 1.96
+    },
+    "model": null,
+    "oos_window": [
+      "2019-01-03",
+      "2024-06-30"
+    ],
+    "periods_per_year": 252,
+    "run_id": "sjm_crowding_v1",
+    "seed": 42
+  }
+}
