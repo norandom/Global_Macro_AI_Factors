@@ -16,7 +16,11 @@ def score_universe(
     sr_star: float = 0.0,
     rf_annual: float = 0.0,
 ) -> pd.DataFrame:
-    """Score every ETF whose history covers [start, end] by SSR; return 0..100 percentile scores.
+    """Score every ETF whose history starts at/before `start` by SSR; return 0..100 percentile scores.
+
+    Eligibility checks only the start of history (`first_date <= start`); an ETF
+    whose data ends before `end` (e.g. delisted mid-period) is still scored as
+    long as it keeps >= 2*window return observations.
 
     Columns: rank, symbol, name, category, ssr, score, mean_rolling_sr, sigma_hac,
              sr_full, n_obs, n_rolling, L_hac

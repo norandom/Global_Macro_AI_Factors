@@ -43,7 +43,9 @@ def absorption_ratio(
 
     High AR = variance concentrated in few factors = crowded/fragile market.
     Values lie in (0, 1]. Returns a Series indexed by date (from the first
-    full-window date onward); dates whose window keeps no asset are NaN.
+    full-window date onward); a window that keeps no asset computes NaN, but the
+    final forward-fill replaces it with the most recent computed value, so only
+    leading no-asset windows surface as NaN.
     """
     idx = returns.index
     out: dict = {}

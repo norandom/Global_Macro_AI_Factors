@@ -61,7 +61,7 @@ _ASSET_NUMERIC_FIELDS: tuple[tuple[str, str], ...] = (
 # the calibration-corpus generation step so MIA features stay comparable. The
 # closing answer block is crafted to satisfy recall_guard's strict parsers:
 # the evaluator reads ``\bDirection\b[\s\*_:]*(int)`` and ``\bConfidence\b...``
-# and the smoke check reads ``Direction:\s*(-?\d+)`` / ``Confidence:`` — so the
+# and the smoke check reads only ``Direction:\s*(-?\d+)`` — so the
 # model is told to end on exactly two lines, ``Direction:`` then ``Confidence:``.
 # The example values shown ARE themselves valid for those parsers.
 DIRECTIONAL_PROMPT_TEMPLATE = """You are a macroeconomic analyst. You are given a point-in-time macro state \
@@ -348,7 +348,9 @@ class ScoringAdapter:
         """Score per-rebalance directional prompts on the separate inference path.
 
         A thin, order-preserving wrapper over the calibrated scorer's
-        ``score_many``: one NIM call per prompt, run on the calibrated
+        ``score_many``: one primary NIM call per prompt — two when the scorer
+        was calibrated with a ``reference_model``, which adds a second
+        generate pass per prompt — run on the calibrated
         ``recall_guard`` scorer — the **separate, logprob-bearing inference
         path**, not the agent's DSPy/OpenRouter call, which stays untouched
         (Requirement 1.3). The prompts carry the same anonymized, z-scored PIT
@@ -362,7 +364,7 @@ class ScoringAdapter:
         ("Only ``p_memorized`` and ``fail_reason`` are steering inputs … the
         scorer's ``signal`` / ``raw_confidence`` are never read"; design
         "ScoringAdapter" Responsibilities) is a **downstream consumption
-        contract** enforced by the ViewSteerer (task 2.4 reads only
+        contract** enforced by the ViewSteerer (task 2.5 reads only
         ``p_memorized``) and the gating logic — never read from a decision path
         here — not a narrowing of this return type.
 
@@ -667,8 +669,9 @@ def steer_views(
 ) -> list[MacroView]:
     """Shape view confidence from contamination + macro consistency (R1.6, 3.1-3.5).
 
-    Returns a **new** ``list[MacroView]`` of **new** ``MacroView`` objects; the
-    input list and its views are never mutated. Only ``confidence`` is changed —
+    On the shaping path, returns a **new** ``list[MacroView]`` of **new**
+    ``MacroView`` objects (the passthrough branch returns the input list itself);
+    the input views are never mutated. Only ``confidence`` is changed —
     ``asset_long``, ``asset_short``, ``expected_excess_annualized`` and
     ``rationale`` are copied through unchanged (Requirement 3.4). No
     return/forecast objective is ever introduced (Requirement 3.5).
@@ -1060,8 +1063,8 @@ def score_distribution_report(
 # pd.Series`` turns the steered (P, Q) — or the ``(None, None)`` fallback — into
 # target weights. The adapter holds ONE agent instance (design note: "holds the
 # same LlmMacroAgent (or VariantMacroAgent) instance") and sources
-# ``real_symbols`` from the price columns when not supplied, exactly as the Track
-# A weight_fn does (``real_symbols = list(ctx["prices"].columns)``).
+# ``real_symbols`` from the price columns when not supplied (the same symbols the
+# Track A weight_fn passes via its notebook-level ``SYMBOLS`` constant).
 #
 # This task provides ONLY the composition + the steered/unsteered decision; it
 # writes NO artifacts (Requirement 3.3 — nb11 (task 4.1) owns the targets and the

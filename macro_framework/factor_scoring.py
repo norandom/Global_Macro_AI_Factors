@@ -254,9 +254,11 @@ def _clip_unit(value: float) -> float:
     return value
 
 
-# An axis name followed by a number, e.g. ``inflation: 0.6``, ``"growth" = -0.2``,
-# ``credit_stress -> 1.4``. Tolerant of JSON-ish, labeled-list, and "key value"
-# formats; the axis name is matched literally so only MACRO_AXES axes are read.
+# An axis name, a separator, and a number, e.g. ``inflation: 0.6``,
+# ``"growth" = -0.2``, ``credit_stress -> 1.4``. Tolerant of JSON-ish and
+# labeled-list formats; a ``:``/``=``/``->`` separator is required (a bare
+# "key value" pair does not match), and the axis name is matched literally so
+# only MACRO_AXES axes are read.
 _NUMBER = r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?"
 
 
@@ -394,7 +396,9 @@ class ConfigurationError(RuntimeError):
       - an empty ``api_key`` (guarded BEFORE constructing ``NvidiaLM``, which
         would otherwise raise a bare ``ValueError``);
       - ``baseline.n_valid == 0`` after ``build_baseline`` (no control corpus to
-        standardise against — scoring would be invalid).
+        standardise against — scoring would be invalid);
+      - an auth-class ``RuntimeError`` (401/403 / invalid-api-key markers, see
+        ``_AUTH_MARKERS``) surfacing from ``score`` / ``score_many`` (task 2.4).
 
     Subclasses ``RuntimeError`` so callers that already catch the library's
     runtime errors keep working, while ``ConfigurationError`` callers get the
@@ -736,7 +740,8 @@ class FactorScorer:
     def save(self, path: Path) -> None:
         """Persist the trained scorer to a directory — never the credential (R1.6).
 
-        The number-native calibration is a one-time cost (~135 NIM calls); this
+        The number-native calibration is a one-time cost (~3 × n_per_class live
+        NIM calls: the baseline pass plus both corpora again in training); this
         writes the trained components so they are reused across notebooks without
         a rebuild. Three artifacts are written under ``path`` (created if absent):
 
@@ -1082,8 +1087,10 @@ REGIME_ASSET_EXPOSURE: dict[str, dict[str, float]] = {
 def _finite_or_zero(value: float) -> float:
     """Return ``value`` if finite, else ``0.0`` (guard non-finite loadings).
 
-    Per the tasks.md 2.2 note, non-standard JSON ``NaN``/``Infinity`` can bypass
-    the parser's clip. Treating a non-finite loading as ``0`` keeps it inert in
+    Non-standard JSON ``NaN`` can bypass the parser's clip (``Infinity`` is
+    clipped to ±1 by ``_clip_unit``; an ``Inf`` here can only come from a
+    manually built ``RegimeLoadings``). Treating a non-finite loading as ``0``
+    keeps it inert in
     the dot-product so no ``NaN``/``Inf`` tilt propagates into the unchanged
     Black-Litterman conversion (R3.1).
     """
@@ -1113,8 +1120,9 @@ def loadings_to_tilt_views(
         the unchanged conversion but NEVER feeds the tilt itself (R3.2);
       - ``asset_short = None`` — a single-leg exposure, no direction (R3.4).
 
-    Non-finite axis loadings (``NaN``/``Inf``, which can slip past the parser's
-    clip via non-standard JSON) are treated as ``0`` so no ``NaN`` tilt reaches
+    Non-finite axis loadings (``NaN`` can slip past the parser's clip via
+    non-standard JSON; ``Inf`` only via a manually built ``RegimeLoadings``)
+    are treated as ``0`` so no ``NaN`` tilt reaches
     BL (tasks.md 2.2 note). An asset whose category is absent from
     ``REGIME_ASSET_EXPOSURE`` or unmapped to a pseudo id is skipped (no view).
 
@@ -1701,8 +1709,9 @@ class FactorDecision:
     ``views`` handed to ``views_to_bl`` (``[]`` on the parse-fail path), the
     parsed ``loadings`` (``None`` on parse fail), the measured ``p_memorized``
     (``None`` on the weak / no-scorer / scoring-failure path — R4.3), a
-    ``parse_ok`` flag, and a ``steered`` flag that is ``True`` only when a
-    measured score actually drove the recall-guarded adjustment.
+    ``parse_ok`` flag, and a ``steered`` flag that is ``True`` whenever a score
+    was measured (``p_memorized is not None``) — the adjustment itself can still
+    be a passthrough when ``RecallGuardedConfig.enabled`` is ``False``.
 
     Attributes:
         P, Q: the ``views_to_bl`` BL view pair, or ``(None, None)`` when no view
@@ -1835,7 +1844,8 @@ def factor_rebalance(
     # 7. The UNCHANGED views_to_bl conversion (Q = tilt·conviction/252).
     P, Q = agent.views_to_bl(adjusted, real_symbols)
 
-    # 8. Steered iff a measured score actually drove the recall-guarded adjustment.
+    # 8. Steered iff a score was measured; with the guard disabled the adjustment
+    #    is a passthrough but the measurement is still recorded as steered.
     steered = p_memorized is not None
 
     return FactorDecision(
@@ -1937,9 +1947,10 @@ def make_factor_weight_fn(
 #     to one of: "recalls" / "detector_unvalidated" / "certified_no_recall" /   #
 #     "inconclusive".                                                           #
 #   - screen_candidate — the per-candidate orchestration (R8.1): build the      #
-#     corpora, baseline, gather features (the ONLY live calls), compute the     #
-#     controlled and positive-control statistics offline, measure the parse     #
-#     rate, and return a typed CertificationResult (no credential in it, R8.6). #
+#     corpora, then the live-call steps (baseline, feature gathering, and the   #
+#     fresh-reply parse-rate sample), compute the controlled and                #
+#     positive-control statistics offline on the gathered matrices, and         #
+#     return a typed CertificationResult (no credential in it, R8.6).           #
 # --------------------------------------------------------------------------- #
 
 
@@ -2443,9 +2454,11 @@ def screen_candidate(
     2. Re-render the SAME pre-cutoff states with
        :func:`render_prose_confounded_prompt` — the positive-control class
        (R8.3); the anonymized OOS rows are shared as its contrast class.
-    3. ``build_baseline`` on the anonymized OOS corpus (``ref_lm=None``).
-    4. Gather standardized features for all three classes (the ONLY live
-       calls), then compute the controlled (identifying vs anonymized) and
+    3. ``build_baseline`` on the anonymized OOS corpus (``ref_lm=None``) —
+       itself live generate calls.
+    4. Gather standardized features for all three classes (more live calls;
+       step 5's parse sample is live too), then compute the controlled
+       (identifying vs anonymized) and
        positive-control (prose-confounded vs anonymized) statistics OFFLINE
        via :func:`certification_stats` (R8.2). A positive-control statistics
        failure (too few surviving rows) degrades to ``None`` — which the
@@ -2557,8 +2570,9 @@ def screen_candidate(
             "parse_sample": [],
         }
 
-    # Gather the standardized features per class — the only live calls; every
-    # statistic below is computed OFFLINE on these matrices (R8.2).
+    # Gather the standardized features per class; the controlled and
+    # positive-control statistics are computed OFFLINE on these matrices (R8.2).
+    # The parse-rate block further below issues its own fresh live calls.
     x_is = gather_certification_features(
         lm, is_rows, baseline, max_workers=max_workers,
         evidence=ev["identifying"] if ev is not None else None,

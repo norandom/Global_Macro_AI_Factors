@@ -46,7 +46,8 @@ def build_walk_forward_targets(
     Each `weight_fn` gets a context dict:
       - rebalance_date: pd.Timestamp
       - prices:         DataFrame with rows strictly before rebalance_date (tail of lookback_days)
-      - returns:        daily returns aligned to `prices`
+      - returns:        daily returns over the same lookback, with any row containing
+                        a NaN dropped — its index can be a strict subset of `prices`
       - macro_panel:    rows strictly before rebalance_date (if provided)
     and must return a Series of target weights summing to 1 over `prices.columns`.
     """
