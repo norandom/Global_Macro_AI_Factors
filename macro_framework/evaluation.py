@@ -16,15 +16,22 @@ def anticipation_lead_time(
     defensive_cols: tuple[str, ...] = ("BIL", "IAU"),
     threshold: float = 0.40,
 ) -> pd.Timestamp | None:
-    """First rebalance date where the sum of `defensive_cols` weights ≥ threshold.
-    Returns None if the strategy never crosses the threshold.
+    """First rebalance date where defensive share CROSSES up to the threshold.
+
+    Returns the first date where the sum of ``defensive_cols`` moves from below
+    ``threshold`` to at-or-above it. A portfolio already defensive on the first
+    observed row does NOT count as an anticipatory rotation and returns ``None``.
     """
     tgt = target_weights.dropna(how="all")
     defensive = [c for c in defensive_cols if c in tgt.columns]
     if not defensive:
         return None
     defensive_share = tgt[defensive].sum(axis=1)
-    hit = defensive_share[defensive_share >= threshold]
+    above = defensive_share >= threshold
+    if above.empty:
+        return None
+    crossed = above & ~above.shift(1, fill_value=above.iloc[0])
+    hit = crossed[crossed]
     return hit.index[0] if len(hit) else None
 
 
@@ -98,13 +105,23 @@ def head_to_head_report(
     rows: dict[str, dict[str, float]] = {}
     crisis = crisis_analytics(pfs, crisis_start, crisis_end)
     for name, pf in pfs.items():
+        tgt = targets.get(name, pd.DataFrame()).dropna(how="all")
         lead = anticipation_lead_time(
-            targets.get(name, pd.DataFrame()),
+            tgt,
             defensive_cols=defensive_cols,
             threshold=defensive_threshold,
         )
-        turnover = turnover_stats(targets.get(name, pd.DataFrame()))
+        turnover = turnover_stats(tgt)
         crow = crisis.loc[name].to_dict() if name in crisis.index else {"crisis_return": float("nan"), "crisis_max_drawdown": float("nan"), "crisis_vol_ann": float("nan")}
+        defensive = [c for c in defensive_cols if c in tgt.columns]
+        starts_defensive = bool(
+            defensive and not tgt.empty and tgt[defensive].sum(axis=1).iloc[0] >= defensive_threshold
+        )
+        lead_label = (
+            pd.Timestamp(lead).date().isoformat() if lead is not None
+            else "already defensive at sample start" if starts_defensive
+            else "—"
+        )
         rows[name] = {
             "total_return":             float(pf.total_return()),
             "annualized_return":        float(pf.annualized_return()),
@@ -115,7 +132,7 @@ def head_to_head_report(
             "max_drawdown":             float(pf.max_drawdown()),
             "crisis_return":            crow["crisis_return"],
             "crisis_max_drawdown":      crow["crisis_max_drawdown"],
-            "defensive_lead_date":      (pd.Timestamp(lead).date().isoformat() if lead is not None else "—"),
+            "defensive_lead_date":      lead_label,
             "avg_turnover":             turnover["avg_turnover"],
         }
     return pd.DataFrame(rows).T

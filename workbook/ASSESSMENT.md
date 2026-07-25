@@ -1,12 +1,17 @@
 # Step-by-step assessment in Excel (Power Query, German locale)
 
-A didactic walkthrough of the whole storyboard, from S0 (the static problem)
-through S5 (luck vs skill), using one reusable Excel sheet fed from the versioned
-[data-v2 release](https://github.com/norandom/Global_Macro_AI_Factors/releases/tag/data-v2).
+A didactic walkthrough of the original S0→S5 storyboard, using one reusable
+Excel sheet fed from the immutable
+[`data-v2` release](https://github.com/norandom/Global_Macro_AI_Factors/releases/tag/data-v2).
+This page stays pinned to `data-v2` on purpose so the thesis walk-through does
+not drift. For the newer `data-v3` trio example (**Static B&H 16-26**, **Factor
+ext26**, **SJM×crowding de-risk v2**), use
+[`Simulation.examples.md`](Simulation.examples.md).
+
 Every file referenced here is a `_de` variant: semicolon-separated with comma
 decimals, so it loads correctly in German Excel with zero transform steps.
 
-URL prefix for everything (prepend to every filename below):
+URL prefix for the walkthrough assets below:
 
 ```
 https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v2/
@@ -101,7 +106,7 @@ reference and BibTeX are in the repository README's Citation section.
 
 | Metric | What it is | PM feedback point |
 |---|---|---|
-| **SSR** (Sharpe Stability Ratio) | t-statistic of the rolling 1-year Sharpe against 0, with Newey-West HAC standard errors (Andrews bandwidth) — precomputed in `tear_sheet_de.csv` | "Sharpe says how good; SSR says whether it was RELIABLY good. Needs ≥1.96. Autocorrelation of rolling windows kills naive t-tests — HAC is non-negotiable." |
+| **SSR** (Sharpe Stability Ratio) | signal-to-noise of the rolling 1-year Sharpe path: mean(Z)/sigma_HAC(Z), Newey-West/Andrews — precomputed in `tear_sheet_de.csv` with a one-sided moving-block-bootstrap p-value (`ssr_mbb_p`) as the verdict | "Sharpe says how good; SSR says whether it was RELIABLY good. SSR is the effect size; the bootstrap p < 0.05 is the pass. Autocorrelation of rolling windows kills naive t-tests — the block bootstrap rebuilds it honestly." |
 | Wilson 95% CI | binomial interval for an accuracy | "Does the interval contain 0.5? Then the hit rate is coin-flip-compatible." |
 | Paired Cohen's d | mean(Δ)/std(Δ) on paired observations | "Effect size for paired designs — big d with tiny P&L difference means the effect is real but not monetizable." |
 
@@ -135,7 +140,9 @@ Walk through, in seduction order:
 6. The alpha mirage: `=ACHSENABSCHNITT(...)*365` → **+9,2 %** "alpha", appraisal 1,09 —
    then `risk_decomposition_de.csv` row: `r2_basket_4etf` **0,985**, basket alpha
    **−1,8 %** → the "alpha" was gold/cash factor return; true idio ≈ 1,9 %.
-7. The verdict: `ssr` = **0,147** ≪ 1,96 — *luck-compatible* (column `ssr_verdict`).
+7. The verdict: `ssr` = **0,147**, MBB p < 0,05 — *stably positive in-sample*, but the
+   basket decomposition just showed it is factor exposure, and the selection peeked:
+   temporal consistency of a hindsight book, not skill (column `ssr_verdict`).
 
 **PM summary S0**: gorgeous curve, real crisis cushioning, ρ=0.84 to the market,
 IR≈0, fake CAPM alpha, zero certifiable skill — and the selection peeked at the
@@ -219,9 +226,10 @@ Compute live: contamination premium `=MITTELWERT(delta)` → **+0,528**
 dated, named data). Paired Cohen's d: `=MITTELWERT(delta)/STABW.S(delta)` → **1,93**.
 
 Read from the SSR table: PIT **0,124**, non-PIT **0,130**, and the
-**differential 0,002**: the recall premium in *returns* is statistically
-indistinguishable from zero. Huge in memory, nil in P&L, and the honest
-instrument (same SSR that judged S0) says: luck-compatible, never attainable skill.
+**differential 0,03** with MBB p = 0,22: the recall premium in *returns* is
+statistically indistinguishable from zero. Huge in memory, nil in P&L, and the
+honest instrument (the same bootstrap test that judged S0) says: the premium is
+luck-compatible, never attainable skill.
 
 **PM summary S5 / thesis close**: S0 showed hindsight making a dumb portfolio
 look brilliant. S1–S5 built the machinery to *measure* hindsight inside an AI

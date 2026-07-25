@@ -15,13 +15,16 @@ Files ending in `_de.csv` are semicolon-separated with comma decimals and load i
 German Excel with zero transform steps; plain `.csv` files use `.` decimals and
 need a locale step on German systems.
 
-Two guides cover the Excel side:
+Three guides cover the Excel side:
 
 - [workbook/ASSESSMENT.md](workbook/ASSESSMENT.md) walks the whole storyboard
   (S0 static problem through S5 luck vs skill) in one reusable Power Query sheet,
   with the equations, Excel formulas, and the questions a PM would ask of each number.
 - [workbook/S0.md](workbook/S0.md) shows three ways to get the static
   buy-and-hold line into Excel, easiest first, including the German-locale trap.
+- [workbook/Simulation.examples.md](workbook/Simulation.examples.md) is the
+  current `data-v3` import guide for the final ext26 trio (Static B&H, Factor,
+  SJM de-risk v2), with direct release links and copy-paste Power Query.
 
 ## Use the workbook
 
@@ -62,10 +65,13 @@ is 0.389 with a Wilson interval that contains 0.5, and that coin-flip result is
 expected and correct: it was never supposed to forecast. The deployable
 portfolio line is recall-guarded, meaning LLM tilts are discounted by a measured
 memorization probability; the unguarded line exists only as a diagnostic control.
-Luck vs skill is judged with the SSR cited below, and every headline line so far
-is luck-compatible (SSR far below 1.96). The 4-ETF universe was itself selected
-in-sample, which is deliberate: that hindsight-flattered static line is the
-problem exhibit the rest of the pipeline measures.
+Luck vs skill is judged with the SSR cited below as the effect size and the
+paper's one-sided moving-block-bootstrap test as the verdict: most headline
+lines test stably above zero (temporal consistency — for long-only lines that
+is beta-compatible, not a skill claim), while the recall-premium differential
+and the momentum baseline remain luck-compatible. The 4-ETF universe was itself
+selected in-sample, which is deliberate: that hindsight-flattered static line
+is the problem exhibit the rest of the pipeline measures.
 
 ## Citation
 

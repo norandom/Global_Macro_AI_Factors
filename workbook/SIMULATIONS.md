@@ -29,7 +29,7 @@ and BibTeX in the repository README's Citation section.
 - **What**: 25% equal weight at inception, 4 trades total, no rebalancing. Benchmark SPY B&H.
 - **Window**: 2016-01-31 → 2026-01-31, the full SSR-selection decade, *deliberately* in-sample: this run exists to show how good hindsight selection looks.
 - **Engine**: vectorbt `buy_and_hold`; re-implemented as plain share arithmetic in `scripts/build_static_bh.py` (matches to ~3 decimals; residual = yfinance-vs-DB prices).
-- **Artifacts**: `static_bh_equity_2016_2026*`, `static_bh_stats.json`; headline: Sharpe 1.44, maxDD −19.6%, IR vs SPY 0.05, SSR 0.147 (luck-compatible).
+- **Artifacts**: `static_bh_equity_2016_2026*`, `static_bh_stats.json`; headline: Sharpe 1.44, maxDD −19.6%, IR vs SPY 0.05, SSR 0.147 (stably positive under MBB; hindsight-selected, so consistency not skill).
 
 ### 2. nb05 — Annual rebalance HRP-CVaR + BL
 - **What**: first dynamic engine test: annual rebalances, HRP-CVaR with the pinned 25% BIL sleeve, BL tilt toward a fixed prior view.
@@ -79,10 +79,11 @@ and BibTeX in the repository README's Citation section.
 - **What**: uniform re-computation across all 9 equity lines — active-span, one convention — plus CAPM-vs-SPY and 4-ETF-basket risk decomposition, IR-vs-SPY series.
 - **Why active spans**: the 2014-anchored storage frames contain flat stubs that would dilute CAGR/vol/Sharpe; the tear sheet trims to first movement and discloses the window per row (this is why its Sharpes differ from the full-frame figures embedded in `factor_contrast_summary_v1.json`).
 
-### 12. PLANNED — Extension to 2026-06: the post-cutoff natural experiment (→ data-v3)
-- **What**: extend the stream by ~18 rebalances (2025-01 → 2026-06) for the factor PIT line, the non-PIT diagnostic, the naive eval, and the cheap comparison tracks; re-cut contrast/luck-vs-skill with an explicit **in-training vs post-cutoff split**.
-- **Why**: 2019–2024 sits inside gpt-oss-20b's training window (recall possible — the guard's regime). Post-2024-06 data is unseeable by construction. Falsifiable prediction: the PIT-vs-non-PIT `p_memorized` premium (+0.53 in-training) **collapses toward 0 post-cutoff**, while return behavior stays similar. If observed, it validates that the contamination signal measures memorization specifically.
-- **Status**: amendment task in the version-aware-factor-scoring spec; results will ship as `data-v3` (data-v2 stays immutable).
+### 12. Extension to 2026-06 (`data-v3`) — the post-cutoff natural experiment
+- **What**: the stream was extended by ~18 rebalances (2025-01 → 2026-06) for the factor PIT line, the non-PIT diagnostic, the naive eval, and the cheap comparison tracks; contrast/luck-vs-skill were re-cut with an explicit **in-training vs post-cutoff split**.
+- **Artifacts**: `*_ext2026` files, `tear_sheet_ext2026*`, `risk_decomposition_ext2026*`, and the final trio comparison carried by `factor_equity_ext2026`, `static_bh_equity_2016_2026`, and `sjm_crowding_derisk_v2_equity_ext2026`.
+- **Why**: 2019–2024 sits inside gpt-oss-20b's training window (recall possible — the guard's regime). Post-2024-06 data is unseeable by construction. The split table reports whether the PIT-vs-non-PIT `p_memorized` premium actually collapses post-cutoff.
+- **Excel path**: `Simulation.examples.md` is the direct import guide for the shipped trio CSVs under `data-v3`; `ASSESSMENT.md` stays the older S0→S5 walkthrough pinned to `data-v2`.
 
 ## Standing caveats (apply to every run)
 
