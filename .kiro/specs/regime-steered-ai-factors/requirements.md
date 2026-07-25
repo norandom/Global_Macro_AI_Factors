@@ -36,7 +36,7 @@ See the seeded description retained below the requirements ("Appendix: Original 
 #### Acceptance Criteria
 1. When a candidate configuration is evaluated, the Evaluation Harness shall emit a PASS verdict only if every acceptance gate passes, and a FAIL verdict otherwise.
 2. The Evaluation Harness shall treat the skill gate as passed only when the own-basket alpha HAC t-statistic exceeds 2.
-3. The Evaluation Harness shall treat the stability gate as passed only when the Sharpe Stability Ratio is at least 1.96.
+3. The Evaluation Harness shall treat the stability gate as passed only when the one-sided moving-block-bootstrap p-value on the mean rolling Sharpe (the SSR paper's Test 1) is below 0.05 and the mean rolling Sharpe exceeds the benchmark; the SSR itself is reported as the effect size. (Amended 2026-07-23: the earlier absolute bar `SSR >= 1.96` compared an effect size with no sqrt(n) to a z critical value and was unpassable by construction — review record in `docs/ssr_verdict_review.md`.)
 4. The Evaluation Harness shall treat the no-recall gate as passed only when the point-in-time versus non-point-in-time memorization premium is not statistically distinguishable from zero on the post-cutoff window.
 5. The Evaluation Harness shall treat the risk-shape gate as passed only when out-of-sample Calmar is not below the baseline Calmar and out-of-sample maximum drawdown is not worse than baseline beyond a stated tolerance.
 6. If any gate fails, then the Evaluation Harness shall report which gate failed and the value that missed its threshold.

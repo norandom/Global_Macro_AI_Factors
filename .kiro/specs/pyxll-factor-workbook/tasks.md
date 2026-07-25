@@ -79,7 +79,7 @@
   - _Depends: 3.1, 3.4_
 
 - [x] 4.5 Step 5 view — luck versus skill
-  - Assemble the paired contrast with premium and paired effect size re-derived from per-date records, the Sharpe-stability table for both lines and the differential re-derived via the vendored computation, the PIT-vs-non-PIT loading-stability comparison, and the mandated conclusion wording (luck-compatible; lookahead/recall bias, never attainable skill)
+  - Assemble the paired contrast with premium and paired effect size re-derived from per-date records, the Sharpe-stability table for both lines and the differential re-derived via the vendored computation, the PIT-vs-non-PIT loading-stability comparison, and the mandated conclusion wording (differential luck-compatible under the one-sided MBB test; lookahead/recall bias, never attainable skill — amended 2026-07-23)
   - Observable: tests assert the re-derived premium/effect size and stability rows match published values within tolerance and the conclusion wording is present verbatim
   - _Requirements: 6.1, 6.2, 6.3, 7.3_
   - _Depends: 3.1, 3.2, 3.4_
@@ -127,7 +127,7 @@
 - [ ] 7. Amendment 2026-07-10 (user directive): Step-0 static line
 - [x] 7.1 S0 sheet — the static buy-and-hold line in the workbook
   - Add the data-v2 static assets to the schema-contract registry (equity 2014-2024 + 2016-2026, drifting targets, stats JSON) with fixtures; build the S0 step view (equity/drawdown, drifting weights, stats + crisis episodes, checks re-deriving the published metrics and SSR from the equity series); expose step "S0" through the Excel surface; add the S0 sheet + navigation to the generator; default the generated workbook tag to data-v2 (superset of v1)
-  - Framing carries the two-claims separation: crisis episodes are real event-level observables; the performance level is hindsight-flattered (in-sample SSR selection) and the line's own SSR 0.147 is luck-compatible — never presented as attainable skill
+  - Framing carries the two-claims separation: crisis episodes are real event-level observables; the performance level is hindsight-flattered (in-sample SSR selection) and the line's own SSR 0.147 tests stably positive under the one-sided MBB test yet remains hindsight consistency, beta-compatible — never presented as attainable skill (amended 2026-07-23)
   - Observable: offline tests cover the new registry entries (fixtures), the S0 view tables/checks/framing, "S0" through the addin, and the generated S0 sheet; the opt-in live test builds S0 against the real data-v2 release with every check ok; on data-v1 the S0 step surfaces the per-asset #ERROR (asset absent), never an exception
   - _Requirements: 1.4, 7.2, 7.3 (amendment scope — static line as Step 0)_
   - _Boundary: workbook/factor_workbook/{contract,steps,addin}.py + workbook/build_workbook.py + workbook/tests/ (fixtures + tests)_

@@ -38,7 +38,7 @@ import pandas as pd  # noqa: E402
 import yfinance as yf  # noqa: E402
 
 from factor_workbook.rederive import equity_metrics  # noqa: E402
-from macro_framework.ssr import compute_ssr  # noqa: E402
+from macro_framework.ssr import ssr_inference  # noqa: E402
 
 OUT = REPO / "data" / "tear_sheet"
 BASKET = ["SWDA.L", "XLK", "IAU", "BIL"]
@@ -103,7 +103,8 @@ def main() -> None:
         value = _active_value(pd.read_parquet(path)["value"])
         r = value.pct_change().dropna()
         m = equity_metrics(value)
-        ssr = compute_ssr(r)
+        ssr_inf = ssr_inference(r)
+        ssr = ssr_inf.result
 
         neg = r[r < 0]
         dd = value / value.cummax() - 1
@@ -132,8 +133,8 @@ def main() -> None:
             "crisis_2022_max_dd": m.crisis_max_drawdown,
             "ssr": ssr.ssr, "mean_rolling_sharpe": ssr.mean_rolling_sr,
             "nw_sigma_hac": ssr.sigma_hac, "nw_bandwidth_L": ssr.L_hac,
-            "ssr_verdict": ("stably > 0" if abs(ssr.ssr) >= 1.96 else
-                             "NOT distinguishable from zero under HAC — luck-compatible"),
+            "ssr_mbb_p": ssr_inf.p_value, "ssr_mbb_block": ssr_inf.block_len,
+            "ssr_verdict": ssr_inf.verdict(),
         })
 
         spy = factor_returns["SPY"].reindex(r.index).dropna()

@@ -20,7 +20,7 @@ from macro_framework.skill_metric import (
     GateConfig,
     evaluate_gates,
 )
-from macro_framework.ssr import SSRResult
+from macro_framework.ssr import SSRInference, SSRResult
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import factor_loop as fl  # noqa: E402
@@ -35,10 +35,13 @@ def _residual() -> BasketResidual:
     )
 
 
-def _ssr() -> SSRResult:
-    return SSRResult(
-        n_obs=500, n_rolling=250, sr_full=1.0, mean_rolling_sr=1.0,
-        sigma_hac=0.4, L_hac=5, ssr=2.5,
+def _ssr() -> SSRInference:
+    return SSRInference(
+        result=SSRResult(
+            n_obs=500, n_rolling=250, sr_full=1.0, mean_rolling_sr=1.0,
+            sigma_hac=0.4, L_hac=5, ssr=0.14,
+        ),
+        sr_star=0.0, p_value=0.01, block_len=5, n_boot=1000, seed=0, alpha=0.05,
     )
 
 

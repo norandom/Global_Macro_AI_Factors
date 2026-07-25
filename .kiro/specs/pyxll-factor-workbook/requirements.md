@@ -175,7 +175,8 @@ inference, so that I can distinguish what the model remembered from what would h
    line, the diagnostic line, and their return differential, including the long-run variance
    treatment behind them.
 3. The factor workbook shall state the published conclusion in its recorded terms: the return
-   differential is statistically indistinguishable from zero, so the recall premium is
+   differential is not distinguishable from zero under the one-sided moving-block-bootstrap
+   test (amended 2026-07-23, `docs/ssr_verdict_review.md`), so the recall premium is
    luck-compatible; where any excess of the recall-enabled line is shown, it shall be labeled
    lookahead/recall bias and never attainable skill.
 

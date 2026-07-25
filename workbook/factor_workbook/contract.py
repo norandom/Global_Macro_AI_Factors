@@ -268,6 +268,8 @@ ASSET_SPECS: dict[str, AssetSpec] = {
             "nw_long_run_var": "float64",
             "nw_sigma_hac": "float64",
             "nw_bandwidth_L": "int64",
+            "mbb_p": "float64",
+            "mbb_block": "int64",
             "verdict": "str",
         },
         min_rows=3,

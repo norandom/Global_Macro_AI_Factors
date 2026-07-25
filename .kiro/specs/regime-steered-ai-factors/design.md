@@ -192,7 +192,7 @@ The overlay computes a dynamic BIL pin from the strictly-pre-rebalance return wi
 - Regress strategy daily returns on the four **own-factor** ETF returns with a constant beta over the window; α is annualized, its t-stat uses a Newey-West HAC covariance (`cov_type="HAC"`). Isolates timing skill from static factor exposure (1.1, 1.2, 1.3).
 - Where a market benchmark is provided, also report single-factor market α/β/R² (1.4).
 - Return the appraisal ratio as `None` when residual volatility is below `IDIO_FLOOR` (1.5).
-- Compose the four gates into one verdict; report the failing gate and missed value (2.1, 2.6). Gate thresholds are configurable; defaults encode the requirement (`skill_t_min=2.0`, `ssr_min=1.96`), with an alternative `relative_improvement` mode (see Open Questions).
+- Compose the four gates into one verdict; report the failing gate and missed value (2.1, 2.6). Gate thresholds are configurable; defaults encode the requirement (`skill_t_min=2.0`, `ssr_alpha=0.05` — the one-sided MBB p-value level; amended 2026-07-23, see `docs/ssr_verdict_review.md`), with an alternative `relative_improvement` mode (see Open Questions).
 
 **Dependencies**
 - Outbound: `ssr.compute_ssr`, `ssr.newey_west_var` — SSR gate + HAC estimator (P0).
@@ -240,7 +240,7 @@ def market_attribution(
 @dataclass(frozen=True)
 class GateConfig:
     skill_t_min: float = 2.0
-    ssr_min: float = 1.96
+    ssr_alpha: float = 0.05               # one-sided MBB p-value level (amended 2026-07-23)
     recall_premium_max: float = 0.05      # |PIT vs non-PIT p_memorized delta| tolerance (~0)
     calmar_tolerance: float = 0.0         # OOS Calmar must be >= baseline - tolerance
     maxdd_tolerance: float = 0.0          # OOS |maxDD| must be <= baseline |maxDD| + tolerance
@@ -253,7 +253,7 @@ class GateVerdict:
     stability_pass: bool
     recall_pass: bool
     risk_shape_pass: bool
-    first_failure: str | None            # e.g. "stability: SSR=0.14 < 1.96"
+    first_failure: str | None            # e.g. "stability: MBB p=0.31 >= 0.05 (SSR=0.14)"
     values: dict[str, float]
 
 def evaluate_gates(

@@ -48,7 +48,7 @@ from macro_framework import factor_scoring as fs
 from macro_framework import macro as macro_module
 from macro_framework import steering
 from macro_framework.factor_scoring import _median, _paired_cohens_d
-from macro_framework.ssr import compute_ssr
+from macro_framework.ssr import ssr_inference
 
 warnings.filterwarnings("ignore")
 
@@ -824,46 +824,36 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
     print(f"(in-training reproduces published +{PUBLISHED_V1_PREMIUM:.3f} "
           f"within {premium_repro_diff:.4f})")
 
-    # --- S10: luck-vs-skill (compute_ssr, NW-HAC) over the extended lines -------- #
+    # --- S10: luck-vs-skill (SSR effect size + one-sided MBB p) over the extended lines - #
     sim_start_ts = rebalance_dates[0]
     ret_pit = equity_ext.loc[sim_start_ts:].pct_change().dropna()
     ret_np = equity_np_ext.loc[sim_start_ts:].pct_change().dropna()
     common_r = ret_pit.index.intersection(ret_np.index)
     ret_diff = (ret_np.loc[common_r] - ret_pit.loc[common_r]).rename("recall_minus_norecall")
-    ssr_pit, ssr_np, ssr_diff = compute_ssr(ret_pit), compute_ssr(ret_np), compute_ssr(ret_diff)
+    inf_pit, inf_np, inf_diff = (
+        ssr_inference(ret_pit), ssr_inference(ret_np), ssr_inference(ret_diff)
+    )
+    ssr_pit, ssr_np, ssr_diff = inf_pit.result, inf_np.result, inf_diff.result
 
     pit_row = report.loc["Factor PIT (ext2026)"]
     np_row = report.loc["Non-PIT DIAGNOSTIC (ext2026)"]
-    z_ref = 1.96
 
-    def _verdict(res, differential: bool) -> str:
-        if not np.isfinite(res.ssr):
-            return "insufficient rolling observations for HAC inference"
-        if differential:
-            if abs(res.ssr) < z_ref:
-                return (f"|SSR|={abs(res.ssr):.2f} < {z_ref}: differential indistinguishable from "
-                        f"zero under NW-HAC — the premium is LUCK-COMPATIBLE, not skill")
-            return (f"|SSR|={abs(res.ssr):.2f} >= {z_ref}: QUANTIFIED LOOKAHEAD/RECALL BIAS, "
-                    f"never attainable skill (R7.5)")
-        if res.ssr >= z_ref:
-            return (f"SSR={res.ssr:.2f} >= {z_ref}: rolling Sharpe stably above zero under NW-HAC "
-                    f"(no skill claim — non-predictive framing, R6.4)")
-        return f"SSR={res.ssr:.2f} < {z_ref}: NOT stably distinguishable from zero — luck-compatible"
-
-    def _luck_row(name: str, res, total_return: float, sharpe: float, differential: bool) -> dict:
+    def _luck_row(name: str, inf, total_return: float, sharpe: float, differential: bool) -> dict:
+        res = inf.result
         return {"line": name, "n_obs": res.n_obs, "n_rolling": res.n_rolling,
                 "total_return": total_return, "sharpe": sharpe,
                 "mean_rolling_sr": res.mean_rolling_sr, "ssr": res.ssr,
                 "nw_long_run_var": float(res.sigma_hac ** 2) if np.isfinite(res.sigma_hac) else float("nan"),
                 "nw_sigma_hac": res.sigma_hac, "nw_bandwidth_L": res.L_hac,
-                "verdict": _verdict(res, differential)}
+                "mbb_p": inf.p_value, "mbb_block": inf.block_len,
+                "verdict": inf.verdict(differential=differential)}
 
     luck_df = pd.DataFrame([
-        _luck_row("PIT recall-guarded (deployable, ext2026)", ssr_pit,
+        _luck_row("PIT recall-guarded (deployable, ext2026)", inf_pit,
                   float(pit_row["total_return"]), ssr_pit.sr_full, False),
-        _luck_row("Non-PIT recall-enabled (DIAGNOSTIC, ext2026)", ssr_np,
+        _luck_row("Non-PIT recall-enabled (DIAGNOSTIC, ext2026)", inf_np,
                   float(np_row["total_return"]), ssr_np.sr_full, False),
-        _luck_row("Differential (non-PIT minus PIT, ext2026)", ssr_diff,
+        _luck_row("Differential (non-PIT minus PIT, ext2026)", inf_diff,
                   float(np_row["total_return"] - pit_row["total_return"]),
                   ssr_diff.sr_full, True),
     ]).set_index("line")
@@ -891,7 +881,8 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
         value = bts._active_value(value_raw)
         r = value.pct_change().dropna()
         m = equity_metrics(value)
-        ssr = compute_ssr(r)
+        ssr_inf = ssr_inference(r)
+        ssr = ssr_inf.result
         dd = value / value.cummax() - 1
         dd_end = dd.idxmin()
         dd_start = value.loc[:dd_end].idxmax()
@@ -914,8 +905,8 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
             "crisis_2022_return": m.crisis_return, "crisis_2022_max_dd": m.crisis_max_drawdown,
             "ssr": ssr.ssr, "mean_rolling_sharpe": ssr.mean_rolling_sr,
             "nw_sigma_hac": ssr.sigma_hac, "nw_bandwidth_L": ssr.L_hac,
-            "ssr_verdict": ("stably > 0" if abs(ssr.ssr) >= 1.96 else
-                            "NOT distinguishable from zero under HAC — luck-compatible"),
+            "ssr_mbb_p": ssr_inf.p_value, "ssr_mbb_block": ssr_inf.block_len,
+            "ssr_verdict": ssr_inf.verdict(),
         })
         spy = factor_returns["SPY"].reindex(r.index).dropna()
         y = r.reindex(spy.index)

@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-from macro_framework.ssr import TRADING_DAYS, SSRResult
+from macro_framework.ssr import TRADING_DAYS, SSRInference, SSRResult
 
 IDIO_FLOOR: float = 1e-4  # annualized residual-vol floor below which appraisal is undefined
 
@@ -122,7 +122,7 @@ class GateConfig:
     """
 
     skill_t_min: float = 2.0
-    ssr_min: float = 1.96
+    ssr_alpha: float = 0.05  # one-sided MBB p-value level for the stability gate
     recall_premium_max: float = 0.05  # |PIT vs non-PIT p_memorized delta| tolerance (~0)
     calmar_tolerance: float = 0.0  # OOS Calmar must be >= baseline - tolerance
     maxdd_tolerance: float = 0.0  # OOS |maxDD| must be <= baseline |maxDD| + tolerance
@@ -136,7 +136,7 @@ class GateVerdict:
     stability_pass: bool
     recall_pass: bool
     risk_shape_pass: bool
-    first_failure: str | None  # e.g. "stability: SSR=0.14 < 1.96"
+    first_failure: str | None  # e.g. "stability: MBB p=0.31 >= 0.05 (SSR=0.14)"
     values: dict[str, float]
 
 
@@ -152,10 +152,20 @@ def _skill_gate(residual: BasketResidual, config: GateConfig) -> tuple[bool, str
     return ok, None if ok else f"skill: t={t:.4g} <= {config.skill_t_min}"
 
 
-def _stability_gate(ssr: SSRResult, config: GateConfig) -> tuple[bool, str | None]:
-    val = ssr.ssr
-    ok = math.isfinite(val) and val >= config.ssr_min
-    return ok, None if ok else f"stability: SSR={val:.4g} < {config.ssr_min}"
+def _stability_gate(ssr: SSRInference, config: GateConfig) -> tuple[bool, str | None]:
+    """Paper Test 1 (one-sided MBB): the rolling-Sharpe mean must exceed sr_star with
+    bootstrap p below ``ssr_alpha``. SSR itself is the effect size, not the test —
+    the pre-2026-07 rule (SSR >= 1.96) had no sqrt(n) and was unpassable by design."""
+    p, val = ssr.p_value, ssr.result.ssr
+    ok = (
+        math.isfinite(p)
+        and math.isfinite(val)
+        and p < config.ssr_alpha
+        and ssr.result.mean_rolling_sr > ssr.sr_star
+    )
+    return ok, None if ok else (
+        f"stability: MBB p={p:.4g} >= {config.ssr_alpha} (SSR={val:.4g})"
+    )
 
 
 def _recall_gate(recall_premium: float, config: GateConfig) -> tuple[bool, str | None]:
@@ -184,7 +194,7 @@ def _risk_shape_gate(
 
 def evaluate_gates(
     residual: BasketResidual,
-    ssr: SSRResult,
+    ssr: SSRInference,
     recall_premium: float,  # from ContrastResult.contamination_premium()
     oos_calmar: float,
     baseline_calmar: float,
@@ -222,7 +232,8 @@ def evaluate_gates(
     values = {
         "skill_t": float(residual.t_alpha_hac),
         "appraisal": float("nan") if residual.appraisal is None else float(residual.appraisal),
-        "ssr": float(ssr.ssr),
+        "ssr": float(ssr.result.ssr),
+        "ssr_p": float(ssr.p_value),
         "recall_premium": float(recall_premium),
         "oos_calmar": float(oos_calmar),
         "baseline_calmar": float(baseline_calmar),

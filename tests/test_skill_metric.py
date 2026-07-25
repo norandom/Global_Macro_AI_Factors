@@ -16,7 +16,7 @@ from macro_framework.skill_metric import (
     evaluate_gates,
     market_attribution,
 )
-from macro_framework.ssr import SSRResult
+from macro_framework.ssr import SSRInference, SSRResult
 
 RNG = np.random.default_rng(20260720)
 FACTORS = ("SWDA.L", "XLK", "IAU", "BIL")
@@ -109,15 +109,23 @@ def _residual(t=4.0, appraisal=0.9):
     )
 
 
-def _ssr(value=2.5):
-    return SSRResult(
-        n_obs=500,
-        n_rolling=250,
-        sr_full=1.0,
-        mean_rolling_sr=1.0,
-        sigma_hac=0.4,
-        L_hac=5,
-        ssr=value,
+def _ssr(p=0.01, value=0.14):
+    return SSRInference(
+        result=SSRResult(
+            n_obs=500,
+            n_rolling=250,
+            sr_full=1.0,
+            mean_rolling_sr=1.0,
+            sigma_hac=0.4,
+            L_hac=5,
+            ssr=value,
+        ),
+        sr_star=0.0,
+        p_value=p,
+        block_len=5,
+        n_boot=1000,
+        seed=0,
+        alpha=0.05,
     )
 
 
@@ -143,7 +151,8 @@ def test_all_gates_pass():
     )
     assert v.first_failure is None
     assert v.values["skill_t"] == 4.0
-    assert v.values["ssr"] == 2.5
+    assert v.values["ssr"] == 0.14
+    assert v.values["ssr_p"] == 0.01
 
 
 def test_skill_gate_flip():
@@ -155,11 +164,11 @@ def test_skill_gate_flip():
 
 
 def test_stability_gate_flip():
-    v = evaluate_gates(_residual(), _ssr(0.14), **_PASS)
+    v = evaluate_gates(_residual(), _ssr(p=0.31), **_PASS)
     assert v.passed is False
     assert v.stability_pass is False
     assert v.first_failure.startswith("stability:")
-    assert "0.14" in v.first_failure and "1.96" in v.first_failure
+    assert "0.31" in v.first_failure and "0.05" in v.first_failure
 
 
 def test_recall_gate_flip():
@@ -235,7 +244,7 @@ def test_relative_mode_fails_on_negative_t():
 
 
 def test_custom_thresholds():
-    cfg = GateConfig(skill_t_min=3.0, ssr_min=1.0)
-    v = evaluate_gates(_residual(t=2.5), _ssr(1.5), **_PASS, config=cfg)
+    cfg = GateConfig(skill_t_min=3.0, ssr_alpha=0.10)
+    v = evaluate_gates(_residual(t=2.5), _ssr(p=0.08), **_PASS, config=cfg)
     assert v.skill_pass is False  # 2.5 < 3.0
-    assert v.stability_pass is True  # 1.5 >= 1.0
+    assert v.stability_pass is True  # p=0.08 < alpha=0.10

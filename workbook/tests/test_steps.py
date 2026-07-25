@@ -1023,9 +1023,9 @@ def test_s5_framing_mandated_conclusion_wording(s5):
     assert "0.528" in framing and "1.93" in framing  # premium in MEMORY
     assert "in memory" in framing
     assert "~0 in p&l" in framing
-    assert "ssr" in framing and "0.002" in framing
-    assert "newey-west" in framing
-    assert "statistically indistinguishable from zero" in framing
+    assert "ssr" in framing and "0.03" in framing
+    assert "moving-block-bootstrap" in framing
+    assert "not distinguishable from zero" in framing
     assert "luck-compatible, not skill" in framing
     assert "lookahead/recall bias" in framing
     assert "never attainable skill" in framing
@@ -1183,11 +1183,11 @@ def test_s0_framing_two_claims_separated(s0):
     assert "in-sample by construction" in framing
     assert "sharpe stability ratio computed over the same window" in framing
     assert "hindsight artifact, never attainable skill" in framing
-    assert "0.147" in framing and "1.96" in framing
-    assert "luck-compatible" in framing
+    assert "0.147" in framing and "mbb p" in framing
+    assert "not a skill claim" in framing
     assert "s1" in framing and "s5" in framing
     assert "no forecast-accuracy claim" in framing
-    assert "LUCK-COMPATIBLE" in s0.framing
+    assert "NOT a skill claim" in s0.framing
     assert s0.framing == S0_FRAMING
     assert s0.title.startswith("S0")
 

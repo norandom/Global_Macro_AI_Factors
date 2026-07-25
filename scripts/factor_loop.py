@@ -188,7 +188,7 @@ from macro_framework.skill_metric import (
     basket_residual,
     evaluate_gates,
 )
-from macro_framework.ssr import compute_ssr
+from macro_framework.ssr import ssr_inference
 
 
 class ConfigurationError(RuntimeError):
@@ -288,7 +288,7 @@ def verify(
             recall_premium=recall_premium,
         )
     residual = basket_residual(oos_strategy_returns, factor_returns)
-    ssr = compute_ssr(oos_strategy_returns)
+    ssr = ssr_inference(oos_strategy_returns)
     verdict = evaluate_gates(
         residual,
         ssr,

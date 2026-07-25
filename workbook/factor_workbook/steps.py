@@ -112,10 +112,11 @@ S0_FRAMING = (
     "(nb02/nb03). This line illustrates how strong a hindsight-selected "
     "static portfolio looks — the lookahead/contamination problem the "
     "recall-guarded pipeline measures. Its performance is a hindsight "
-    "artifact, never attainable skill. The line's own SSR of 0.147 is far "
-    "below 1.96: LUCK-COMPATIBLE, never attainable skill. This is the "
-    "problem the following steps S1-S5 measure. No forecast-accuracy claim "
-    "is made."
+    "artifact, never attainable skill. The line's own SSR of 0.147 tests "
+    "stably above zero (one-sided MBB p < 0.05) — but that is temporal "
+    "consistency of a hindsight-selected book, beta-compatible and NOT a "
+    "skill claim. This is the problem the following steps S1-S5 measure. "
+    "No forecast-accuracy claim is made."
 )
 
 
@@ -674,11 +675,11 @@ S5_FRAMING = (
     "Luck versus skill: the contamination premium is +0.528 (paired Cohen's "
     "d = 1.93) in MEMORY, while the head-to-head premium is ~0 in P&L "
     "(total-return differential 0.028). The return differential's SSR = "
-    "0.002 under Newey-West HAC inference is statistically indistinguishable "
-    "from zero: the recall premium is LUCK-COMPATIBLE, not skill. Any excess "
-    "of the recall-enabled line is LOOKAHEAD/RECALL BIAS, never attainable "
-    "skill, and the diagnostic line is never deployable. No "
-    "forecast-accuracy claim is made."
+    "0.03 is NOT distinguishable from zero under the paper's one-sided "
+    "moving-block-bootstrap test (p = 0.22): the recall premium is "
+    "LUCK-COMPATIBLE, not skill. Any excess of the recall-enabled line is "
+    "LOOKAHEAD/RECALL BIAS, never attainable skill, and the diagnostic line "
+    "is never deployable. No forecast-accuracy claim is made."
 )
 
 
