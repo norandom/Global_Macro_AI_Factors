@@ -133,7 +133,9 @@ def main() -> None:
             "crisis_2022_max_dd": m.crisis_max_drawdown,
             "ssr": ssr.ssr, "mean_rolling_sharpe": ssr.mean_rolling_sr,
             "nw_sigma_hac": ssr.sigma_hac, "nw_bandwidth_L": ssr.L_hac,
-            "ssr_mbb_p": ssr_inf.p_value, "ssr_mbb_block": ssr_inf.block_len,
+            # No standalone MBB p column: SSR is the effect size, and the verdict
+            # sentence already carries the p-value in prose. A bare p next to a bare
+            # SSR invites thresholding one against the other.
             "ssr_verdict": ssr_inf.verdict(),
         })
 

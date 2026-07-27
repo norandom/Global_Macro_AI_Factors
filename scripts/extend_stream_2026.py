@@ -905,7 +905,7 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
             "crisis_2022_return": m.crisis_return, "crisis_2022_max_dd": m.crisis_max_drawdown,
             "ssr": ssr.ssr, "mean_rolling_sharpe": ssr.mean_rolling_sr,
             "nw_sigma_hac": ssr.sigma_hac, "nw_bandwidth_L": ssr.L_hac,
-            "ssr_mbb_p": ssr_inf.p_value, "ssr_mbb_block": ssr_inf.block_len,
+            # No standalone MBB p column — see scripts/build_tear_sheet.py.
             "ssr_verdict": ssr_inf.verdict(),
         })
         spy = factor_returns["SPY"].reindex(r.index).dropna()

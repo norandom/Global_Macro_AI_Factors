@@ -106,7 +106,7 @@ reference and BibTeX are in the repository README's Citation section.
 
 | Metric | What it is | PM feedback point |
 |---|---|---|
-| **SSR** (Sharpe Stability Ratio) | signal-to-noise of the rolling 1-year Sharpe path: mean(Z)/sigma_HAC(Z), Newey-West/Andrews — precomputed in `tear_sheet_de.csv` with a one-sided moving-block-bootstrap p-value (`ssr_mbb_p`) as the verdict | "Sharpe says how good; SSR says whether it was RELIABLY good. SSR is the effect size; the bootstrap p < 0.05 is the pass. Autocorrelation of rolling windows kills naive t-tests — the block bootstrap rebuilds it honestly." |
+| **SSR** (Sharpe Stability Ratio) | signal-to-noise of the rolling 1-year Sharpe path: mean(Z)/sigma_HAC(Z), Newey-West/Andrews — precomputed in `tear_sheet_de.csv` alongside `ssr_verdict`, which renders the one-sided moving-block-bootstrap decision and quotes its p-value in prose (there is deliberately no standalone p column — a bare p beside a bare SSR invites thresholding one against the other) | "Sharpe says how good; SSR says whether it was RELIABLY good. SSR is the effect size; the bootstrap p < 0.05 is the pass. Autocorrelation of rolling windows kills naive t-tests — the block bootstrap rebuilds it honestly." |
 | Wilson 95% CI | binomial interval for an accuracy | "Does the interval contain 0.5? Then the hit rate is coin-flip-compatible." |
 | Paired Cohen's d | mean(Δ)/std(Δ) on paired observations | "Effect size for paired designs — big d with tiny P&L difference means the effect is real but not monetizable." |
 
