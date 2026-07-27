@@ -109,7 +109,7 @@ def _residual(t=4.0, appraisal=0.9):
     )
 
 
-def _ssr(p=0.01, value=0.14):
+def _ssr(p=0.01, value=0.14, alpha=0.05):
     return SSRInference(
         result=SSRResult(
             n_obs=500,
@@ -125,7 +125,7 @@ def _ssr(p=0.01, value=0.14):
         block_len=5,
         n_boot=1000,
         seed=0,
-        alpha=0.05,
+        alpha=alpha,
     )
 
 
@@ -245,6 +245,36 @@ def test_relative_mode_fails_on_negative_t():
 
 def test_custom_thresholds():
     cfg = GateConfig(skill_t_min=3.0, ssr_alpha=0.10)
-    v = evaluate_gates(_residual(t=2.5), _ssr(p=0.08), **_PASS, config=cfg)
+    # the inference must be BUILT at the gate's alpha — the gate delegates to
+    # SSRInference.stable rather than re-encoding the rule, so the two can no
+    # longer disagree on the same object.
+    ssr = _ssr(p=0.08, alpha=0.10)
+    v = evaluate_gates(_residual(t=2.5), ssr, **_PASS, config=cfg)
     assert v.skill_pass is False  # 2.5 < 3.0
     assert v.stability_pass is True  # p=0.08 < alpha=0.10
+    assert ssr.stable is True  # gate and verdict agree
+
+
+def test_stability_gate_rejects_alpha_mismatch():
+    """A gate alpha that disagrees with the inference's alpha is a caller error."""
+    with pytest.raises(ValueError, match="ssr_alpha"):
+        evaluate_gates(_residual(), _ssr(p=0.08, alpha=0.05), **_PASS,
+                       config=GateConfig(ssr_alpha=0.10))
+
+
+def test_verdict_distinguishes_negative_from_inconclusive():
+    """A decisively negative sample must not render as 'luck-compatible'."""
+    neg = SSRInference(
+        result=SSRResult(n_obs=500, n_rolling=250, sr_full=-1.5, mean_rolling_sr=-1.5,
+                         sigma_hac=0.4, L_hac=5, ssr=-0.30),
+        sr_star=0.0, p_value=1.0, block_len=5, n_boot=1000, seed=0, alpha=0.05,
+        p_value_lower=0.0,
+    )
+    assert neg.stable is False and neg.stably_below is True
+    assert "stably BELOW" in neg.verdict()
+    assert "luck-compatible" not in neg.verdict()
+    # genuinely inconclusive: neither tail rejects
+    incon = _ssr(p=0.40, value=0.02)
+    incon = SSRInference(**{**incon.__dict__, "p_value_lower": 0.60})
+    assert incon.stably_below is False
+    assert "luck-compatible" in incon.verdict()

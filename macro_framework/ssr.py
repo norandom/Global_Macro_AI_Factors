@@ -169,33 +169,56 @@ class SSRInference:
     n_boot: int
     seed: int
     alpha: float
+    #: mirror-tail p for H0: mu_Z >= sr_star. ``p_value`` alone can only reject
+    #: UPWARD, so without this a decisively negative sample is indistinguishable
+    #: from a genuinely inconclusive one and both render as "luck-compatible".
+    p_value_lower: float = float("nan")
 
     @property
     def stable(self) -> bool:
-        return (
+        # bool(...) — np.isfinite returns np.bool_, which leaks through `and` and
+        # fails callers asserting `is False`.
+        return bool(
             np.isfinite(self.result.ssr)
             and np.isfinite(self.p_value)
             and self.p_value < self.alpha
             and self.result.mean_rolling_sr > self.sr_star
         )
 
+    @property
+    def stably_below(self) -> bool:
+        """Mirror of ``stable``: the sample rejects DOWNWARD at ``alpha``."""
+        return bool(
+            np.isfinite(self.result.ssr)
+            and np.isfinite(self.p_value_lower)
+            and self.p_value_lower < self.alpha
+            and self.result.mean_rolling_sr < self.sr_star
+        )
+
     def verdict(self, *, differential: bool = False) -> str:
         if not np.isfinite(self.result.ssr) or not np.isfinite(self.p_value):
             return "insufficient rolling observations for inference"
-        ssr, p = self.result.ssr, self.p_value
-        if differential:
-            if self.stable:
+        ssr, p, q = self.result.ssr, self.p_value, self.p_value_lower
+        subject = "differential" if differential else "rolling Sharpe"
+        star = "zero" if differential else f"{self.sr_star:g}"
+        if self.stable:
+            if differential:
                 return (f"SSR={ssr:.2f}: differential stably > 0 (one-sided MBB "
                         f"p={p:.3f} < {self.alpha:g}) — QUANTIFIED LOOKAHEAD/RECALL "
                         f"BIAS, never attainable skill")
-            return (f"SSR={ssr:.2f}: differential NOT distinguishable from zero "
-                    f"(one-sided MBB p={p:.3f}) — premium is LUCK-COMPATIBLE, not skill")
-        if self.stable:
             return (f"SSR={ssr:.2f}: rolling Sharpe stably > {self.sr_star:g} in this "
                     f"sample (one-sided MBB p={p:.3f} < {self.alpha:g}) — temporal "
                     f"consistency, not a skill claim")
-        return (f"SSR={ssr:.2f}: NOT distinguishable from {self.sr_star:g} "
-                f"(one-sided MBB p={p:.3f}) — luck-compatible")
+        # Not stable upward. Distinguish "decisively on the wrong side" from
+        # "genuinely inconclusive" — calling the former luck-compatible is false.
+        if self.stably_below:
+            return (f"SSR={ssr:.2f}: {subject} stably BELOW {star} in this sample "
+                    f"(mirror-tail MBB p={q:.3f} < {self.alpha:g}) — decisively "
+                    f"negative, NOT merely inconclusive")
+        tail = f", mirror p={q:.3f}" if np.isfinite(q) else ""
+        return (f"SSR={ssr:.2f}: {subject} NOT distinguishable from {star} "
+                f"(one-sided MBB p={p:.3f}{tail}) — luck-compatible"
+                + (", not skill" if differential else ""))
 
 
 def ssr_inference(
@@ -241,5 +264,10 @@ def ssr_inference(
         sig = np.sqrt(lr_var) if lr_var > 0 else np.nan
         draws[b] = (z.mean() - sr_star) / sig if np.isfinite(sig) and sig > 0 else np.nan
     # undefined replicates count as "failed to exceed the benchmark" (conservative)
-    p = float((np.sum(draws[np.isfinite(draws)] <= 0.0) + np.sum(~np.isfinite(draws))) / n_boot)
-    return SSRInference(res, sr_star, p, block_len, n_boot, seed, alpha)
+    ok = np.isfinite(draws)
+    n_bad = int(np.sum(~ok))
+    p = float((np.sum(draws[ok] <= 0.0) + n_bad) / n_boot)
+    # mirror tail (H0: mu_Z >= sr_star); undefined replicates again count against
+    # rejection, so both tails stay conservative rather than summing to 1.
+    p_lower = float((np.sum(draws[ok] >= 0.0) + n_bad) / n_boot)
+    return SSRInference(res, sr_star, p, block_len, n_boot, seed, alpha, p_lower)

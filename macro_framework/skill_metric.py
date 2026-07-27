@@ -153,18 +153,24 @@ def _skill_gate(residual: BasketResidual, config: GateConfig) -> tuple[bool, str
 
 
 def _stability_gate(ssr: SSRInference, config: GateConfig) -> tuple[bool, str | None]:
-    """Paper Test 1 (one-sided MBB): the rolling-Sharpe mean must exceed sr_star with
-    bootstrap p below ``ssr_alpha``. SSR itself is the effect size, not the test —
-    the pre-2026-07 rule (SSR >= 1.96) had no sqrt(n) and was unpassable by design."""
-    p, val = ssr.p_value, ssr.result.ssr
-    ok = (
-        math.isfinite(p)
-        and math.isfinite(val)
-        and p < config.ssr_alpha
-        and ssr.result.mean_rolling_sr > ssr.sr_star
-    )
+    """Paper Test 1 (one-sided MBB), delegated to ``SSRInference.stable`` — the repo's
+    single verdict authority. SSR itself is the effect size, not the test: the
+    pre-2026-07 rule (SSR >= 1.96) had no sqrt(n) and was unpassable by design.
+
+    The inference MUST be built at the gate's ``ssr_alpha``. Re-encoding the four
+    conditions here against a different alpha let the gate return PASS while
+    ``ssr.verdict()`` on the same object printed "luck-compatible".
+    """
+    if ssr.alpha != config.ssr_alpha:
+        raise ValueError(
+            f"GateConfig.ssr_alpha={config.ssr_alpha} but this SSRInference was built at "
+            f"alpha={ssr.alpha}. Rebuild it with ssr_inference(..., alpha={config.ssr_alpha}) "
+            "so the gate and ssr.verdict() cannot disagree on the same input."
+        )
+    ok = ssr.stable
     return ok, None if ok else (
-        f"stability: MBB p={p:.4g} >= {config.ssr_alpha} (SSR={val:.4g})"
+        f"stability: MBB p={ssr.p_value:.4g} >= {config.ssr_alpha} "
+        f"(SSR={ssr.result.ssr:.4g})"
     )
 
 

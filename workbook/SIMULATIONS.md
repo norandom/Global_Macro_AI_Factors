@@ -67,7 +67,7 @@ and BibTeX in the repository README's Citation section.
 - **Artifacts**: `factor_*_v1`, naive directional eval (S2), calibrator dir.
 
 ### 9. nb14 — Prompt v2 + PIT-vs-non-PIT contrast (S5)
-- **What**: v2 prompt over the same stream (REJECTED by the gate: contamination 0.271 > 0.236); non-PIT diagnostic line (identifying prompts: dates+tickers+raw levels) vs the PIT line; premium +0.528 (d=1.93) in memory, differential SSR 0.002 in returns.
+- **What**: v2 prompt over the same stream (ADOPTED by the gate: contamination 0.238 < 0.308 — the same gate REJECTED v2 on the previous run, so treat one draw either side of the threshold as noise, not a verdict); non-PIT diagnostic line (identifying prompts: dates+tickers+raw levels) vs the PIT line; premium +0.400 (d=1.37) in memory, differential SSR 0.11 at one-sided MBB p=0.056 in returns.
 - **Window**: the stream — R7.6 requires all-else-equal, so both variants share it exactly.
 - **Artifacts**: `factor_*_v2`, `factor_nonpit_diagnostic_*`, `factor_contrast_*`, `factor_luck_vs_skill_v1`.
 
@@ -84,6 +84,14 @@ and BibTeX in the repository README's Citation section.
 - **Artifacts**: `*_ext2026` files, `tear_sheet_ext2026*`, `risk_decomposition_ext2026*`, and the final trio comparison carried by `factor_equity_ext2026`, `static_bh_equity_2016_2026`, and `sjm_crowding_derisk_v2_equity_ext2026`.
 - **Why**: 2019–2024 sits inside gpt-oss-20b's training window (recall possible — the guard's regime). Post-2024-06 data is unseeable by construction. The split table reports whether the PIT-vs-non-PIT `p_memorized` premium actually collapses post-cutoff.
 - **Excel path**: `Simulation.examples.md` is the direct import guide for the shipped trio CSVs under `data-v3`; `ASSESSMENT.md` stays the older S0→S5 walkthrough pinned to `data-v2`.
+
+### 13. nb17 — SJM × crowding de-risk overlay (the trio's third seat)
+- **What**: a de-risk-only overlay on the `factor_equity_ext2026` line. At each monthly rebalance a deterministic cap table indexed by (walk-forward SJM regime × expanding-quantile crowding bucket) sets `cap`, and the book holds `cap·FactorPIT + (1−cap)·BIL`. AI is used **once**, offline, to calibrate the cap table from anonymized dev-window statistics, then replayed from a persisted artifact; runtime is pure. Caps never exceed 1 — the overlay can only de-risk, never winner-pick.
+- **v1 vs v2**: v1 was always-on and carried a chronic return drag. **v2 (shipped) is drawdown-armed**: caps engage only once the factor line is ≥3% off its trailing high. Adopted v2 config `lam=20.0, signal='absorption', window=126, scale=0.9, floor=0.4, arm=−0.03`.
+- **Window**: 2019-01-02 → 2026-06-30, tuned on the dev window 2019-01 → 2024-06 only; the holdout was evaluated once.
+- **Headline (full span, √252 / elapsed-calendar basis)**: CAGR 12.89%, ann. vol 8.57%, Sharpe 1.49, max DD −11.24%, Calmar 1.147, SSR 0.138 (one-sided MBB p = 0.000). Against the unhedged base line over the same span (CAGR 13.93%, vol 9.67%, Sharpe 1.43, max DD −12.08%, Calmar 1.153): the overlay buys a lower vol, a higher Sharpe and a shallower max drawdown with ~1pp of CAGR — but **not** a better Calmar. On the trio window (which ends 2026-01-30) it does lead Calmar, 1.55 vs 1.14; the difference is a Feb–Mar 2026 drawdown episode that lies outside that window. Quote the window with the number.
+- **Regenerated 2026-07-27** from the current loop convergence, superseding a frozen 2026-07-23 artifact whose levels no longer matched its own ledger (that line read: last 25,160.81, CAGR 13.11%, max DD −10.32%, Calmar 1.270, SSR 0.146). Only the persisted-artifact consumers moved — nb17's own tear sheet is computed live and was byte-identical across the regeneration.
+- **Artifacts**: `sjm_crowding_derisk_v2_equity_ext2026.parquet` (+ CSV mirrors; schema metadata carries a `provenance` key), `factor_loop_ledger_sjm_crowding_v2_calmar.{json,csv}`, `sjm_crowding_limits_sjm_crowding_v1.json`, `reports/nb17_sjm_crowding_tearsheet.csv`. Approach note: `docs/sjm_crowding_derisk.md` (documents **v1**; see its scope banner).
 
 ## Standing caveats (apply to every run)
 

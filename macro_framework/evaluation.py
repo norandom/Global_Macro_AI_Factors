@@ -10,6 +10,91 @@ import pandas as pd
 if TYPE_CHECKING:  # pragma: no cover
     import vectorbt as vbt
 
+#: Trading-day annualization basis (sqrt(252) volatility, the notebooks' headline).
+TRADING_DAYS = 252
+#: Calendar-year basis — vectorbt's ``year_freq`` and what
+#: ``factor_workbook.rederive`` used to build the RELEASED tear sheet.
+CALENDAR_DAYS = 365
+
+
+def cagr(value: pd.Series) -> float:
+    """Geometric growth rate on ELAPSED CALENDAR TIME. The preferred basis: it is
+    invariant to how many sessions the exchange happened to open in the window."""
+    years = max((value.index[-1] - value.index[0]).days / 365.25, 1 / 365.25)
+    return float((value.iloc[-1] / value.iloc[0]) ** (1 / years) - 1)
+
+
+def cagr_rows(value: pd.Series, *, periods_per_year: float = CALENDAR_DAYS) -> float:
+    """Geometric growth rate annualized on ROW COUNT — vectorbt's convention, kept
+    for parity with the released artifact. Sensitive to calendar coverage: the same
+    curve on a 252-row/yr trading calendar vs a 365-row/yr padded one differs."""
+    n = len(value)
+    if n < 2:
+        return 0.0
+    return float((value.iloc[-1] / value.iloc[0]) ** (periods_per_year / n) - 1)
+
+
+def max_drawdown(value: pd.Series) -> float:
+    return float((value / value.cummax() - 1).min())
+
+
+def calmar(value: pd.Series) -> float:
+    dd = max_drawdown(value)
+    return float(cagr(value) / abs(dd)) if dd else np.nan
+
+
+def metric_block(value: pd.Series) -> dict:
+    """One tear-sheet metric implementation shared by nb15_2 / nb16 / nb17 / nb18.
+
+    BOTH annualization bases are returned, explicitly named, because the repo needs
+    both: row-count/365 for vectorbt and released-artifact parity, elapsed-calendar
+    /252 for everything reader-facing. The bare keys (``cagr``, ``ann_vol``,
+    ``sharpe``, ``sortino``, ``calmar``) are the preferred calendaric/trading-day
+    primaries; the ``*_rows`` and ``*_cal`` keys are the alternates.
+
+    Never mix bases within one table. Doing so inflates vol-scaled figures by
+    sqrt(365/252)=1.20 and annualized means by 365/252=1.45 — the exact failure
+    ``tests/test_evaluation.py`` now pins against.
+    """
+    r = value.pct_change().dropna()
+    downside = np.minimum(r.to_numpy(dtype=float), 0.0)
+    downside_rms = float(np.sqrt(np.mean(downside ** 2))) if len(downside) else np.nan
+    std = float(r.std(ddof=1))
+    mean = float(r.mean())
+    dd = value / value.cummax() - 1
+    mdd = float(dd.min())
+    cg, cg_rows = cagr(value), cagr_rows(value)
+
+    def _ann(basis: int) -> tuple[float, float]:
+        root = np.sqrt(basis)
+        return (
+            float(mean / std * root) if std > 0 else np.nan,
+            float(mean / downside_rms * root) if downside_rms > 0 else np.nan,
+        )
+
+    sharpe_252, sortino_252 = _ann(TRADING_DAYS)
+    sharpe_365, sortino_365 = _ann(CALENDAR_DAYS)
+    return {
+        "returns": r,
+        "dd": dd,
+        # basis-free
+        "total_return": float(value.iloc[-1] / value.iloc[0] - 1),
+        "maxdd": mdd,
+        "downside_rms": downside_rms,
+        # preferred: elapsed-calendar growth, sqrt(252) risk
+        "cagr": cg,
+        "ann_vol": std * np.sqrt(TRADING_DAYS),
+        "sharpe": sharpe_252,
+        "sortino": sortino_252,
+        "calmar": float(cg / abs(mdd)) if mdd else np.nan,
+        # alternates: row-count growth, sqrt(365) risk (vectorbt / released artifact)
+        "cagr_rows": cg_rows,
+        "ann_vol_cal": std * np.sqrt(CALENDAR_DAYS),
+        "sharpe_cal": sharpe_365,
+        "sortino_cal": sortino_365,
+        "calmar_rows": float(cg_rows / abs(mdd)) if mdd else np.nan,
+    }
+
 
 def anticipation_lead_time(
     target_weights: pd.DataFrame,

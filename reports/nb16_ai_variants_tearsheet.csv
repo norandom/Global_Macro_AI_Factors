@@ -1,31 +1,34 @@
-,Factor PIT,Non-PIT (diagnostic),Factor PIT v2 (rejected)
-Total Return,1.655392,1.631857,0.819219
-CAGR,0.139253,0.137900,0.105003
-Ann. Volatility,0.096657,0.097537,0.077902
-Sharpe (rf=0),1.428781,1.404204,1.348902
-Downside vol (daily),0.004199,0.004180,0.003345
-Sortino,2.071896,2.064243,1.978872
-Max Drawdown,-0.120805,-0.111910,-0.124992
-Calmar,1.152713,1.232236,0.840081
-VaR 95 (daily),-0.008327,-0.008646,-0.007505
-CVaR 95 (daily),-0.013665,-0.013913,-0.011243
-Skew,-0.526856,-0.093526,-0.194609
-Excess Kurtosis,19.714161,16.677233,4.732224
-Hit Rate,0.570732,0.571274,0.563599
-SSR (Sharpe Stability),0.133965,0.141915,0.111078
-"HAC t (mean, NW)",3.808852,3.856531,3.154252
-Correlation to SPY,0.492569,0.509903,0.548340
-Beta (SPY),0.235426,0.249475,0.212799
-Active Return (ann.),-0.038164,-0.033569,-0.051308
-Tracking Error (ann.),0.171349,0.169396,0.170848
-Information Ratio,-0.222725,-0.198168,-0.300313
-SPY regression R2,0.242624,0.260001,0.300677
-SPY regression intercept (ann.),0.101723,0.103748,0.077746
-SPY residual vol (ann.),0.081885,0.082855,0.065117
-SPY appraisal ratio,1.242267,1.252164,1.193936
-SPY intercept t-stat (HAC),3.716430,3.839140,2.933659
-Basket R2 (4-ETF),0.811059,0.840104,0.923354
-Basket intercept (ann.),0.013062,0.012203,0.008431
-Basket residual vol (ann.),0.040922,0.038316,0.021552
-Basket appraisal ratio,0.319197,0.318480,0.391163
-Basket intercept t-stat (HAC),0.948301,1.320416,0.911249
+,Factor PIT,Non-PIT (diagnostic),Factor PIT v2 (prompt variant)
+Total Return,1.655392,1.631857,0.928789
+CAGR,0.139253,0.137900,0.115728
+Ann. Volatility,0.096657,0.097537,0.078301
+Sharpe (rf=0),1.428781,1.404204,1.468865
+Downside vol (daily),0.004199,0.004180,0.003318
+Sortino,2.071896,2.064243,2.183790
+Max Drawdown,-0.120805,-0.111910,-0.112320
+Calmar,1.152713,1.232236,1.030342
+VaR 95 (daily),-0.008327,-0.008646,-0.007274
+CVaR 95 (daily),-0.013665,-0.013913,-0.010949
+Skew,-0.526856,-0.093526,-0.075635
+Excess Kurtosis,19.714161,16.677233,9.212695
+Hit Rate,0.570732,0.571274,0.562542
+SSR (Sharpe Stability),0.133965,0.141915,0.124863
+SSR MBB p (one-sided),0.000000,0.000000,0.000000
+SSR MBB p (mirror tail),1.000000,1.000000,1.000000
+SSR verdict,"SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.000 < 0.05) — temporal consistency, not a skill claim","SSR=0.14: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.000 < 0.05) — temporal consistency, not a skill claim","SSR=0.12: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.000 < 0.05) — temporal consistency, not a skill claim"
+"HAC t (mean, NW)",3.808852,3.856531,3.383285
+Correlation to SPY,0.492569,0.509903,0.538175
+Beta (SPY),0.235426,0.249475,0.210352
+Active Return (ann.),-0.038164,-0.033569,-0.041627
+Tracking Error (ann.),0.171349,0.169396,0.171620
+Information Ratio,-0.222725,-0.198168,-0.242554
+SPY regression R2,0.242624,0.260001,0.289632
+SPY regression intercept (ann.),0.101723,0.103748,0.087881
+SPY residual vol (ann.),0.081885,0.082855,0.066078
+SPY appraisal ratio,1.242267,1.252164,1.329966
+SPY intercept t-stat (HAC),3.716430,3.839140,3.292442
+Basket R2 (4-ETF),0.811059,0.840104,0.913874
+Basket intercept (ann.),0.013062,0.012203,0.018953
+Basket residual vol (ann.),0.040922,0.038316,0.023070
+Basket appraisal ratio,0.319197,0.318480,0.821571
+Basket intercept t-stat (HAC),0.948301,1.320416,1.946189

@@ -1,0 +1,2319 @@
+{
+  "best_config": {
+    "axes": [
+      "growth",
+      "inflation",
+      "policy",
+      "risk"
+    ],
+    "blend": 0.3,
+    "conviction": 1.0,
+    "exposure": "default",
+    "overlay": {
+      "arm": -0.03,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "prompt": "default",
+    "regime_view": 0.0,
+    "tau": 0.05
+  },
+  "config": {
+    "axes": [
+      "growth",
+      "inflation",
+      "policy",
+      "risk"
+    ],
+    "blend": 0.3,
+    "conviction": 1.0,
+    "exposure": "default",
+    "overlay": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 50.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 252
+    },
+    "prompt": "default",
+    "regime_view": 0.0,
+    "tau": 0.05
+  },
+  "entries": [
+    {
+      "appraisal": 0.8120696003583808,
+      "decision": "KEEP",
+      "iteration": 0,
+      "mutation": null,
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07147167542425481,
+          "dev_calmar": 0.8120696003583808,
+          "dev_maxdd": -0.08801176080561701
+        }
+      }
+    },
+    {
+      "appraisal": 0.9107122501714557,
+      "decision": "KEEP",
+      "iteration": 1,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07522402951342921,
+          "dev_calmar": 0.9107122501714557,
+          "dev_maxdd": -0.08259911898546124
+        }
+      }
+    },
+    {
+      "appraisal": 0.6969112626311068,
+      "decision": "REVERT",
+      "iteration": 2,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": "budget: CAGR 6.94% vs floor 7.11%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.06939496600109085,
+          "dev_calmar": 0.6969112626311068,
+          "dev_maxdd": -0.09957503877767493
+        }
+      }
+    },
+    {
+      "appraisal": 0.9032663507537055,
+      "decision": "REVERT",
+      "iteration": 3,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07460900478146959,
+          "dev_calmar": 0.9032663507537055,
+          "dev_maxdd": -0.08259911898546224
+        }
+      }
+    },
+    {
+      "appraisal": 0.7217905181036637,
+      "decision": "REVERT",
+      "iteration": 4,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": "budget: CAGR 6.98% vs floor 7.11%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.06983729207253386,
+          "dev_calmar": 0.7217905181036637,
+          "dev_maxdd": -0.0967556241331835
+        }
+      }
+    },
+    {
+      "appraisal": 0.9464250056977235,
+      "decision": "KEEP",
+      "iteration": 5,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.0817446289429804,
+          "dev_calmar": 0.9464250056977235,
+          "dev_maxdd": -0.08637200882357987
+        }
+      }
+    },
+    {
+      "appraisal": 0.7475806511752638,
+      "decision": "REVERT",
+      "iteration": 6,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07720871948383445,
+          "dev_calmar": 0.7475806511752638,
+          "dev_maxdd": -0.1032781136890788
+        }
+      }
+    },
+    {
+      "appraisal": 0.8812092868764482,
+      "decision": "REVERT",
+      "iteration": 7,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09156694508098995,
+          "dev_calmar": 0.8812092868764482,
+          "dev_maxdd": -0.10391055387711579
+        }
+      }
+    },
+    {
+      "appraisal": 0.9430783901400983,
+      "decision": "REVERT",
+      "iteration": 8,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.08001781909540373,
+          "dev_calmar": 0.9430783901400983,
+          "dev_maxdd": -0.08484747390247882
+        }
+      }
+    },
+    {
+      "appraisal": 0.9107122501714557,
+      "decision": "REVERT",
+      "iteration": 9,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07522402951342921,
+          "dev_calmar": 0.9107122501714557,
+          "dev_maxdd": -0.08259911898546124
+        }
+      }
+    },
+    {
+      "appraisal": 0.9464140704057729,
+      "decision": "REVERT",
+      "iteration": 10,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07366125762752684,
+          "dev_calmar": 0.9464140704057729,
+          "dev_maxdd": -0.07783195530466358
+        }
+      }
+    },
+    {
+      "appraisal": 0.9350328767183134,
+      "decision": "REVERT",
+      "iteration": 11,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.1,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.08869209844880932,
+          "dev_calmar": 0.9350328767183134,
+          "dev_maxdd": -0.0948545240035753
+        }
+      }
+    },
+    {
+      "appraisal": 0.9388613789433435,
+      "decision": "REVERT",
+      "iteration": 12,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.2,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09338234185794358,
+          "dev_calmar": 0.9388613789433435,
+          "dev_maxdd": -0.09946339678285865
+        }
+      }
+    },
+    {
+      "appraisal": 0.9369928892979177,
+      "decision": "REVERT",
+      "iteration": 13,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.3,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09629570659070974,
+          "dev_calmar": 0.9369928892979177,
+          "dev_maxdd": -0.10277101106163511
+        }
+      }
+    },
+    {
+      "appraisal": 0.9464250056977235,
+      "decision": "REVERT",
+      "iteration": 14,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.5,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.0817446289429804,
+          "dev_calmar": 0.9464250056977235,
+          "dev_maxdd": -0.08637200882357987
+        }
+      }
+    },
+    {
+      "appraisal": 0.9464250056977235,
+      "decision": "REVERT",
+      "iteration": 15,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.3,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.0817446289429804,
+          "dev_calmar": 0.9464250056977235,
+          "dev_maxdd": -0.08637200882357987
+        }
+      }
+    },
+    {
+      "appraisal": 1.0807368085473215,
+      "decision": "KEEP",
+      "iteration": 16,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09781455462634558,
+          "dev_calmar": 1.0807368085473215,
+          "dev_maxdd": -0.09050728526385954
+        }
+      }
+    },
+    {
+      "appraisal": 0.8723400095555743,
+      "decision": "REVERT",
+      "iteration": 17,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09363424573831014,
+          "dev_calmar": 0.8723400095555743,
+          "dev_maxdd": -0.10733686946906562
+        }
+      }
+    },
+    {
+      "appraisal": 0.9364364023763364,
+      "decision": "REVERT",
+      "iteration": 18,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09978657880759534,
+          "dev_calmar": 0.9364364023763364,
+          "dev_maxdd": -0.10655991005301924
+        }
+      }
+    },
+    {
+      "appraisal": 1.0756782304814771,
+      "decision": "REVERT",
+      "iteration": 19,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "turbulence",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09735671645831045,
+          "dev_calmar": 1.0756782304814771,
+          "dev_maxdd": -0.09050728526385932
+        }
+      }
+    },
+    {
+      "appraisal": 1.056233498762897,
+      "decision": "REVERT",
+      "iteration": 20,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.0,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09225339807555022,
+          "dev_calmar": 1.056233498762897,
+          "dev_maxdd": -0.08734185971530073
+        }
+      }
+    },
+    {
+      "appraisal": 1.1203581270516634,
+      "decision": "KEEP",
+      "iteration": 21,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09411634313613049,
+          "dev_calmar": 1.1203581270516634,
+          "dev_maxdd": -0.0840055879130428
+        }
+      }
+    },
+    {
+      "appraisal": 0.9106769430706071,
+      "decision": "REVERT",
+      "iteration": 22,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09037247548666838,
+          "dev_calmar": 0.9106769430706071,
+          "dev_maxdd": -0.09923659116914918
+        }
+      }
+    },
+    {
+      "appraisal": 0.9737578444095589,
+      "decision": "REVERT",
+      "iteration": 23,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09593085041430638,
+          "dev_calmar": 0.9737578444095589,
+          "dev_maxdd": -0.09851612591883596
+        }
+      }
+    },
+    {
+      "appraisal": 1.1154226112900405,
+      "decision": "REVERT",
+      "iteration": 24,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09370173223292078,
+          "dev_calmar": 1.1154226112900405,
+          "dev_maxdd": -0.08400558791304236
+        }
+      }
+    },
+    {
+      "appraisal": 1.0982482414157089,
+      "decision": "REVERT",
+      "iteration": 25,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.08911367547539362,
+          "dev_calmar": 1.0982482414157089,
+          "dev_maxdd": -0.0811416509627374
+        }
+      }
+    },
+    {
+      "appraisal": 1.0297751731532112,
+      "decision": "REVERT",
+      "iteration": 26,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.1,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09986546319985279,
+          "dev_calmar": 1.0297751731532112,
+          "dev_maxdd": -0.09697792858421794
+        }
+      }
+    },
+    {
+      "appraisal": 1.0051146193275948,
+      "decision": "REVERT",
+      "iteration": 27,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.2,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.10142876488800745,
+          "dev_calmar": 1.0051146193275948,
+          "dev_maxdd": -0.10091263517374927
+        }
+      }
+    },
+    {
+      "appraisal": 0.9857711427051526,
+      "decision": "REVERT",
+      "iteration": 28,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.3,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.10244706505860113,
+          "dev_calmar": 0.9857711427051526,
+          "dev_maxdd": -0.10392581058669048
+        }
+      }
+    },
+    {
+      "appraisal": 1.0952359141684622,
+      "decision": "REVERT",
+      "iteration": 29,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.5,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.0946729039590819,
+          "dev_calmar": 1.0952359141684622,
+          "dev_maxdd": -0.08644064966675291
+        }
+      }
+    },
+    {
+      "appraisal": 1.1203581270516634,
+      "decision": "REVERT",
+      "iteration": 30,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.3,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09411634313613049,
+          "dev_calmar": 1.1203581270516634,
+          "dev_maxdd": -0.0840055879130428
+        }
+      }
+    },
+    {
+      "appraisal": 0.9464140704057729,
+      "decision": "REVERT",
+      "iteration": 31,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.07366125762752684,
+          "dev_calmar": 0.9464140704057729,
+          "dev_maxdd": -0.07783195530466358
+        }
+      }
+    },
+    {
+      "appraisal": 1.1564782022665763,
+      "decision": "KEEP",
+      "iteration": 32,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.10025795652191438,
+          "dev_calmar": 1.1564782022665763,
+          "dev_maxdd": -0.08669247403489255
+        }
+      }
+    },
+    {
+      "appraisal": 0.9496319830961817,
+      "decision": "REVERT",
+      "iteration": 33,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09674736706361342,
+          "dev_calmar": 0.9496319830961817,
+          "dev_maxdd": -0.10187880019392159
+        }
+      }
+    },
+    {
+      "appraisal": 1.0147700362827066,
+      "decision": "REVERT",
+      "iteration": 34,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.1017937655614296,
+          "dev_calmar": 1.0147700362827066,
+          "dev_maxdd": -0.10031215144499073
+        }
+      }
+    },
+    {
+      "appraisal": 1.1475046013317798,
+      "decision": "REVERT",
+      "iteration": 35,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09948001285587593,
+          "dev_calmar": 1.1475046013317798,
+          "dev_maxdd": -0.08669247403489333
+        }
+      }
+    },
+    {
+      "appraisal": 1.174619160355328,
+      "decision": "KEEP",
+      "iteration": 36,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09847647356755784,
+          "dev_calmar": 1.174619160355328,
+          "dev_maxdd": -0.08383693786994606
+        }
+      }
+    },
+    {
+      "appraisal": 0.9554207821154084,
+      "decision": "REVERT",
+      "iteration": 37,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 252
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09465424906534836,
+          "dev_calmar": 0.9554207821154084,
+          "dev_maxdd": -0.0990707454110149
+        }
+      }
+    },
+    {
+      "appraisal": 1.1754682642310814,
+      "decision": "KEEP",
+      "iteration": 38,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09854765983643476,
+          "dev_calmar": 1.1754682642310814,
+          "dev_maxdd": -0.08383693786994628
+        }
+      }
+    },
+    {
+      "appraisal": 0.9561368216592773,
+      "decision": "REVERT",
+      "iteration": 39,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 100.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09472518763670301,
+          "dev_calmar": 0.9561368216592773,
+          "dev_maxdd": -0.09907074541101468
+        }
+      }
+    },
+    {
+      "appraisal": 1.010746443610523,
+      "decision": "REVERT",
+      "iteration": 40,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 504
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.0957939114782409,
+          "dev_calmar": 1.010746443610523,
+          "dev_maxdd": -0.09477541284840152
+        }
+      }
+    },
+    {
+      "appraisal": 1.0147700362827066,
+      "decision": "REVERT",
+      "iteration": 41,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "turbulence",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.1017937655614296,
+          "dev_calmar": 1.0147700362827066,
+          "dev_maxdd": -0.10031215144499073
+        }
+      }
+    },
+    {
+      "appraisal": 1.066285959932694,
+      "decision": "REVERT",
+      "iteration": 42,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.1,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.10093011880597214,
+          "dev_calmar": 1.066285959932694,
+          "dev_maxdd": -0.09465577021415816
+        }
+      }
+    },
+    {
+      "appraisal": 1.01756784894328,
+      "decision": "REVERT",
+      "iteration": 43,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.2,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.10179469989374668,
+          "dev_calmar": 1.01756784894328,
+          "dev_maxdd": -0.10003726041409233
+        }
+      }
+    },
+    {
+      "appraisal": 0.9860034216061011,
+      "decision": "REVERT",
+      "iteration": 44,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 1.3,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.10247120483166428,
+          "dev_calmar": 0.9860034216061011,
+          "dev_maxdd": -0.10392581058669037
+        }
+      }
+    },
+    {
+      "appraisal": 1.1487070049959334,
+      "decision": "REVERT",
+      "iteration": 45,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.5,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09910176530940351,
+          "dev_calmar": 1.1487070049959334,
+          "dev_maxdd": -0.08627244795965561
+        }
+      }
+    },
+    {
+      "appraisal": 1.1754682642310814,
+      "decision": "REVERT",
+      "iteration": 46,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.03,
+          "floor": 0.3,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09854765983643476,
+          "dev_calmar": 1.1754682642310814,
+          "dev_maxdd": -0.08383693786994628
+        }
+      }
+    },
+    {
+      "appraisal": 0.9033145051517298,
+      "decision": "REVERT",
+      "iteration": 47,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": null,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": "budget: CAGR 6.73% vs floor 7.11%",
+        "passed": false,
+        "values": {
+          "dev_cagr": 0.06725412911227369,
+          "dev_calmar": 0.9033145051517298,
+          "dev_maxdd": -0.07445261725424968
+        }
+      }
+    },
+    {
+      "appraisal": 1.09631295218266,
+      "decision": "REVERT",
+      "iteration": 48,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.02,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.08895664291193484,
+          "dev_calmar": 1.09631295218266,
+          "dev_maxdd": -0.08114165096273851
+        }
+      }
+    },
+    {
+      "appraisal": 0.9961559740955079,
+      "decision": "REVERT",
+      "iteration": 49,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.04,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09473393835969612,
+          "dev_calmar": 0.9961559740955079,
+          "dev_maxdd": -0.09509950331393924
+        }
+      }
+    },
+    {
+      "appraisal": 1.0002278987710291,
+      "decision": "REVERT",
+      "iteration": 50,
+      "mutation": {
+        "kind": "overlay",
+        "param": "overlay",
+        "rescoring": false,
+        "value": {
+          "arm": -0.05,
+          "floor": 0.4,
+          "lam": 20.0,
+          "limits": {
+            "bear": {
+              "0": 1.0,
+              "1": 0.8,
+              "2": 0.5
+            },
+            "bull": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            },
+            "neutral": {
+              "0": 1.0,
+              "1": 0.9,
+              "2": 0.8
+            }
+          },
+          "scale": 0.9,
+          "signal": "absorption",
+          "window": 126
+        }
+      },
+      "verdict": {
+        "first_failure": null,
+        "passed": true,
+        "values": {
+          "dev_cagr": 0.09664199799434603,
+          "dev_calmar": 1.0002278987710291,
+          "dev_maxdd": -0.09661997842000725
+        }
+      }
+    }
+  ],
+  "run_header": {
+    "annualization_basis": "calendar/sqrt-252",
+    "built_at": "2026-07-27T09:04:08.733205+00:00",
+    "cutoff": null,
+    "gate_config": {
+      "calmar_tolerance": 0.0,
+      "maxdd_tolerance": 0.0,
+      "mode": "absolute",
+      "recall_premium_max": 0.05,
+      "skill_t_min": 2.0,
+      "ssr_alpha": 0.05
+    },
+    "model": null,
+    "oos_window": [
+      "2019-01-03",
+      "2024-06-30"
+    ],
+    "periods_per_year": 252,
+    "provenance": "Regenerated 2026-07-27 (user-approved) from this notebook's loop. SUPERSEDES the frozen 2026-07-23 ledger, whose best_config.overlay was signal='turbulence'/window=504 \u2014 a convergence this loop does not reproduce and which disagreed with the equity artifact it shipped with.",
+    "run_id": "sjm_crowding_v2_calmar",
+    "seed": 42
+  }
+}

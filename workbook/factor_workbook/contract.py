@@ -19,6 +19,12 @@ entirely-null column satisfies any contract dtype: parquet writers persist
 all-null columns as ``object`` or ``float64`` depending on origin
 (``raw_ref_delta`` differs across the published evidence members).
 
+Columns listed in ``AssetSpec.optional`` are the one exception to fail-fast on
+absence: a release tag is immutable, so a column added after a tag was cut can
+never appear in it. Those columns validate exactly like any other when present
+and are simply absent otherwise, which is what keeps the shipped default
+``data-v2`` (HAC-only luck-vs-skill table, no MBB columns) loadable.
+
 JSON specs use dotted key paths as "columns" (e.g. ``meta.nim_model``) with
 JSON type names as "dtypes"; the decision logs share a common per-date shape
 while their ``meta`` blocks differ per variant (v1 carries cutoff/holdout
@@ -136,6 +142,9 @@ class AssetSpec:
             ``tar_*`` kinds.
         row_container: JSON only — dotted path of the container whose length
             is checked against ``min_rows`` (e.g. the per-date dict).
+        optional: Subset of ``columns`` that later releases added: absence is
+            tolerated (an older, immutable release predates them), presence is
+            validated exactly like any other contracted column.
     """
 
     asset: str
@@ -146,6 +155,7 @@ class AssetSpec:
     expected_rows: int = 0
     member: str | None = None
     row_container: str | None = None
+    optional: frozenset[str] = frozenset()
 
 
 def _monthly(asset: str, columns: dict[str, str]) -> AssetSpec:
@@ -274,6 +284,9 @@ ASSET_SPECS: dict[str, AssetSpec] = {
         },
         min_rows=3,
         expected_rows=3,
+        # the MBB inference columns post-date the immutable data-v2 release,
+        # which ships the HAC-only table — tolerated absent, validated present
+        optional=frozenset({"mbb_p", "mbb_block"}),
     ),
     # -- JSON summaries --------------------------------------------------------
     "factor_stability_v1": AssetSpec(
@@ -470,6 +483,8 @@ def _validate_frame(spec: AssetSpec, df: pd.DataFrame) -> None:
         )
     for column, expected in spec.columns.items():
         if column not in df.columns:
+            if column in spec.optional:
+                continue  # added by a later release; older tags predate it
             raise SchemaError(
                 f"asset {spec.asset}: missing column {column!r} (expected dtype {expected})"
             )

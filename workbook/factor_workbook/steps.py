@@ -12,6 +12,7 @@ exonerated — with its recorded error.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import pandas as pd
@@ -28,7 +29,7 @@ from factor_workbook.rederive import (
     wilson_ci,
 )
 from factor_workbook.release import ReleaseClient, ReleaseError
-from factor_workbook.vendored_ssr import compute_ssr
+from factor_workbook.vendored_ssr import SSRInference, ssr_inference
 from factor_workbook.verify import Check, compare
 
 _N_SPLITS = 5  # certification_stats default; each arm needs >= this many rows
@@ -87,9 +88,37 @@ _S0_METRIC_FIELDS = [
     "max_drawdown",
 ]
 
-#: Published static_bh_ssr fields; the vendored ``compute_ssr`` attributes
-#: carry the same names (same producer, exact full-data agreement).
+#: Published static_bh_ssr fields; the vendored ``SSRResult`` attributes carry
+#: the same names (same producer, exact full-data agreement).
 _S0_SSR_FIELDS = ["ssr", "mean_rolling_sr", "sigma_hac", "L_hac", "n_rolling"]
+
+
+def _claim_check(name: str, holds: bool, inference: SSRInference) -> Check:
+    """Re-derive one framing sentence's verdict bit as a 1/0 check row (R7.2).
+
+    The framing states a conclusion; ``vendored_ssr.ssr_inference`` is the only
+    thing allowed to decide whether it holds — never a threshold re-encoded
+    here. A degenerate inference (too few rolling observations, as on the
+    fixture subsets) can neither confirm nor deny the claim, so it renders as a
+    disagreement rather than passing by default.
+    """
+    return compare(name, 1.0, float(holds and math.isfinite(inference.p_value)))
+
+
+def _inference_row(label: str, inference: SSRInference, *, differential: bool = False) -> dict:
+    """One re-derived MBB-inference row: p-values, block length, verdict."""
+    return {
+        "line": label,
+        "ssr": inference.result.ssr,
+        "mbb_p": inference.p_value,
+        "mbb_p_mirror": inference.p_value_lower,
+        "mbb_block": inference.block_len,
+        "n_boot": inference.n_boot,
+        "alpha": inference.alpha,
+        "stable": inference.stable,
+        "stably_below": inference.stably_below,
+        "verdict_rederived": inference.verdict(differential=differential),
+    }
 
 #: Per-episode crisis fields re-derived via ``equity_metrics(value, crisis=...)``.
 _S0_CRISIS_FIELDS = ["crisis_return", "crisis_max_drawdown", "crisis_vol_ann"]
@@ -133,9 +162,14 @@ def build_s0(client: ReleaseClient) -> StepView:
     one row per named macro-crisis episode per window. Every published
     static-line figure is re-derived from the loaded equity series and
     attached as a check: the seven equity metrics, the five SSR fields
-    (vendored ``compute_ssr`` over daily returns), and the per-episode
+    (vendored ``ssr_inference`` over daily returns), and the per-episode
     crisis figures; on fixture-sized subsets the disagreements are rendered
-    flags, never exceptions (R7.2). On ``data-v1`` the assets are absent and
+    flags, never exceptions (R7.2). The ``inference`` table carries what the
+    published stats do not: the paper's one-sided moving-block-bootstrap
+    p-value, its mirror tail, the block length, and the rendered verdict — and
+    the framing's "tests stably above zero" sentence is re-derived from it as
+    its own check row, so the headline claim is never asserted on trust. On
+    ``data-v1`` the assets are absent and
     the loaders raise the typed per-asset :class:`ReleaseError`, which the
     Excel surface renders in-cell (R1.4).
 
@@ -150,6 +184,7 @@ def build_s0(client: ReleaseClient) -> StepView:
     checks: list[Check] = []
     stats_rows: list[dict] = []
     episode_rows: list[dict] = []
+    inference_rows: list[dict] = []
     for window, key, table_name in _S0_WINDOWS:
         values, _ = load_frame(client, key)
         value = values["value"]
@@ -174,7 +209,16 @@ def build_s0(client: ReleaseClient) -> StepView:
                     getattr(metrics, field),
                 )
             )
-        ssr = compute_ssr(value.pct_change().dropna())
+        inference = ssr_inference(value.pct_change().dropna())
+        ssr = inference.result
+        inference_rows.append(_inference_row(window, inference))
+        checks.append(
+            _claim_check(
+                f"S0 {window} framing claim 'SSR tests stably above zero' (1 = holds)",
+                inference.stable,
+                inference,
+            )
+        )
         for field in _S0_SSR_FIELDS:
             stats_rows.append(
                 {
@@ -210,6 +254,7 @@ def build_s0(client: ReleaseClient) -> StepView:
     tables["targets_drift"] = targets
     tables["stats"] = pd.DataFrame(stats_rows)
     tables["crisis_episodes"] = pd.DataFrame(episode_rows)
+    tables["inference"] = pd.DataFrame(inference_rows)
     return StepView(
         title="S0 — Static buy-and-hold line (hindsight-selected, in-sample)",
         framing=S0_FRAMING,
@@ -413,10 +458,12 @@ S3_FRAMING = (
     "figures. The recall guard discounts every raw tilt by the measured "
     "memorization score — guarded = raw * (1 - p_memorized) — re-derived "
     "here and checked against the published guarded values. The prompt-v2 "
-    "refinement was rejected by the accept-gate on contamination (mean "
-    "p_memorized 0.2709 vs 0.2361) even though every performance check "
-    "passed; both prompt versions' data are preserved as alternatives. "
-    "No forecast-accuracy claim is made."
+    "refinement was adopted by the accept-gate on contamination (mean "
+    "p_memorized 0.2384 vs 0.3080) and every performance check passed. "
+    "The same gate rejected v2 on the previous run of the same notebook, so "
+    "the decision is one draw from a non-deterministic generator, not a "
+    "settled ranking; both prompt versions' data are preserved as "
+    "alternatives. No forecast-accuracy claim is made."
 )
 
 
@@ -649,7 +696,8 @@ def build_s4(client: ReleaseClient) -> StepView:
 
 
 #: Published->re-derived field mapping of the S5 Sharpe-stability table (R6.2):
-#: ``factor_luck_vs_skill_v1`` columns to vendored ``SSRResult`` attributes.
+#: ``factor_luck_vs_skill_v1`` columns to vendored ``SSRResult`` attributes
+#: (``ssr_inference(...).result``).
 _S5_SSR_FIELDS = {
     "n_obs": "n_obs",
     "n_rolling": "n_rolling",
@@ -672,11 +720,15 @@ _S5_DIFF_TOL = 1e-3
 
 #: Luck-vs-skill conclusion framing for S5 (R6.3, R7.3) — the recorded terms.
 S5_FRAMING = (
-    "Luck versus skill: the contamination premium is +0.528 (paired Cohen's "
-    "d = 1.93) in MEMORY, while the head-to-head premium is ~0 in P&L "
-    "(total-return differential 0.028). The return differential's SSR = "
-    "0.03 is NOT distinguishable from zero under the paper's one-sided "
-    "moving-block-bootstrap test (p = 0.22): the recall premium is "
+    "Luck versus skill: the contamination premium is +0.400 (paired Cohen's "
+    "d = 1.37) in MEMORY, while the head-to-head premium is statistically "
+    "~0 in P&L (total-return differential 0.174 over the sample, not "
+    "separable from zero). The "
+    "return differential's SSR = "
+    "0.11 is NOT distinguishable from zero under the paper's one-sided "
+    "moving-block-bootstrap test (p = 0.056, marginally above the 0.05 "
+    "threshold — the P&L reading is weak evidence, not a clean null): "
+    "the recall premium is "
     "LUCK-COMPATIBLE, not skill. Any excess of the recall-enabled line is "
     "LOOKAHEAD/RECALL BIAS, never attainable skill, and the diagnostic line "
     "is never deployable. No forecast-accuracy claim is made."
@@ -697,12 +749,18 @@ def build_s5(client: ReleaseClient) -> StepView:
     table (``ssr``) carries the three published ``factor_luck_vs_skill_v1``
     rows — deployable line, diagnostic line, return differential, including
     the Newey-West long-run variance treatment — next to the vendored
-    ``compute_ssr`` re-derivation over the loaded equity series, sliced at
+    ``ssr_inference`` re-derivation over the loaded equity series, sliced at
     the first rebalance date exactly as the producer built them, with the
     differential as the date-aligned non-PIT-minus-PIT daily returns (R6.2).
     Per-line SSR and total-return checks compare re-derived against published
     at the documented tolerances; on fixture-sized subsets the disagreement
-    is a rendered flag, never an exception (R7.2). The PIT-vs-non-PIT
+    is a rendered flag, never an exception (R7.2). SSR is only the effect
+    size, so the verdict comes from the paper's one-sided moving-block
+    bootstrap: the MBB p-value, its block length, and the rendered verdict
+    string sit beside the published ones, the p-value is checked against the
+    published ``mbb_p`` where the release carries it (data-v2 predates those
+    columns), and the framing's "not distinguishable from zero" sentence is
+    re-derived as its own check row. The PIT-vs-non-PIT
     loading-stability comparison (``loading_stability``, research.md §5) is
     re-derived from the loaded loadings tables. The framing states the
     recorded conclusion: luck-compatible, lookahead/recall bias, never
@@ -767,9 +825,12 @@ def build_s5(client: ReleaseClient) -> StepView:
     total_return["differential"] = total_return["nonpit"] - total_return["pit"]
 
     ssr_rows: list[dict] = []
+    has_published_mbb = "mbb_p" in published_ssr.columns  # absent on data-v2
     for i, line in enumerate(("pit", "nonpit", "differential")):
         published = published_ssr.iloc[i]
-        result = compute_ssr(returns[line])
+        differential = line == "differential"
+        inference = ssr_inference(returns[line])
+        result = inference.result
         row: dict = {"line": published_ssr.index[i]}
         for column, attr in _S5_SSR_FIELDS.items():
             row[f"{column}_published"] = published[column]
@@ -778,9 +839,14 @@ def build_s5(client: ReleaseClient) -> StepView:
         row["nw_long_run_var_rederived"] = float(result.sigma_hac) ** 2
         row["total_return_published"] = published["total_return"]
         row["total_return_rederived"] = total_return[line]
+        row["mbb_p_published"] = published.get("mbb_p")
+        row["mbb_p_rederived"] = inference.p_value
+        row["mbb_block_published"] = published.get("mbb_block")
+        row["mbb_block_rederived"] = inference.block_len
         row["verdict"] = published["verdict"]
+        row["verdict_rederived"] = inference.verdict(differential=differential)
         ssr_rows.append(row)
-        tol = _S5_DIFF_TOL if line == "differential" else 1e-6
+        tol = _S5_DIFF_TOL if differential else 1e-6
         checks.append(
             compare(f"S5 {line} ssr vs published", published["ssr"], result.ssr, tol=tol)
         )
@@ -792,6 +858,24 @@ def build_s5(client: ReleaseClient) -> StepView:
                 tol=tol,
             )
         )
+        if has_published_mbb:
+            # a bootstrap p is a count/n_boot: exact reproduction or nothing
+            checks.append(
+                compare(
+                    f"S5 {line} mbb_p vs published",
+                    published["mbb_p"],
+                    inference.p_value,
+                )
+            )
+        if differential:
+            checks.append(
+                _claim_check(
+                    "S5 framing claim 'differential NOT distinguishable from zero' "
+                    "(1 = holds)",
+                    not (inference.stable or inference.stably_below),
+                    inference,
+                )
+            )
     tables["ssr"] = pd.DataFrame(ssr_rows)
 
     stability_rows: list[dict] = []

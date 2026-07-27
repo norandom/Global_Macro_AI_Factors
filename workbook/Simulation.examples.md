@@ -89,7 +89,10 @@ That keeps the same sheet, charts, and formulas while swapping the underlying li
 let
     Source = Csv.Document(
         Web.Contents("https://github.com/norandom/Global_Macro_AI_Factors/releases/download/data-v3/tear_sheet_trio_ext2026_de.csv"),
-        [Delimiter=";", Encoding=65001, QuoteStyle=QuoteStyle.None]
+        // QuoteStyle.Csv, not .None: the "Model note (REF)" column contains a
+        // semicolon and is written quoted. QuoteStyle.None would split that row
+        // into extra columns.
+        [Delimiter=";", Encoding=65001, QuoteStyle=QuoteStyle.Csv]
     ),
     PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars=true])
 in

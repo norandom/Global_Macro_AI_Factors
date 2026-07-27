@@ -2,10 +2,18 @@
 
 ``factor_workbook.vendored_ssr`` is a verbatim copy of
 ``macro_framework/ssr.py``. In the root environment (pytest run from the repo
-root, where ``macro_framework`` is importable) both implementations are run on
-identical inputs and every ``SSRResult`` field must match exactly. Outside the
-root environment the parity tests auto-skip, but the vendored module must
-still import and compute standalone on numpy/pandas alone.
+root, where ``macro_framework`` is importable) the vendored file is compared
+byte for byte against the source, and both implementations are run on
+identical inputs so every ``SSRResult`` field matches exactly. Outside the root
+environment the parity tests auto-skip, but the vendored module must still
+import and compute standalone on numpy/pandas alone.
+
+Parity covers the VERDICT path too, not just the point estimates: SSR is an
+effect size, the one-sided moving-block-bootstrap p-value is what decides the
+storyboard's headline claims, and ``SSRInference.verdict()`` is the single
+rendering of that decision. Both the p-values (main and mirror tail) and the
+verdict string must be identical to the root module's, or the workbook would
+re-derive a different conclusion than the repo it mirrors.
 """
 
 import dataclasses
@@ -67,6 +75,25 @@ def _assert_results_equal(vendored, original) -> None:
 
 @pytest.mark.skipif(original_ssr is None, reason="macro_framework not importable")
 class TestParityWithOriginal:
+    def test_vendored_body_is_byte_identical_to_the_source(self):
+        """The header's "VERBATIM" claim, enforced rather than asserted.
+
+        Behavioral parity tests only catch drift on the inputs they happen to
+        exercise; this catches it on the first character. A failure here is not
+        a bug in either module — it means macro_framework/ssr.py moved and the
+        vendored copy must be regenerated from it (header + source, verbatim).
+        """
+        source = (_REPO_ROOT / "macro_framework" / "ssr.py").read_text(encoding="utf-8")
+        vendored = Path(vendored_ssr.__file__).read_text(encoding="utf-8")
+        header, marker, body = vendored.partition('"""')
+        assert all(
+            line.startswith("#") for line in header.splitlines() if line.strip()
+        ), "the vendored provenance header must be comments only"
+        assert marker + body == source, (
+            "vendored_ssr.py has drifted from macro_framework/ssr.py — "
+            "re-sync the vendored copy from the source module"
+        )
+
     def test_parity_on_released_equity_fixture(self):
         returns = _fixture_returns()
         _assert_results_equal(
@@ -86,6 +113,39 @@ class TestParityWithOriginal:
         z = vendored_ssr.rolling_sharpe(_synthetic_returns()).to_numpy()
         assert vendored_ssr.andrews_bandwidth(z) == original_ssr.andrews_bandwidth(z)
         assert vendored_ssr.newey_west_var(z) == original_ssr.newey_west_var(z)
+
+    def test_parity_of_block_length_on_synthetic(self):
+        r = _synthetic_returns().to_numpy()
+        assert vendored_ssr.politis_white_block_length(
+            r
+        ) == original_ssr.politis_white_block_length(r)
+
+    @pytest.mark.parametrize("differential", [False, True])
+    def test_inference_parity_p_values_and_verdict(self, differential):
+        """The verdict path, end to end: both MBB tails and the rendered
+        verdict string. n_boot=200 keeps the test quick — the bootstrap is
+        seeded, so parity holds draw for draw at any B."""
+        returns = _synthetic_returns()
+        vendored = vendored_ssr.ssr_inference(returns, n_boot=200)
+        original = original_ssr.ssr_inference(returns, n_boot=200)
+        _assert_results_equal(vendored.result, original.result)
+        assert vendored.p_value == original.p_value
+        assert vendored.p_value_lower == original.p_value_lower
+        assert vendored.block_len == original.block_len
+        assert vendored.stable is original.stable
+        assert vendored.stably_below is original.stably_below
+        assert vendored.verdict(differential=differential) == original.verdict(
+            differential=differential
+        )
+
+    def test_inference_parity_on_degenerate_series(self):
+        """The too-short path renders the same 'insufficient observations'
+        verdict in both — the S0/S5 fixture-subset case."""
+        returns = _fixture_returns()
+        vendored = vendored_ssr.ssr_inference(returns, n_boot=50)
+        original = original_ssr.ssr_inference(returns, n_boot=50)
+        assert math.isnan(vendored.p_value) and math.isnan(original.p_value)
+        assert vendored.verdict() == original.verdict()
 
 
 # --------------------------------------------------------------------------- #
@@ -109,7 +169,19 @@ class TestVendoredStandalone:
         assert result.n_rolling == 0
         assert math.isnan(result.ssr)
 
-    def test_provenance_header_names_source_and_commit(self):
+    def test_inference_decides_the_verdict_standalone(self):
+        """The vendored module ships the whole verdict authority, not just the
+        effect size: p-value, mirror tail, block length, verdict string."""
+        inference = vendored_ssr.ssr_inference(_synthetic_returns(), n_boot=200)
+        assert isinstance(inference, vendored_ssr.SSRInference)
+        assert 0.0 <= inference.p_value <= 1.0
+        assert 0.0 <= inference.p_value_lower <= 1.0
+        assert inference.block_len >= 1
+        assert isinstance(inference.stable, bool)
+        assert f"SSR={inference.result.ssr:.2f}" in inference.verdict()
+
+    def test_provenance_header_names_source_and_resync_procedure(self):
         source = Path(vendored_ssr.__file__).read_text()
         assert "macro_framework/ssr.py" in source
-        assert "c8b03e7efafc42a6567dbd23566a5531a3e1276d" in source
+        assert "VERBATIM" in source
+        assert "re-sync" in source

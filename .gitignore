@@ -73,3 +73,7 @@ data/track_b_equity_ext2026.parquet
 # derived variant equity) — regenerable via notebooks/17; shipped via GH data release.
 data/etf_prices_wide_2013_2026.parquet
 data/sjm_crowding_derisk_equity_ext2026.parquet
+
+# nb18_2 window dashboard: the long SPY regression benchmark — the price panel
+# above spliced back to 2009 by scripts/build_spy_long.py; shipped via GH data release.
+data/spy_close_2009_2026.parquet

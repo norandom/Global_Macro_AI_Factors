@@ -650,15 +650,16 @@ def test_s3_both_prompt_versions_preserved(s3):
     assert set(s3.tables["stability"]["version"]) == {"v1", "v2"}
 
 
-def test_s3_framing_guard_and_rejection_no_accuracy_claim(s3):
-    """R7.3: the guard discounts by measured memorization; v2 rejected by the
-    accept-gate on contamination with every performance check passing; both
-    versions preserved; no forecast-accuracy claim."""
+def test_s3_framing_guard_and_gate_no_accuracy_claim(s3):
+    """R7.3: the guard discounts by measured memorization; the accept-gate
+    decision on contamination is stated with every performance check passing,
+    and flagged as one draw from a non-deterministic generator rather than a
+    settled ranking; both versions preserved; no forecast-accuracy claim."""
     framing = s3.framing.lower()
     assert "raw * (1 - p_memorized)" in framing
-    assert "rejected" in framing
+    assert "adopted" in framing
     assert "contamination" in framing
-    assert "0.2709" in framing and "0.2361" in framing
+    assert "0.2384" in framing and "0.3080" in framing
     assert "every performance check passed" in framing
     assert "preserved" in framing
     assert "no forecast-accuracy claim" in framing
@@ -868,6 +869,12 @@ S5_SSR_PUBLISHED_COLUMNS = [
     "nw_sigma_hac",
     "nw_bandwidth_L",
 ]
+S5_CLAIM_CHECK = (
+    "S5 framing claim 'differential NOT distinguishable from zero' (1 = holds)"
+)
+# per line: ssr + total_return + mbb_p; plus 4 premium checks and the one
+# re-derived framing claim on the differential row
+S5_EXPECTED_CHECKS = 4 + 3 * len(S5_LINES) + 1
 
 
 @pytest.fixture(scope="module")
@@ -945,19 +952,52 @@ def test_s5_ssr_table_three_lines_published_beside_rederived(s5):
     assert table["ssr_rederived"].isna().all()
 
 
+def test_s5_ssr_table_rederives_the_mbb_verdict(s5):
+    """R6.2: SSR is only the effect size — the verdict is the paper's
+    one-sided MBB test, so the p-value, block length and rendered verdict
+    string are re-derived beside the published ones, never copied."""
+    table = s5.tables["ssr"]
+    published = pd.read_parquet(FIXTURES / "factor_luck_vs_skill_v1.parquet")
+    for i in range(3):
+        assert table.iloc[i]["mbb_p_published"] == pytest.approx(published.iloc[i]["mbb_p"])
+        assert table.iloc[i]["mbb_block_published"] == published.iloc[i]["mbb_block"]
+    # degenerate on the fixture — but rendered by ssr_inference, not copied
+    assert table["mbb_p_rederived"].isna().all()
+    assert (
+        table["verdict_rederived"] == "insufficient rolling observations for inference"
+    ).all()
+
+
+def test_s5_survives_a_data_v2_frame_without_the_mbb_columns():
+    """data-v2 is immutable and predates mbb_p/mbb_block: the whole step must
+    still build, showing the re-derived p with no published counterpart."""
+    frame = pd.read_parquet(FIXTURES / "factor_luck_vs_skill_v1.parquet")
+    buf = io.BytesIO()
+    frame.drop(columns=["mbb_p", "mbb_block"]).to_parquet(buf)
+    view = build_s5(FakeClient({"factor_luck_vs_skill_v1.parquet": buf.getvalue()}))
+    table = view.tables["ssr"]
+    assert table["mbb_p_published"].isna().all()
+    assert "mbb_p_rederived" in table.columns
+    names = {c.name for c in view.checks}
+    assert not any(name.endswith("mbb_p vs published") for name in names)
+    assert S5_CLAIM_CHECK in names
+
+
 def test_s5_ssr_and_total_return_checks_flag_the_fixture_subset(s5):
     """R6.2/R7.2: per line, the re-derived SSR and total return are compared
     against the published rows — flagged (never raised) on the fixture."""
     by_name = {c.name: c for c in s5.checks}
     for line in S5_LINES:
-        for field in ("ssr", "total_return"):
+        for field in ("ssr", "total_return", "mbb_p"):
             check = by_name[f"S5 {line} {field} vs published"]
             assert check.ok is False
             assert check.message  # visible, human-readable flag
     # the differential rows carry the documented cancellation-slack tolerance
     assert by_name["S5 differential ssr vs published"].tolerance == pytest.approx(1e-3)
     assert by_name["S5 pit ssr vs published"].tolerance == pytest.approx(1e-6)
-    assert len(s5.checks) == 4 + 2 * len(S5_LINES)
+    # a degenerate inference cannot confirm the framing claim either
+    assert by_name[S5_CLAIM_CHECK].ok is False
+    assert len(s5.checks) == S5_EXPECTED_CHECKS
 
 
 def test_s5_loading_stability_pit_vs_nonpit(s5):
@@ -998,20 +1038,28 @@ def test_s5_checks_pass_on_full_data():
     effect size, per-line SSR, and total returns re-derived from the full
     series all match the published values within tolerance — every S5 check
     passes — and the loading-stability comparison reproduces the research.md
-    §5 figures (PIT 0.5437/0.3878 vs non-PIT 0.6370/0.5103)."""
+    §5 figures (PIT 0.5502/0.4200 vs non-PIT 0.6586/0.5142)."""
     overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S5_REAL_ASSETS}
     view = build_s5(FakeClient(overrides))
     failing = [check.message for check in view.checks if not check.ok]
     assert failing == []
-    # nb14's differential construction reproduced: published 0.028024 / 0.001999
+    # nb14's differential construction reproduced, effect size and verdict
+    published = pd.read_parquet(REAL_DATA / "factor_luck_vs_skill_v1.parquet")
     diff = view.tables["ssr"].iloc[2]
-    assert diff["total_return_rederived"] == pytest.approx(0.028024, abs=5e-6)
-    assert diff["ssr_rederived"] == pytest.approx(0.001999, abs=5e-6)
+    assert diff["total_return_rederived"] == pytest.approx(
+        published.iloc[2]["total_return"], abs=5e-6
+    )
+    assert diff["ssr_rederived"] == pytest.approx(published.iloc[2]["ssr"], abs=5e-6)
+    # the framing's headline: the MBB p re-derives exactly (a count / n_boot)
+    # and does NOT clear alpha — luck-compatible, which is the S5 conclusion
+    assert diff["mbb_p_rederived"] == published.iloc[2]["mbb_p"]
+    assert diff["mbb_p_rederived"] > 0.05
+    assert "NOT distinguishable from zero" in diff["verdict_rederived"]
     stability = view.tables["loading_stability"].set_index("line")
-    assert stability.loc["pit", "mean_std"] == pytest.approx(0.5437, abs=1e-4)
-    assert stability.loc["pit", "mean_mac"] == pytest.approx(0.3878, abs=1e-4)
-    assert stability.loc["nonpit", "mean_std"] == pytest.approx(0.6370, abs=1e-4)
-    assert stability.loc["nonpit", "mean_mac"] == pytest.approx(0.5103, abs=1e-4)
+    assert stability.loc["pit", "mean_std"] == pytest.approx(0.5502, abs=1e-4)
+    assert stability.loc["pit", "mean_mac"] == pytest.approx(0.4200, abs=1e-4)
+    assert stability.loc["nonpit", "mean_std"] == pytest.approx(0.6586, abs=1e-4)
+    assert stability.loc["nonpit", "mean_mac"] == pytest.approx(0.5142, abs=1e-4)
 
 
 def test_s5_framing_mandated_conclusion_wording(s5):
@@ -1020,10 +1068,10 @@ def test_s5_framing_mandated_conclusion_wording(s5):
     HAC, luck-compatible not skill, any recall-line excess is lookahead/recall
     bias and never attainable skill, the diagnostic line never deployable."""
     framing = s5.framing.lower()
-    assert "0.528" in framing and "1.93" in framing  # premium in MEMORY
+    assert "0.400" in framing and "1.37" in framing  # premium in MEMORY
     assert "in memory" in framing
     assert "~0 in p&l" in framing
-    assert "ssr" in framing and "0.03" in framing
+    assert "ssr" in framing and "0.11" in framing
     assert "moving-block-bootstrap" in framing
     assert "not distinguishable from zero" in framing
     assert "luck-compatible, not skill" in framing
@@ -1070,8 +1118,10 @@ S0_SSR_FIELDS = ["ssr", "mean_rolling_sr", "sigma_hac", "L_hac", "n_rolling"]
 S0_CRISIS_FIELDS = ["crisis_return", "crisis_max_drawdown", "crisis_vol_ann"]
 S0_WINDOWS = ["2016_2026", "2014_2024"]
 S0_EPISODES = ["covid_2020", "inflation_2022"]
-# 2 windows x (7 metrics + 5 SSR fields + 2 episodes x 3 crisis fields)
-S0_EXPECTED_CHECKS = 2 * (7 + 5 + 2 * 3)
+# 2 windows x (7 metrics + 5 SSR fields + 2 episodes x 3 crisis fields
+#              + 1 re-derived framing claim)
+S0_EXPECTED_CHECKS = 2 * (7 + 5 + 2 * 3 + 1)
+S0_CLAIM_CHECK = "S0 {} framing claim 'SSR tests stably above zero' (1 = holds)"
 
 
 @pytest.fixture(scope="module")
@@ -1170,13 +1220,32 @@ def test_s0_checks_flag_the_fixture_subset(s0):
     assert "S0 2014_2024 sharpe vs published" in names
     assert "S0 2016_2026 ssr vs published" in names
     assert "S0 2014_2024 covid_2020 crisis_max_drawdown vs published" in names
+    # a degenerate inference confirms nothing: the claim check flags too
+    assert S0_CLAIM_CHECK.format("2016_2026") in names
+
+
+def test_s0_inference_table_carries_the_mbb_verdict(s0):
+    """R7.3: the framing's 'stably above zero' sentence is not asserted on
+    trust — the MBB p-value, its mirror tail, block length and the rendered
+    verdict come from the vendored ssr_inference, one row per window."""
+    table = s0.tables["inference"]
+    assert list(table["line"]) == S0_WINDOWS
+    for column in ("ssr", "mbb_p", "mbb_p_mirror", "mbb_block", "alpha", "stable"):
+        assert column in table.columns, column
+    assert (table["alpha"] == 0.05).all()
+    # fixture equity is 5 rows: no rolling window, so no verdict is available
+    assert table["mbb_p"].isna().all()
+    assert (table["verdict_rederived"] == "insufficient rolling observations for inference").all()
 
 
 def test_s0_framing_two_claims_separated(s0):
     """R7.3: crisis episodes are real event-level observables; the performance
-    LEVEL is hindsight-flattered (in-sample SSR selection, caveat verbatim);
-    the line's own SSR 0.147 << 1.96 is luck-compatible, never attainable
-    skill; this is the problem S1-S5 measure."""
+    LEVEL is hindsight-flattered (in-sample SSR selection, caveat verbatim).
+    The line's own SSR of 0.147 DOES test stably above zero under the paper's
+    one-sided MBB test — the framing says so and keeps it separate from any
+    skill claim: temporal consistency of a hindsight-selected book, a
+    hindsight artifact and never attainable skill. This is the problem
+    S1-S5 measure."""
     framing = s0.framing.lower()
     assert "event-level observables" in framing
     assert "no selection artifact" in framing
@@ -1208,13 +1277,22 @@ def test_s0_checks_pass_on_full_data():
     """Agreement proof: build_static_bh.py WROTE the published stats with
     rederive.equity_metrics and (macro_framework's) compute_ssr over the same
     series it released — so on the REAL parquets every S0 check reproduces the
-    published metrics, SSR fields, and crisis episodes exactly."""
+    published metrics, SSR fields, and crisis episodes exactly, and the
+    framing's MBB claim re-derives as holding."""
     overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S0_REAL_ASSETS}
     view = build_s0(FakeClient(overrides))
     assert len(view.checks) == S0_EXPECTED_CHECKS
     failing = [check.message for check in view.checks if not check.ok]
     assert failing == []
-    # the published headline: the 10y line's own SSR is far below 1.96
+    # the framing's headline figure: the 10y line's own SSR effect size
     ssr_row = view.tables["stats"]
     ssr_2016 = ssr_row[(ssr_row["window"] == "2016_2026") & (ssr_row["metric"] == "ssr")]
     assert ssr_2016.iloc[0]["static_bh"] == pytest.approx(0.147, abs=5e-4)
+    # ...and the framing's claim about it, re-derived: p < 0.05, stably above
+    # zero. SSR is an effect size — 0.147 is small and still decisively
+    # positive; the verdict is the bootstrap's, never a threshold on the SSR.
+    inference = view.tables["inference"].set_index("line").loc["2016_2026"]
+    assert inference["mbb_p"] < 0.05
+    assert bool(inference["stable"])
+    assert "stably > 0" in inference["verdict_rederived"]
+    assert "not a skill claim" in inference["verdict_rederived"]

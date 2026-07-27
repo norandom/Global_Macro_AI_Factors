@@ -221,15 +221,16 @@ the way a placebo arm exists to measure a drug.
 **REF load →** `factor_contrast_v1_de.csv` (72 paired dates: `pit_p`, `nonpit_p`,
 `delta`) and `factor_luck_vs_skill_v1_de.csv` (the SSR table with verdict text).
 
-Compute live: contamination premium `=MITTELWERT(delta)` → **+0,528**
-(memorization: PIT 0,236 vs non-PIT 0,764; the model *demonstrably recognizes*
-dated, named data). Paired Cohen's d: `=MITTELWERT(delta)/STABW.S(delta)` → **1,93**.
+Compute live: contamination premium `=MITTELWERT(delta)` → **+0,400**
+(memorization: PIT 0,308 vs non-PIT 0,708; the model *demonstrably recognizes*
+dated, named data). Paired Cohen's d: `=MITTELWERT(delta)/STABW.S(delta)` → **1,37**.
 
-Read from the SSR table: PIT **0,124**, non-PIT **0,130**, and the
-**differential 0,03** with MBB p = 0,22: the recall premium in *returns* is
-statistically indistinguishable from zero. Huge in memory, nil in P&L, and the
-honest instrument (the same bootstrap test that judged S0) says: the premium is
-luck-compatible, never attainable skill.
+Read from the SSR table: PIT **0,125**, non-PIT **0,138**, and the
+**differential 0,11** with MBB p = 0,056: the recall premium in *returns* is not
+separable from zero — though only just, p sits above the 0,05 threshold by a
+hair, so read it as weak evidence rather than a clean null. Large in memory, not
+separable from luck in P&L, and the honest instrument (the same bootstrap test
+that judged S0) says: the premium is luck-compatible, never attainable skill.
 
 **PM summary S5 / thesis close**: S0 showed hindsight making a dumb portfolio
 look brilliant. S1–S5 built the machinery to *measure* hindsight inside an AI

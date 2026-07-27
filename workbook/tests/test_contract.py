@@ -228,6 +228,48 @@ def test_corrupted_static_stats_names_asset_and_key():
     assert "2014_2024.static_bh_ssr.ssr" in message
 
 
+# --- optional (later-release) columns ---------------------------------------
+
+# the MBB inference columns were added after the data-v2 tag was cut; tags are
+# immutable, so a data-v2 load must succeed without them (2026-07 regression:
+# contracting them as required broke every live load on the shipped default).
+LUCK_MBB_COLUMNS = ["mbb_p", "mbb_block"]
+
+
+def test_luck_vs_skill_loads_without_the_mbb_columns():
+    """A data-v2-shaped frame — HAC columns only — validates, no raise."""
+    data_v2 = rewrite_parquet(
+        "factor_luck_vs_skill_v1.parquet", lambda df: df.drop(columns=LUCK_MBB_COLUMNS)
+    )
+    client = FakeClient({"factor_luck_vs_skill_v1.parquet": data_v2})
+    df, _ = load_frame(client, "factor_luck_vs_skill_v1")
+    assert not set(LUCK_MBB_COLUMNS) & set(df.columns)
+    assert "ssr" in df.columns and df.index.name == "line"
+
+
+def test_optional_columns_are_still_dtype_validated_when_present():
+    """Tolerated absent is not tolerated wrong: a present optional column
+    fails the contract exactly like a required one."""
+    corrupted = rewrite_parquet(
+        "factor_luck_vs_skill_v1.parquet",
+        lambda df: df.assign(mbb_p=df["mbb_p"].astype(str)),
+    )
+    client = FakeClient({"factor_luck_vs_skill_v1.parquet": corrupted})
+    with pytest.raises(SchemaError) as exc:
+        load_frame(client, "factor_luck_vs_skill_v1")
+    assert "mbb_p" in str(exc.value)
+
+
+def test_only_the_mbb_columns_are_optional():
+    """Nothing else in the registry silently tolerates a missing column."""
+    optional = {
+        (key, column) for key, spec in ASSET_SPECS.items() for column in spec.optional
+    }
+    assert optional == {("factor_luck_vs_skill_v1", c) for c in LUCK_MBB_COLUMNS}
+    for key, spec in ASSET_SPECS.items():
+        assert spec.optional <= set(spec.columns), key
+
+
 # --- fail-fast corrupted-fixture messages -----------------------------------
 
 

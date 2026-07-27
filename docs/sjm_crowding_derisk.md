@@ -2,6 +2,27 @@
 
 *Companion to `notebooks/17_sjm_crowding_derisk.ipynb` (commits `18762b7`, `12c72a5` and successors). Goal: reduce the Factor PIT line's max drawdown at little return cost, with AI used for calibration only and a deterministic function at runtime.*
 
+> **Scope: this page documents the v1 ALWAYS-ON overlay.** Sections 1–3 (the SJM,
+> the crowding signal, the PIT discipline) still describe the shipped design. Every
+> **result** below — the loop tables in §4, the adopted configuration, the holdout
+> and full-span tear sheets — is a **v1** result and is superseded.
+>
+> The shipped line is **v2, drawdown-armed**: caps engage only once the factor line
+> is ≥3% off its trailing high (`arm = −0.03`), which removed v1's chronic return
+> drag. v2's adopted configuration is `lam=20.0, signal='absorption', window=126,
+> scale=0.9, floor=0.4, arm=−0.03` — *not* the v1 configuration named in §4. The
+> persisted v2 artifact was regenerated on 2026-07-27 from the current loop
+> convergence, superseding a frozen 2026-07-23 line that had drifted out of
+> agreement with its own ledger.
+>
+> For v2 numbers go to the artifacts, not to this page:
+> `notebooks/17_sjm_crowding_derisk.ipynb` (§8–§9),
+> `reports/nb17_sjm_crowding_tearsheet.csv`,
+> `data/factor_loop_ledger_sjm_crowding_v2_calmar.{json,csv}`, and the trio release
+> sheet `data/tear_sheet/tear_sheet_trio_ext2026.csv`. Full-span v2 headline
+> (2019-01-02 → 2026-06-30): CAGR 12.89%, ann. vol 8.57%, Sharpe 1.49, max DD
+> −11.24%, Calmar 1.147, SSR 0.138 (one-sided MBB p = 0.000).
+
 ## 1. The Sparse Jump Model (SJM)
 
 The regime detector is a **statistical jump model** (Shu & Mulvey 2024; Nystrup et al.), ported from the sibling `facdrone` project (`macro_framework/jump_regime.py`). It clusters temporal feature vectors `x_0..x_{T-1}` into `K` states while **penalising state transitions**:
@@ -68,7 +89,7 @@ The search reused the shipped `factor_loop.run_loop` engine (one deterministic m
 | 10 | + scale 0.9 | −7.4% | 7.01% | revert (cost 3.7pp, over budget) |
 | 13 | + scale 1.3 | −10.3% | 9.74% | revert (shallower cut than best) |
 
-Adopted configuration: **λ=20 (fast regime switching), turbulence crowding signal, window 252, AI cap table at scale 1.0, floor 0.4** — dev maxDD −8.2% (from −12.1%), CAGR cost 2.95pp, Calmar 0.95 vs baseline 0.89 and control 0.92.
+Adopted configuration **for v1**: **λ=20 (fast regime switching), turbulence crowding signal, window 252, AI cap table at scale 1.0, floor 0.4** — dev maxDD −8.2% (from −12.1%), CAGR cost 2.95pp, Calmar 0.95 vs baseline 0.89 and control 0.92. **Superseded** — the shipped v2 overlay adopted `absorption`, window 126, scale 0.9, plus the `arm = −0.03` drawdown trigger (see the scope note at the top).
 
 **Holdout verdict (2024-07 → 2026-06, evaluated once, post-adoption):**
 
@@ -102,7 +123,8 @@ The overlay **generalized**: on the unseen holdout it still cut the max drawdown
 
 ## 6. Reproducibility
 
-- All signals are PIT by construction (walk-forward SJM refits; expanding-quantile buckets; trailing-window AR/turbulence) with biting unit tests (suite: 520 passing).
+- All signals are PIT by construction (walk-forward SJM refits; expanding-quantile buckets; trailing-window AR/turbulence) with biting unit tests (root suite: 300 passing as of 2026-07-27).
 - The AI table is called once and replayed from the persisted artifact; the loop ledger records every candidate's mutation, metrics, gate outcomes, and decision.
-- Artifacts: `data/sjm_crowding_limits_sjm_crowding_v1.json`, `data/factor_loop_ledger_sjm_crowding_v1_2pp.json` and `..._35pp.json` (+ CSV mirrors), `reports/nb17_sjm_crowding_tearsheet.csv`.
+- Artifacts (v1): `data/sjm_crowding_limits_sjm_crowding_v1.json`, `data/factor_loop_ledger_sjm_crowding_v1_2pp.json` and `..._35pp.json` (+ CSV mirrors), `reports/nb17_sjm_crowding_tearsheet.csv`.
+- Artifacts (v2, the shipped line): `data/factor_loop_ledger_sjm_crowding_v2_calmar.{json,csv}`, `data/sjm_crowding_derisk_v2_equity_ext2026.parquet` (+ CSV mirrors). The parquet carries a `provenance` key in its schema metadata naming the run id, config, limits, ledger, and what it supersedes.
 - Rebuild: run `notebooks/17_sjm_crowding_derisk.ipynb` top-to-bottom (needs `DATABASE_URL`; the NIM key is only needed if the limits artifact is absent).

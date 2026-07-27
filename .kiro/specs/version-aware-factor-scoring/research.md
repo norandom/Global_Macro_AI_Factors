@@ -355,7 +355,7 @@ shipped via the GH data release)._
 - **S3 factors**: 71/72 loadings parsed; p_memorized mean=0.2361,
   median=0.2085, min=0.0000, max=0.7346, p90=0.5183
   (`factor_scores_v1.parquet`, `factor_loadings_v1.parquet`, `factor_views_v1.parquet`); factor stability
-  mean_std=0.5437, mean_mac=0.3878 (`factor_stability_v1.json`).
+  mean_std=0.5502, mean_mac=0.4200 (`factor_stability_v1.json`).
 - **S4 recall-guarded PIT line**: 71/72 rebalances guarded (tilt × (1−p_mem));
   head-to-head row Track A (factor): total_return=0.8678, sharpe=1.2000,
   max_dd=-0.1204, crisis_return=-0.0336, avg_turnover=0.2769
@@ -375,31 +375,51 @@ holdout_auc=0.9668, is_weak=False); nb13's v1 artifacts REUSED verbatim
 (zero new NIM calls for v1); yfinance prices in-cell; price-dependent v2/non-PIT
 targets/equity/decision-logs gitignored, shipped via the GH data release._
 
+> **Figures below re-measured 2026-07-27** by a full live re-execution of nb14 against nb13's
+> regenerated v1 stream. The original 2026-07-03 figures were paired with an older v1 stream and
+> no longer reproduce from the artifacts on disk; the whole v2 / non-PIT / contrast / S5 family
+> now comes from one run. The LLM calls are non-deterministic, so a re-run moves these numbers —
+> what is stable is the shape of the result, not the third decimal.
+
 - **R5 prompt versions (same PIT stream, n=72)** — v2 = v1 + one output-discipline line
-  ("Respond with ONLY the JSON object — no other text."). p_memorized mean: v1=0.2361, v2=0.2709;
+  ("Respond with ONLY the JSON object — no other text."). p_memorized mean: v1=0.3080, v2=0.2384;
   parse rate v1=0.986, v2=1.000; stability mean_mac
-  v1=0.3878, v2=0.4063; head-to-head
-  v2−v1: total_return=-0.0485, sharpe=-0.0044,
-  max_dd=-0.0046.
-- **R5.4 accept-gate: v2 REJECTED** (contamination_no_greater=False,
+  v1=0.4200, v2=0.3712 (mean_std v1=0.5502, v2=0.5414); head-to-head
+  v2−v1: total_return=+0.1066, sharpe=+0.1439,
+  max_dd=+0.0017.
+- **R5.4 accept-gate: v2 ADOPTED** (contamination_no_greater=True,
   sharpe_not_worse=True, max_dd_not_deeper=True, stability_not_worse=True;
   tolerances sharpe −0.05, max_dd −0.02, mean_mac +0.05) →
-  `prompt_version_gate_v1.json`; v1 artifacts preserved either way (R5.5).
-- **R7 contrast (n_pairs=72)** — p_memorized PIT mean=0.2361 vs
-  non-PIT mean=0.7644; contamination premium mean delta=
-  +0.5283 (median +0.5667),
-  paired Cohen's d=1.925 (`factor_contrast_v1.parquet`,
-  `factor_contrast_summary_v1.json`). Head-to-head: PIT v1 total_return=0.8678,
-  sharpe=1.2000, max_dd=-0.1204; non-PIT DIAGNOSTIC
-  total_return=0.8958, sharpe=1.1961,
-  max_dd=-0.1119 → premium (non-PIT−PIT)
-  total_return=+0.0280,
-  sharpe=-0.0038 — reported as LOOKAHEAD/RECALL BIAS,
+  `prompt_version_gate_v1.json`; v1 artifacts preserved either way (R5.5). The gate flipped from
+  REJECTED (2026-07-03) to ADOPTED on the re-run: v2's contamination now sits below v1's rather
+  than above it. One draw either side of a threshold is not evidence that v2 is better — it is
+  evidence that a single-sample gate on a non-deterministic generator is not repeatable.
+- **R7 contrast (n_pairs=72)** — p_memorized PIT mean=0.3080 vs
+  non-PIT mean=0.7075; contamination premium mean delta=
+  +0.3996 (median +0.3785),
+  paired Cohen's d=1.369 (`factor_contrast_v1.parquet`,
+  `factor_contrast_summary_v1.json`). Head-to-head: PIT v1 total_return=0.8222,
+  sharpe=1.1580, max_dd=-0.1141; non-PIT DIAGNOSTIC
+  total_return=0.9964, sharpe=1.3130,
+  max_dd=-0.1106 → premium (non-PIT−PIT)
+  total_return=+0.1741,
+  sharpe=+0.1550 — reported as LOOKAHEAD/RECALL BIAS,
   never attainable skill (R7.5); the non-PIT line is a diagnostic control, never deployed (R7.4).
-- **S5 luck-vs-skill (`factor_luck_vs_skill_v1.parquet`, compute_ssr NW-HAC/Andrews)** —
-  PIT SSR=0.12 (L=125), non-PIT SSR=0.13 (L=125),
-  differential SSR=0.00 (L=125). Verdict on the differential:
-  |SSR|=0.00 < 1.96: the recall premium's return differential is statistically indistinguishable from zero under Newey-West HAC inference — the premium is LUCK-COMPATIBLE, not skill
+- **§5 loading stability, PIT vs non-PIT** (`loading_stability` over the persisted loadings
+  tables) — PIT mean_std=0.5502 / mean_mac=0.4200 (`factor_loadings_v1.parquet`, 71/72 parsed)
+  vs non-PIT mean_std=0.6586 / mean_mac=0.5142
+  (`factor_nonpit_diagnostic_loadings_v1.parquet`, 66/72 parsed). The identifying framing moves
+  the loadings around more between rebalances, not less.
+- **S5 luck-vs-skill (`factor_luck_vs_skill_v1.parquet`, `ssr_inference` NW-HAC/Andrews +
+  one-sided MBB)** — PIT SSR=0.12 (L=125), non-PIT SSR=0.14 (L=125),
+  differential SSR=0.11 (L=125). SSR is the effect size; the verdict is the bootstrap.
+  Verdict on the differential:
+  SSR=0.11: differential NOT distinguishable from zero (one-sided MBB p=0.056, mirror p=0.944) —
+  luck-compatible, not skill. p=0.056 sits just above the 0.05 threshold, so this is a weak
+  non-rejection, not a demonstrated null: the 0.1741 total-return gap is not separable from
+  luck in this sample, and it is lookahead/recall bias in any case, never attainable skill.
+  Every column of every row is derived from the PUBLISHED equity parquets sliced at the first
+  rebalance (2019-01-02), so the table re-derives bit-for-bit from the release.
 - Success stays non-predictive (R6.4): version-aware contamination + stability + non-degraded
   head-to-head; no forecast-accuracy claim. Task 4.2 closes the Excel storyboard (S4 recall line + S5).
 
