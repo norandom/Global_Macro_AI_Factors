@@ -81,3 +81,7 @@ data/spy_close_2009_2026.parquet
 # nb18_3 Markowitz planes: long 4-ETF opportunity set back to SWDA.L inception;
 # regenerable via scripts/build_basket_long.py, shipped via the GH data release.
 data/basket_close_2009_2026.parquet
+
+# appendix D: dividend-adjusted panel for the total-return SSR table;
+# regenerable via scripts/build_appendix_d_total_return.py, shipped via the GH data release.
+data/appendix_d_total_return_2010_2026.parquet

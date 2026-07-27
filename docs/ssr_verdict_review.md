@@ -85,8 +85,16 @@ Same effect sizes, meaningful verdicts (one-sided MBB p in brackets):
 | SJM×crowding de-risk v2 ext26 | 0.14 | stably > 0 (0.000) |
 | **Baseline HRP+momentum (both spans)** | 0.04–0.08 | **luck-compatible (0.08–0.22)** |
 | **Recall-premium differential (v1 / ext26)** | 0.11 / 0.02 | **luck-compatible (0.056 / 0.59)** |
-| QQQ, SPY, IVV, DIA, IWM, XLF, GLD (15y) | 0.04–0.12 | stably > 0 (≤ 0.016) |
-| EFA, XLE, EEM, GDX, FXI, HYG, EWZ, TLT (15y) | 0.00–0.05 | luck-compatible (0.056–0.47) |
+| QQQ, SPY, IVV, DIA, HYG, XLF, IWM, EFA, XLE, GLD, EEM (16y, total return) | 0.04–0.13 | stably > 0 (≤ 0.047) |
+| FXI, GDX, TLT, EWZ (16y, total return) | 0.02–0.03 | luck-compatible (0.116–0.263) |
+
+> **The ETF rows moved on 2026-07-27 for a data reason, not a statistical one.** They
+> previously ran on raw `etf_prices` closes, which carry no dividend or coupon adjustment.
+> That deletes the income leg — hardest for the funds whose return *is* income — and four
+> verdicts flipped once the panel was switched to total return: HYG (p 0.469 → 0.001),
+> EFA (0.119 → 0.036), XLE (0.136 → 0.047), EEM (0.124 → 0.042). HYG compounds −0.6%/yr on
+> raw closes and +5.5%/yr on total return; the old verdict was right about the series and
+> wrong about the fund. Treat XLE and EEM as marginal. Details in appendix D §4.
 
 > **Read the v1 differential as marginal, not comfortable.** The 2026-07-27 nb14
 > re-run moved it from SSR 0.03 at p = 0.22 to **SSR 0.11 at p = 0.056** — it still
