@@ -77,3 +77,7 @@ data/sjm_crowding_derisk_equity_ext2026.parquet
 # nb18_2 window dashboard: the long SPY regression benchmark — the price panel
 # above spliced back to 2009 by scripts/build_spy_long.py; shipped via GH data release.
 data/spy_close_2009_2026.parquet
+
+# nb18_3 Markowitz planes: long 4-ETF opportunity set back to SWDA.L inception;
+# regenerable via scripts/build_basket_long.py, shipped via the GH data release.
+data/basket_close_2009_2026.parquet

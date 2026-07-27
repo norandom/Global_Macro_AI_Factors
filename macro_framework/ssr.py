@@ -266,8 +266,12 @@ def ssr_inference(
     # undefined replicates count as "failed to exceed the benchmark" (conservative)
     ok = np.isfinite(draws)
     n_bad = int(np.sum(~ok))
-    p = float((np.sum(draws[ok] <= 0.0) + n_bad) / n_boot)
+    # (r + 1) / (B + 1), not r / B: the naive ratio reports p == 0.0 exactly whenever
+    # no replicate crosses, which is not a valid Monte-Carlo p-value — it asserts
+    # more evidence than B draws can carry. The add-one estimator (Davison & Hinkley
+    # 1997; Phipson & Smyth 2010) floors p at 1/(B+1) and stays unbiased under H0.
+    p = float((np.sum(draws[ok] <= 0.0) + n_bad + 1) / (n_boot + 1))
     # mirror tail (H0: mu_Z >= sr_star); undefined replicates again count against
     # rejection, so both tails stay conservative rather than summing to 1.
-    p_lower = float((np.sum(draws[ok] >= 0.0) + n_bad) / n_boot)
+    p_lower = float((np.sum(draws[ok] >= 0.0) + n_bad + 1) / (n_boot + 1))
     return SSRInference(res, sr_star, p, block_len, n_boot, seed, alpha, p_lower)
