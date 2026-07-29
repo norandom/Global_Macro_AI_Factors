@@ -9,6 +9,10 @@ label (defect 7).
 
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import pytest
 
 from macro_framework.reporting import LEGACY_SCHEMA, validate_report_row
@@ -885,3 +889,841 @@ def test_local_data_v4_release_assets_are_ignored_without_hiding_contract_source
         ".kiro/specs/finance-metric-integrity-remediation/design.md"
     )
 
+
+# --------------------------------------------------------------------------- #
+# Tasks 10.8/10.9: incomplete candidate staging, direct validation,           #
+# finalization, checksums, read-only verification, and atomic promotion.      #
+# Fixture-driven only: producer trees below are synthetic byte payloads with  #
+# completed producer manifests — no real canonical artifacts are consumed.    #
+# --------------------------------------------------------------------------- #
+
+_PARQUET = "application/vnd.apache.parquet"
+_BUILD_TIME = "2026-07-29T12:00:00+00:00"
+
+
+def _write_producer_manifest(role_dir, manifest) -> None:
+    """Producer convention (tasks 5.3/6.9): COMPLETED carries the manifest sha."""
+    role_dir.mkdir(parents=True, exist_ok=True)
+    path = role_dir / "manifest.json"
+    path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    (role_dir / "COMPLETED").write_text(
+        "2026-07-29T00:00:00+00:00\n"
+        f"manifest_sha256={hashlib.sha256(path.read_bytes()).hexdigest()}\n"
+    )
+
+
+def _mutate_producer_manifest(role_dir, mutate) -> None:
+    manifest = json.loads((role_dir / "manifest.json").read_text())
+    mutate(manifest)
+    _write_producer_manifest(role_dir, manifest)
+
+
+def _producer_dirs(root, pub, payload=None) -> dict:
+    """Synthetic completed producer trees covering the full frozen catalog.
+
+    ``payload`` maps a catalog asset to its fixture bytes; the default emits
+    plain text bytes (cheap, sufficient for staging/finalization tests).
+    """
+    catalog = pub.DATA_V4_CATALOG
+    entries: dict[str, dict[str, dict]] = {
+        role: {} for role in catalog.producer_manifest_map
+    }
+    for asset in catalog.assets:
+        role_entries = entries[asset.producer_manifest_role]
+        if asset.source_artifact in role_entries:
+            continue  # aliases share their target's source bytes
+        src = root / asset.producer_manifest_role / asset.source_artifact
+        src.parent.mkdir(parents=True, exist_ok=True)
+        if payload is None:
+            data = (
+                f"fixture:{asset.producer_manifest_role}:{asset.source_artifact}\n"
+            ).encode()
+        else:
+            data = payload(asset)
+        src.write_bytes(data)
+        entry: dict = {
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "size": len(data),
+            "schema_id": asset.schema_id,
+        }
+        if asset.asset_class == "canonical_payload" and asset.media_type == _PARQUET:
+            entry |= {"rows": 5, "start": "2016-01-04", "end": "2026-03-31"}
+        role_entries[asset.source_artifact] = entry
+    for role, schema_id in catalog.producer_manifest_map.items():
+        _write_producer_manifest(
+            root / role,
+            {"schema": schema_id, "completed": True, "assets": entries[role]},
+        )
+    return {role: root / role for role in catalog.producer_manifest_map}
+
+
+def _stage(pub, producers, destination, publication_id="pub-fixture-0001"):
+    return pub.stage_publication_candidate(
+        destination=destination,
+        producers=producers,
+        publication_id=publication_id,
+        build_time=_BUILD_TIME,
+    )
+
+
+def _candidate_manifest(candidate) -> dict:
+    return json.loads((candidate / "publication_manifest.json").read_text())
+
+
+def _rewrite_candidate_manifest(candidate, manifest) -> None:
+    (candidate / "publication_manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+    )
+
+
+def test_staging_builds_an_incomplete_candidate_with_exact_inventory(tmp_path):
+    pub = _publisher()
+    catalog = pub.DATA_V4_CATALOG
+    producers = _producer_dirs(tmp_path / "producers", pub)
+
+    candidate = _stage(pub, producers, tmp_path / "candidate")
+
+    names = sorted(p.name for p in candidate.iterdir())
+    assert names == sorted(catalog.payload_basenames + ("publication_manifest.json",))
+    assert not (candidate / "SHA256SUMS").exists()
+    assert not (candidate / "COMPLETED").exists()
+
+    manifest = _candidate_manifest(candidate)
+    assert manifest["schema"] == "publication_manifest.v1"
+    assert manifest["release_tag"] == "data-v4"
+    assert manifest["completed"] is False
+    assert manifest["catalog_sha256"] == _EXPECTED_CATALOG_SHA256
+    assert sorted(manifest["assets"]) == sorted(catalog.payload_basenames)
+    for name, entry in manifest["assets"].items():
+        data = (candidate / name).read_bytes()
+        assert entry["sha256"] == hashlib.sha256(data).hexdigest()
+        assert entry["size"] == len(data)
+    for role, recorded in manifest["input_manifests"].items():
+        assert recorded["manifest_sha256"] == hashlib.sha256(
+            (producers[role] / "manifest.json").read_bytes()
+        ).hexdigest()
+    # aliases stage their target's exact bytes
+    assert (candidate / "tear_sheet_ext2026.csv").read_bytes() == (
+        candidate / "portfolio_metrics_reader_ext2026.csv"
+    ).read_bytes()
+
+    # the direct validators accept the incomplete candidate, with and without
+    # the producer manifests supplied for source-hash cross-checks
+    pub.validate_staged_candidate(candidate)
+    pub.validate_staged_candidate(candidate, producers=producers)
+
+    # deterministic: an identical second staging produces identical manifests
+    second = _stage(pub, producers, tmp_path / "candidate_2")
+    assert (second / "publication_manifest.json").read_bytes() == (
+        candidate / "publication_manifest.json"
+    ).read_bytes()
+
+
+def test_staging_refuses_existing_or_completed_candidates(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub)
+
+    # a pre-created EMPTY destination is a valid new candidate location
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    _stage(pub, producers, empty)
+
+    # an existing candidate is never overwritten
+    with pytest.raises(ValueError, match="non-empty"):
+        _stage(pub, producers, empty)
+
+    # a candidate claiming completion is immutable
+    done = _stage(pub, producers, tmp_path / "done")
+    manifest = _candidate_manifest(done)
+    manifest["completed"] = True
+    _rewrite_candidate_manifest(done, manifest)
+    with pytest.raises(ValueError, match="immutable"):
+        _stage(pub, producers, done)
+
+
+def test_every_source_fault_blocks_staging_and_leaves_no_manifest(tmp_path):
+    pub = _publisher()
+    target = next(
+        asset
+        for asset in pub.DATA_V4_CATALOG.assets
+        if asset.public_basename == "factor_evidence_ext2026.parquet"
+    )
+
+    def fault_missing(producers):
+        (producers["factor_run"] / target.source_artifact).unlink()
+
+    def fault_corrupt(producers):
+        (producers["factor_run"] / target.source_artifact).write_bytes(b"tampered")
+
+    def fault_unowned(producers):
+        _mutate_producer_manifest(
+            producers["factor_run"],
+            lambda m: m["assets"].pop(target.source_artifact),
+        )
+
+    def fault_incomplete_producer(producers):
+        _mutate_producer_manifest(
+            producers["factor_run"], lambda m: m.__setitem__("completed", False)
+        )
+
+    def fault_stale_completion(producers):
+        # rewrite manifest bytes WITHOUT refreshing the completion marker
+        path = producers["factor_run"] / "manifest.json"
+        manifest = json.loads(path.read_text())
+        manifest["assets"][target.source_artifact]["rows"] = 6
+        path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+    def fault_wrong_producer_schema(producers):
+        _mutate_producer_manifest(
+            producers["factor_run"],
+            lambda m: m.__setitem__("schema", "factor_run.v999"),
+        )
+
+    def fault_missing_role(producers):
+        producers.pop("market_snapshot")
+
+    def fault_extra_role(producers):
+        producers["scratch_run"] = producers["factor_run"]
+
+    def fault_wrong_schema_id(producers):
+        _mutate_producer_manifest(
+            producers["factor_run"],
+            lambda m: m["assets"][target.source_artifact].__setitem__(
+                "schema_id", "wrong.schema.v999"
+            ),
+        )
+
+    def fault_incoherent_window(producers):
+        _mutate_producer_manifest(
+            producers["factor_run"],
+            lambda m: m["assets"][target.source_artifact].__setitem__(
+                "start", "2027-01-01"
+            ),
+        )
+
+    faults = (
+        ("missing", fault_missing, "absent"),
+        ("corrupt", fault_corrupt, "stale or corrupt"),
+        ("unowned", fault_unowned, "not inventoried"),
+        ("incomplete_producer", fault_incomplete_producer, "completed=true"),
+        ("stale_completion", fault_stale_completion, "COMPLETED marker"),
+        ("wrong_producer_schema", fault_wrong_producer_schema, "has schema"),
+        ("missing_role", fault_missing_role, "missing producer manifest"),
+        ("extra_role", fault_extra_role, "unexpected producer manifest"),
+        ("wrong_schema_id", fault_wrong_schema_id, "catalog schema"),
+        ("bad_window", fault_incoherent_window, "window"),
+    )
+    for name, fault, pattern in faults:
+        producers = _producer_dirs(tmp_path / f"producers_{name}", pub)
+        fault(producers)
+        destination = tmp_path / f"candidate_{name}"
+        with pytest.raises(ValueError, match=pattern):
+            _stage(pub, producers, destination)
+        # the failure is reported but the candidate never becomes complete
+        assert not (destination / "publication_manifest.json").exists()
+        assert not (destination / "SHA256SUMS").exists()
+        assert not (destination / "COMPLETED").exists()
+
+
+def test_direct_staging_validators_reject_each_integrity_dimension(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub)
+    payload = "factor_evidence_ext2026.parquet"
+
+    def fresh(name):
+        return _stage(pub, producers, tmp_path / name)
+
+    cand = fresh("extra")
+    (cand / "stray.txt").write_text("x")
+    with pytest.raises(ValueError, match="extra file"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("sums")
+    (cand / "SHA256SUMS").write_text("")
+    with pytest.raises(ValueError, match="SHA256SUMS"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("marker")
+    (cand / "COMPLETED").write_text("x")
+    with pytest.raises(ValueError, match="COMPLETED"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("claim")
+    manifest = _candidate_manifest(cand)
+    manifest["completed"] = True
+    _rewrite_candidate_manifest(cand, manifest)
+    with pytest.raises(ValueError, match="completed=false"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("values")
+    (cand / payload).write_bytes(b"mutated")
+    with pytest.raises(ValueError, match="mutated after staging"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("inventory")
+    (cand / payload).unlink()
+    with pytest.raises(ValueError, match="missing from disk"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("duplicate")
+    (cand / payload.upper()).write_bytes(b"twin")
+    with pytest.raises(ValueError, match="duplicate public basename"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("lineage")
+    manifest = _candidate_manifest(cand)
+    manifest["assets"][payload]["lineage"] = ["factor_run"]
+    _rewrite_candidate_manifest(cand, manifest)
+    with pytest.raises(ValueError, match="lineage"):
+        pub.validate_staged_candidate(cand)
+
+    cand = fresh("window")
+    manifest = _candidate_manifest(cand)
+    manifest["assets"][payload]["start"] = "2027-01-01"
+    _rewrite_candidate_manifest(cand, manifest)
+    with pytest.raises(ValueError, match="window"):
+        pub.validate_staged_candidate(cand)
+
+    # source-hash cross-check: the producer's bytes drift AFTER staging
+    cand = fresh("source_hash")
+    target = next(
+        asset
+        for asset in pub.DATA_V4_CATALOG.assets
+        if asset.public_basename == payload
+    )
+    (producers["factor_run"] / target.source_artifact).write_bytes(b"drifted")
+    pub.validate_staged_candidate(cand)  # without producers the drift is unseen
+    with pytest.raises(ValueError, match="stale or corrupt"):
+        pub.validate_staged_candidate(cand, producers=producers)
+
+
+def test_finalization_completes_the_manifest_once_and_checksums_exclude_itself(
+    tmp_path,
+):
+    pub = _publisher()
+    catalog = pub.DATA_V4_CATALOG
+    producers = _producer_dirs(tmp_path / "producers", pub)
+    cand = _stage(pub, producers, tmp_path / "candidate")
+
+    finalized = pub.finalize_publication_candidate(cand, producers=producers)
+    assert finalized == cand
+
+    manifest = _candidate_manifest(cand)
+    assert manifest["completed"] is True
+
+    parsed: dict[str, str] = {}
+    for line in (cand / "SHA256SUMS").read_text().splitlines():
+        digest, name = line.split("  ", 1)
+        parsed[name] = digest
+    assert tuple(sorted(parsed)) == catalog.checksum_basenames
+    assert "SHA256SUMS" not in parsed
+    assert "publication_manifest.json" in parsed
+    for name, digest in parsed.items():
+        assert digest == hashlib.sha256((cand / name).read_bytes()).hexdigest()
+
+    # finalization happens exactly once
+    with pytest.raises(ValueError, match="already finalized"):
+        pub.finalize_publication_candidate(cand, producers=producers)
+
+
+def test_finalization_failure_reports_and_leaves_candidate_incomplete(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub)
+    cand = _stage(pub, producers, tmp_path / "candidate")
+    (cand / "factor_evidence_ext2026.parquet").write_bytes(b"mutated")
+
+    with pytest.raises(ValueError, match="mutated after staging"):
+        pub.finalize_publication_candidate(cand, producers=producers)
+
+    # the fault is reported and the candidate remains diagnosable but incomplete
+    assert _candidate_manifest(cand)["completed"] is False
+    assert not (cand / "SHA256SUMS").exists()
+    with pytest.raises(ValueError):
+        pub.verify_finalized_candidate(cand)
+
+
+def test_finalized_candidate_verifies_read_only_and_promotes_atomically(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub)
+    cand = _stage(pub, producers, tmp_path / "candidate")
+    pub.finalize_publication_candidate(cand, producers=producers)
+
+    before = {
+        p.name: (p.stat().st_mtime_ns, p.read_bytes()) for p in cand.iterdir()
+    }
+    for p in cand.iterdir():
+        p.chmod(0o444)
+    cand.chmod(0o555)
+    try:
+        pub.verify_finalized_candidate(cand)  # must succeed WITHOUT mutation
+    finally:
+        cand.chmod(0o755)
+        for p in cand.iterdir():
+            p.chmod(0o644)
+    after = {
+        p.name: (p.stat().st_mtime_ns, p.read_bytes()) for p in cand.iterdir()
+    }
+    assert after == before
+
+    final = tmp_path / "release_assets" / "data-v4"
+    promoted = pub.promote_finalized_candidate(cand, final)
+    assert promoted == final
+    assert final.is_dir()
+    assert not cand.exists()
+    pub.verify_finalized_candidate(final)
+
+
+def test_promotion_refuses_overwrite_and_faults_leave_final_destination_absent(
+    tmp_path,
+):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub)
+    final = tmp_path / "final" / "data-v4"
+
+    # an unfinalized provisional candidate can never promote
+    provisional = _stage(pub, producers, tmp_path / "provisional")
+    with pytest.raises(ValueError, match="completed"):
+        pub.promote_finalized_candidate(provisional, final)
+    assert not final.exists()
+
+    # a finalized candidate corrupted before promotion fails verification
+    corrupt = _stage(pub, producers, tmp_path / "corrupt")
+    pub.finalize_publication_candidate(corrupt, producers=producers)
+    (corrupt / "factor_evidence_ext2026.parquet").write_bytes(b"mutated")
+    with pytest.raises(ValueError, match="mutated after staging"):
+        pub.promote_finalized_candidate(corrupt, final)
+    assert not final.exists()
+
+    # an existing final destination is never overwritten — even an empty one
+    good = _stage(pub, producers, tmp_path / "good")
+    pub.finalize_publication_candidate(good, producers=producers)
+    final.mkdir(parents=True)
+    with pytest.raises(ValueError, match="refusing to overwrite"):
+        pub.promote_finalized_candidate(good, final)
+    assert good.exists()  # the candidate itself is untouched
+    assert not any(final.iterdir())  # nothing partially promoted
+
+
+def test_ac_7_5(tmp_path):
+    # R7.5: every staging, finalization, or promotion fault is reported and the
+    # publication stays incomplete — no completed manifest, no SHA256SUMS, and
+    # no final destination.
+    test_every_source_fault_blocks_staging_and_leaves_no_manifest(
+        tmp_path / "staging"
+    )
+    test_finalization_failure_reports_and_leaves_candidate_incomplete(
+        tmp_path / "finalize"
+    )
+    test_promotion_refuses_overwrite_and_faults_leave_final_destination_absent(
+        tmp_path / "promote"
+    )
+
+
+
+# --------------------------------------------------------------------------- #
+# Task 10.10: offline clean-room upload-set smoke tooling.                     #
+# Task 10.11: read-only public-release smoke-test hooks.                       #
+# A finalized fixture candidate (media-valid bytes) is served over a           #
+# temporary localhost endpoint shaped like the public release endpoint; the    #
+# REAL workbook release client, checksum verification, schema loaders, and    #
+# representative S0-S5 builds all run from a clean temporary directory.        #
+# --------------------------------------------------------------------------- #
+
+_FIXTURE_DATES = (
+    "2016-01-04",
+    "2016-01-05",
+    "2016-01-06",
+    "2026-03-30",
+    "2026-03-31",
+)
+
+
+def _png_fixture_bytes() -> bytes:
+    import struct
+    import zlib
+
+    def chunk(kind: bytes, body: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(body))
+            + kind
+            + body
+            + struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF)
+        )
+
+    header = struct.pack(">IIBBBBB", 1, 1, 8, 0, 0, 0, 0)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", zlib.compress(b"\x00\x00"))
+        + chunk(b"IEND", b"")
+    )
+
+
+def _media_payload(asset) -> bytes:
+    """Media-valid fixture bytes for one catalog asset (5-row tables)."""
+    import io
+
+    values = [round(1.0 + i * 0.25, 2) for i in range(len(_FIXTURE_DATES))]
+    if asset.media_type == "application/vnd.apache.parquet":
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+
+        sink = io.BytesIO()
+        pq.write_table(
+            pa.table(
+                {
+                    "date": list(_FIXTURE_DATES),
+                    "value": values,
+                    "series": [asset.source_artifact] * len(_FIXTURE_DATES),
+                }
+            ),
+            sink,
+        )
+        return sink.getvalue()
+    if asset.media_type.startswith("text/csv"):
+        if asset.locale == "de-DE":
+            rows = ["date;value;series"] + [
+                f"{d};{str(v).replace('.', ',')};{asset.source_artifact}"
+                for d, v in zip(_FIXTURE_DATES, values)
+            ]
+        else:
+            rows = ["date,value,series"] + [
+                f"{d},{v},{asset.source_artifact}"
+                for d, v in zip(_FIXTURE_DATES, values)
+            ]
+        return ("\n".join(rows) + "\n").encode()
+    if asset.media_type == "application/json":
+        return (
+            json.dumps(
+                {
+                    "source_artifact": asset.source_artifact,
+                    "records": [
+                        {"date": d, "value": v}
+                        for d, v in zip(_FIXTURE_DATES, values)
+                    ],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        ).encode()
+    if asset.media_type == "image/png":
+        return _png_fixture_bytes()
+    return f"# fixture {asset.source_artifact}\ncontent body\n".encode()
+
+
+def _finalized_media_candidate(pub, producers, destination):
+    cand = _stage(pub, producers, destination)
+    pub.finalize_publication_candidate(cand, producers=producers)
+    return cand
+
+
+def test_publication_manifest_speaks_the_release_client_contract(tmp_path):
+    # Task 10.10 seam: the finalized manifest must satisfy the READ-ONLY
+    # workbook release-client contract (schema_id + artifacts list) while the
+    # richer assets inventory stays authoritative — and the two may not drift.
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub)
+    cand = _stage(pub, producers, tmp_path / "candidate")
+
+    manifest = _candidate_manifest(cand)
+    assert manifest["schema_id"] == "publication_manifest.v1"
+    artifacts = manifest["artifacts"]
+    assert [row["path"] for row in artifacts] == sorted(manifest["assets"])
+    for row in artifacts:
+        entry = manifest["assets"][row["path"]]
+        assert row["sha256"] == entry["sha256"]
+        assert row["size"] == entry["size"]
+
+    drifted = _candidate_manifest(cand)
+    drifted["artifacts"][0]["sha256"] = "0" * 64
+    _rewrite_candidate_manifest(cand, drifted)
+    with pytest.raises(ValueError, match="artifacts"):
+        pub.validate_staged_candidate(cand)
+
+
+def test_offline_clean_room_smoke_passes_a_finalized_fixture_upload_set(tmp_path):
+    pub = _publisher()
+    catalog = pub.DATA_V4_CATALOG
+    producers = _producer_dirs(tmp_path / "producers", pub, payload=_media_payload)
+    cand = _finalized_media_candidate(pub, producers, tmp_path / "candidate")
+    clean_room = tmp_path / "clean_room"
+
+    with pub.serve_publication_candidate(cand) as served:
+        report = pub.run_offline_release_smoke(
+            base_url=served.base_url, tag="data-v4", clean_room=clean_room
+        )
+
+    assert report["state"] == "verified"
+    assert report["tag"] == "data-v4"
+    assert report["assets_verified"] == len(catalog.payload_basenames)
+    assert report["schemas_validated"] == len(catalog.payload_basenames)
+    # representative S0-S5 builds all loaded real assets via the real client
+    assert set(report["step_builds"]) == {"S0", "S1", "S2", "S3", "S4", "S5"}
+    assert all(report["step_builds"][step] for step in report["step_builds"])
+    # the endpoint saw only read requests
+    assert served.requests and all(m == "GET" for m, _ in served.requests)
+    # the clean room holds the client cache: checksums verified with no
+    # repository data path in reach
+    assert (clean_room / "cache" / "data-v4").is_dir()
+
+
+def test_offline_smoke_blocks_repository_paths_and_mutable_pointers(tmp_path):
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub, payload=_media_payload)
+    cand = _finalized_media_candidate(pub, producers, tmp_path / "candidate")
+
+    # a clean room inside the repository is refused outright
+    repo_room = Path(pub.__file__).resolve().parents[1] / "data" / "_smoke_room"
+    with pub.serve_publication_candidate(cand) as served:
+        with pytest.raises(ValueError, match="repository"):
+            pub.run_offline_release_smoke(
+                base_url=served.base_url, tag="data-v4", clean_room=repo_room
+            )
+        assert not repo_room.exists()
+
+        # a non-empty clean room (stale cache) is refused
+        dirty = tmp_path / "dirty"
+        dirty.mkdir()
+        (dirty / "stale").write_text("x")
+        with pytest.raises(ValueError, match="empty"):
+            pub.run_offline_release_smoke(
+                base_url=served.base_url, tag="data-v4", clean_room=dirty
+            )
+
+        # only an explicit immutable tag is accepted
+        with pytest.raises(ValueError, match="immutable"):
+            pub.run_offline_release_smoke(
+                base_url=served.base_url, tag="latest", clean_room=tmp_path / "r1"
+            )
+
+    # the offline smoke never talks to a non-local endpoint
+    with pytest.raises(ValueError, match="localhost"):
+        pub.run_offline_release_smoke(
+            base_url="https://github.com/norandom/Global_Macro_AI_Factors",
+            tag="data-v4",
+            clean_room=tmp_path / "r2",
+        )
+
+    # the server itself refuses to impersonate a mutable pointer tag
+    with pytest.raises(ValueError, match="immutable"):
+        with pub.serve_publication_candidate(cand, tag="latest"):
+            pass
+
+    # an endpoint that DOES expose a mutable current-release pointer fails
+    class _PointerHandler(BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802 - stdlib API name
+            body = b"{}"
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _PointerHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with pytest.raises(ValueError, match="mutable current-release pointer"):
+            pub.run_offline_release_smoke(
+                base_url=f"http://127.0.0.1:{server.server_port}",
+                tag="data-v4",
+                clean_room=tmp_path / "r3",
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_offline_smoke_fails_each_faulted_upload_set(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub, payload=_media_payload)
+
+    def fresh(name):
+        return _finalized_media_candidate(pub, producers, tmp_path / name)
+
+    def smoke(cand, room):
+        with pub.serve_publication_candidate(cand) as served:
+            return pub.run_offline_release_smoke(
+                base_url=served.base_url, tag="data-v4", clean_room=tmp_path / room
+            )
+
+    payload = "factor_evidence_ext2026.parquet"
+
+    # missing: a manifest-owned asset absent from the upload set
+    cand = fresh("missing")
+    (cand / payload).unlink()
+    with pytest.raises(ValueError, match="missing"):
+        smoke(cand, "room_missing")
+
+    # extra: an uncataloged file in the upload set
+    cand = fresh("extra")
+    (cand / "stray.bin").write_bytes(b"stray")
+    with pytest.raises(ValueError, match="extra"):
+        smoke(cand, "room_extra")
+
+    # corrupt: asset bytes diverge from the manifest hash — the REAL release
+    # client refuses them before any load
+    cand = fresh("corrupt")
+    (cand / payload).write_bytes(b"tampered payload")
+    with pytest.raises(ValueError, match="integrity"):
+        smoke(cand, "room_corrupt")
+
+    # stale: SHA256SUMS no longer matches the finalized bytes
+    cand = fresh("stale")
+    sums = (cand / "SHA256SUMS").read_text().splitlines()
+    sums[0] = ("f" * 64) + sums[0][64:]
+    (cand / "SHA256SUMS").write_text("\n".join(sums) + "\n")
+    with pytest.raises(ValueError, match="SHA256SUMS"):
+        smoke(cand, "room_stale")
+
+    # incomplete: a provisional (never finalized) candidate is not releasable
+    provisional = _stage(pub, producers, tmp_path / "provisional")
+    with pytest.raises(ValueError, match="SHA256SUMS|completed"):
+        smoke(provisional, "room_provisional")
+
+    # schema-invalid: manifest-consistent bytes that do not parse as the
+    # declared media/schema fail the schema loaders
+    bad_producers = _producer_dirs(
+        tmp_path / "producers_schema", pub, payload=_media_payload
+    )
+    target = next(
+        asset
+        for asset in pub.DATA_V4_CATALOG.assets
+        if asset.public_basename == payload
+    )
+    bad_bytes = b"not a parquet table\n"
+    (bad_producers["factor_run"] / target.source_artifact).write_bytes(bad_bytes)
+    _mutate_producer_manifest(
+        bad_producers["factor_run"],
+        lambda m: m["assets"][target.source_artifact].update(
+            sha256=hashlib.sha256(bad_bytes).hexdigest(), size=len(bad_bytes)
+        ),
+    )
+    cand = _finalized_media_candidate(
+        pub, bad_producers, tmp_path / "schema_invalid"
+    )
+    with pytest.raises(ValueError, match="schema-invalid"):
+        smoke(cand, "room_schema")
+
+
+def test_public_smoke_verifies_release_and_frozen_history_read_only(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub, payload=_media_payload)
+    cand = _finalized_media_candidate(pub, producers, tmp_path / "candidate")
+
+    hist = tmp_path / "hist-v2"
+    hist.mkdir()
+    (hist / "factor_loadings_v1.parquet").write_bytes(b"frozen-a")
+    (hist / "static_bh_stats.json").write_bytes(b"frozen-b")
+    pins = {
+        "data-v2": {
+            "factor_loadings_v1.parquet": hashlib.sha256(b"frozen-a").hexdigest(),
+            "static_bh_stats.json": hashlib.sha256(b"frozen-b").hexdigest(),
+        }
+    }
+
+    with pub.serve_publication_candidate(
+        cand, historical={"data-v2": hist}
+    ) as served:
+        report = pub.run_public_release_smoke(
+            tag="data-v4",
+            base_url=served.base_url,
+            clean_room=tmp_path / "room",
+            historical_pins=pins,
+        )
+        # only an explicit immutable tag is accepted — never a mutable pointer
+        with pytest.raises(ValueError, match="immutable"):
+            pub.run_public_release_smoke(
+                tag="latest", base_url=served.base_url, clean_room=tmp_path / "r1"
+            )
+        # a clean cache is mandatory
+        dirty = tmp_path / "dirty"
+        dirty.mkdir()
+        (dirty / "stale").write_text("x")
+        with pytest.raises(ValueError, match="empty"):
+            pub.run_public_release_smoke(
+                tag="data-v4", base_url=served.base_url, clean_room=dirty
+            )
+
+    assert report["state"] == "verified"
+    assert report["historical"] == {"data-v2": {"assets_verified": 2}}
+    # strictly read-only: the endpoint saw GET requests only, nothing
+    # upload- or release-creation-shaped
+    assert served.requests and all(m == "GET" for m, _ in served.requests)
+    assert not any("upload" in path.lower() for _, path in served.requests)
+    # and the publisher module exposes no release-creation/upload capability
+    assert not [
+        n
+        for n in dir(pub)
+        if "upload" in n.lower() or "create_release" in n.lower()
+    ]
+
+
+def test_public_smoke_reports_not_yet_published_and_fails_public_faults(tmp_path):
+    pub = _publisher()
+    producers = _producer_dirs(tmp_path / "producers", pub, payload=_media_payload)
+
+    # not-yet-published: the public endpoint has no data-v4 release at all —
+    # a clear state, not a verification failure
+    hist = tmp_path / "hist"
+    hist.mkdir()
+    (hist / "asset.bin").write_bytes(b"old")
+    with pub.serve_publication_candidate(hist, tag="data-v3") as served:
+        report = pub.run_public_release_smoke(
+            tag="data-v4", base_url=served.base_url, clean_room=tmp_path / "r0"
+        )
+    assert report["state"] == "not_yet_published"
+    assert "data-v4" in report["detail"]
+
+    def fresh(name):
+        return _finalized_media_candidate(pub, producers, tmp_path / name)
+
+    def smoke(cand, room, **kwargs):
+        with pub.serve_publication_candidate(cand, **kwargs) as served:
+            return pub.run_public_release_smoke(
+                tag="data-v4",
+                base_url=served.base_url,
+                clean_room=tmp_path / room,
+            )
+
+    # missing asset in the public release
+    cand = fresh("missing")
+    (cand / "factor_evidence_ext2026.parquet").unlink()
+    with pytest.raises(ValueError, match="missing"):
+        smoke(cand, "r_missing")
+
+    # duplicated asset names in the public listing
+    cand = fresh("duplicate")
+    names = sorted(p.name for p in cand.iterdir())
+    with pytest.raises(ValueError, match="duplicate"):
+        smoke(cand, "r_duplicate", listing_names=names + [names[0]])
+
+    # public bytes that no longer match the publication manifest hash
+    cand = fresh("mismatch")
+    (cand / "factor_evidence_ext2026.parquet").write_bytes(b"drifted bytes")
+    with pytest.raises(ValueError, match="integrity"):
+        smoke(cand, "r_mismatch")
+
+    # historical stability: a frozen historical hash that changed is an error
+    cand = fresh("history")
+    hist2 = tmp_path / "hist2"
+    hist2.mkdir()
+    (hist2 / "asset.bin").write_bytes(b"rewritten history")
+    bad_pins = {"data-v2": {"asset.bin": hashlib.sha256(b"original").hexdigest()}}
+    with pub.serve_publication_candidate(
+        cand, historical={"data-v2": hist2}
+    ) as served:
+        with pytest.raises(ValueError, match="frozen hash"):
+            pub.run_public_release_smoke(
+                tag="data-v4",
+                base_url=served.base_url,
+                clean_room=tmp_path / "r_history",
+                historical_pins=bad_pins,
+            )
