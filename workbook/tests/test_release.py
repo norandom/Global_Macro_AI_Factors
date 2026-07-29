@@ -1,18 +1,25 @@
-"""Offline tests for the versioned release client (task 2.1, R1.1–R1.6).
+"""Offline tests for the versioned release client (task 2.1 R1.1–R1.6;
+task 10.2 manifest-aware ``data-v4`` integrity, R7.3–R8.8).
 
 All transport is mocked (``requests.get`` monkeypatched) and tarballs are
 built in memory — no live network in the default run. Covers: successful
-fetch with provenance, every error class (network/missing/auth/unpack),
-the no-stale-substitution rule, the dormant token path, and the
-keyring-then-environment token lookup order.
+fetch with provenance, every error class (network/missing/auth/unpack/
+integrity), the no-stale-substitution rule, explicit-immutable-tag-only
+resolution without repository-local fallback, ``data-v4`` manifest
+allowlisting and hash verification before caching, cache eviction on
+integrity failure, credential-free provenance, unchanged ``data-v1``–``v3``
+direct loading, the dormant token path, and the keyring-then-environment
+token lookup order.
 """
 
 import hashlib
 import io
+import json
 import os
 import sys
 import tarfile
 import types
+from dataclasses import asdict
 
 import pytest
 
@@ -34,6 +41,17 @@ PUBLIC_URL = (
 API_RELEASE_URL = (
     "https://api.github.com/repos/norandom/Global_Macro_AI_Factors/"
     f"releases/tags/{TAG}"
+)
+DATA_V4_TAG = "data-v4"
+DATA_V4_ASSET = "portfolio_metrics_reader_ext2026.parquet"
+DATA_V4_MANIFEST = "publication_manifest.json"
+DATA_V4_MANIFEST_URL = (
+    "https://github.com/norandom/Global_Macro_AI_Factors/releases/download/"
+    f"{DATA_V4_TAG}/{DATA_V4_MANIFEST}"
+)
+DATA_V4_ASSET_URL = (
+    "https://github.com/norandom/Global_Macro_AI_Factors/releases/download/"
+    f"{DATA_V4_TAG}/{DATA_V4_ASSET}"
 )
 
 
@@ -75,6 +93,31 @@ def make_targz(members: dict[str, bytes]) -> bytes:
 
 def no_token() -> None:
     return None
+
+
+def make_data_v4_manifest(
+    assets: dict[str, bytes],
+    *,
+    completed: bool = True,
+    release_tag: str = DATA_V4_TAG,
+) -> bytes:
+    """Build the compact publication-manifest fixture consumed by the client."""
+    return json.dumps(
+        {
+            "schema_id": "publication_manifest.v1",
+            "release_tag": release_tag,
+            "completed": completed,
+            "artifacts": [
+                {
+                    "path": name,
+                    "sha256": hashlib.sha256(payload).hexdigest(),
+                    "size": len(payload),
+                }
+                for name, payload in sorted(assets.items())
+            ],
+        },
+        sort_keys=True,
+    ).encode("utf-8")
 
 
 # --- successful fetch + provenance (R1.1, R1.2) ---------------------------
@@ -238,6 +281,233 @@ def test_tag_is_immutable_new_client_per_version(tmp_path):
     assert client.tag == TAG
     with pytest.raises(AttributeError):
         client.tag = "data-v2"
+
+
+# --- data-v4 manifest integrity (Task 10.2, R7.3-R8.8) -----------------------
+
+
+def test_data_v4_valid_asset_is_allowlisted_verified_then_cached(monkeypatch, tmp_path):
+    payload = b"verified-data-v4-payload"
+    manifest = make_data_v4_manifest({DATA_V4_ASSET: payload})
+
+    def handler(url, headers):
+        if url == DATA_V4_MANIFEST_URL:
+            return FakeResponse(200, manifest)
+        if url == DATA_V4_ASSET_URL:
+            return FakeResponse(200, payload)
+        raise AssertionError(f"unexpected url {url}")
+
+    calls = install_transport(monkeypatch, handler)
+    client = ReleaseClient(DATA_V4_TAG, cache_dir=tmp_path, token_provider=no_token)
+
+    data, prov = client.fetch(DATA_V4_ASSET)
+
+    expected = hashlib.sha256(payload).hexdigest()
+    assert data == payload
+    assert [url for url, _ in calls] == [DATA_V4_MANIFEST_URL, DATA_V4_ASSET_URL]
+    assert (tmp_path / DATA_V4_TAG / DATA_V4_MANIFEST).read_bytes() == manifest
+    assert (tmp_path / DATA_V4_TAG / DATA_V4_ASSET).read_bytes() == payload
+    assert prov.tag == DATA_V4_TAG
+    assert prov.url == DATA_V4_ASSET_URL
+    assert prov.sha256 == expected
+    assert prov.expected_sha256 == expected
+    assert prov.from_cache is False
+    assert prov.verified is True
+    assert prov.verification == "publication_manifest_sha256"
+
+
+def test_data_v4_rejects_unlisted_asset_before_asset_download(monkeypatch, tmp_path):
+    listed_payload = b"listed"
+    manifest = make_data_v4_manifest({DATA_V4_ASSET: listed_payload})
+    unlisted = "not_in_publication_manifest.parquet"
+
+    def handler(url, headers):
+        if url == DATA_V4_MANIFEST_URL:
+            return FakeResponse(200, manifest)
+        raise AssertionError("an unlisted data-v4 asset must not be downloaded")
+
+    calls = install_transport(monkeypatch, handler)
+    client = ReleaseClient(DATA_V4_TAG, cache_dir=tmp_path, token_provider=no_token)
+
+    with pytest.raises(ReleaseError) as exc:
+        client.fetch(unlisted)
+
+    assert exc.value.error == FetchError(unlisted, "integrity", exc.value.error.detail)
+    assert "not listed" in exc.value.error.detail
+    assert [url for url, _ in calls] == [DATA_V4_MANIFEST_URL]
+    assert not (tmp_path / DATA_V4_TAG / unlisted).exists()
+    assert client.provenance_table() == []
+
+
+def test_data_v4_download_hash_mismatch_is_not_cached_or_loaded(monkeypatch, tmp_path):
+    expected_payload = b"expected"
+    corrupt_payload = b"corrupt"
+    manifest = make_data_v4_manifest({DATA_V4_ASSET: expected_payload})
+
+    def handler(url, headers):
+        if url == DATA_V4_MANIFEST_URL:
+            return FakeResponse(200, manifest)
+        if url == DATA_V4_ASSET_URL:
+            return FakeResponse(200, corrupt_payload)
+        raise AssertionError(f"unexpected url {url}")
+
+    install_transport(monkeypatch, handler)
+    client = ReleaseClient(DATA_V4_TAG, cache_dir=tmp_path, token_provider=no_token)
+
+    with pytest.raises(ReleaseError) as exc:
+        client.fetch(DATA_V4_ASSET)
+
+    assert exc.value.error.cause == "integrity"
+    assert hashlib.sha256(expected_payload).hexdigest() in exc.value.error.detail
+    assert hashlib.sha256(corrupt_payload).hexdigest() in exc.value.error.detail
+    assert not (tmp_path / DATA_V4_TAG / DATA_V4_ASSET).exists()
+    assert client.provenance_table() == []
+
+
+def test_data_v4_stale_cache_hash_mismatch_is_evicted_without_loading(monkeypatch, tmp_path):
+    expected_payload = b"expected"
+    stale_payload = b"stale-cache"
+    manifest = make_data_v4_manifest({DATA_V4_ASSET: expected_payload})
+    tag_cache = tmp_path / DATA_V4_TAG
+    tag_cache.mkdir(parents=True)
+    (tag_cache / DATA_V4_MANIFEST).write_bytes(manifest)
+    stale_path = tag_cache / DATA_V4_ASSET
+    stale_path.write_bytes(stale_payload)
+
+    def boom(url, headers):
+        raise AssertionError("a stale cache entry must fail closed before network refresh")
+
+    install_transport(monkeypatch, boom)
+    client = ReleaseClient(DATA_V4_TAG, cache_dir=tmp_path, token_provider=no_token)
+
+    with pytest.raises(ReleaseError) as exc:
+        client.fetch(DATA_V4_ASSET)
+
+    assert exc.value.error.cause == "integrity"
+    assert "cache" in exc.value.error.detail
+    assert not stale_path.exists()
+    assert client.provenance_table() == []
+
+
+def test_data_v4_invalid_cached_manifest_is_evicted_before_asset_use(monkeypatch, tmp_path):
+    tag_cache = tmp_path / DATA_V4_TAG
+    tag_cache.mkdir(parents=True)
+    manifest_path = tag_cache / DATA_V4_MANIFEST
+    manifest_path.write_bytes(b'{"completed": true, "artifacts": "not-a-list"}')
+    cached_asset = tag_cache / DATA_V4_ASSET
+    cached_asset.write_bytes(b"must-not-load")
+
+    def boom(url, headers):
+        raise AssertionError("an invalid cached manifest must fail closed")
+
+    install_transport(monkeypatch, boom)
+    client = ReleaseClient(DATA_V4_TAG, cache_dir=tmp_path, token_provider=no_token)
+
+    with pytest.raises(ReleaseError) as exc:
+        client.fetch(DATA_V4_ASSET)
+
+    assert exc.value.error.cause == "integrity"
+    assert not manifest_path.exists()
+    assert not cached_asset.exists()
+    assert client.provenance_table() == []
+
+
+@pytest.mark.parametrize("tag", ["", "latest", "current", "data-current", "data/latest", "data-v4?x=1"])
+def test_release_client_rejects_implicit_mutable_or_unsafe_tags(tag, tmp_path):
+    with pytest.raises(ValueError, match="explicit immutable release tag"):
+        ReleaseClient(tag, cache_dir=tmp_path, token_provider=no_token)
+
+
+def test_data_v4_never_uses_repository_local_current_fallback(monkeypatch, tmp_path):
+    local_data = tmp_path / "data"
+    local_data.mkdir()
+    (local_data / "current.json").write_text(
+        json.dumps({"tag": DATA_V4_TAG, "asset": DATA_V4_ASSET}), encoding="utf-8"
+    )
+    (local_data / DATA_V4_ASSET).write_bytes(b"repository-local-substitute")
+    monkeypatch.chdir(tmp_path)
+    calls = install_transport(monkeypatch, lambda url, h: FakeResponse(404))
+    client = ReleaseClient(
+        DATA_V4_TAG,
+        cache_dir=tmp_path / "isolated-cache",
+        token_provider=no_token,
+    )
+
+    with pytest.raises(ReleaseError) as exc:
+        client.fetch(DATA_V4_ASSET)
+
+    assert exc.value.error.cause == "missing"
+    assert calls
+    assert client.provenance_table() == []
+    assert not (tmp_path / "isolated-cache" / DATA_V4_TAG / DATA_V4_ASSET).exists()
+
+
+def test_data_v4_authenticated_provenance_contains_no_credentials(monkeypatch, tmp_path):
+    token = "data-v4-secret-token"
+    payload = b"private-verified-payload"
+    manifest = make_data_v4_manifest({DATA_V4_ASSET: payload})
+    manifest_api_url = "https://api.github.com/repos/norandom/Global_Macro_AI_Factors/releases/assets/40"
+    asset_api_url = "https://api.github.com/repos/norandom/Global_Macro_AI_Factors/releases/assets/41"
+    api_release_url = (
+        "https://api.github.com/repos/norandom/Global_Macro_AI_Factors/"
+        f"releases/tags/{DATA_V4_TAG}"
+    )
+
+    def handler(url, headers):
+        if url in (DATA_V4_MANIFEST_URL, DATA_V4_ASSET_URL):
+            return FakeResponse(404)
+        if url == api_release_url:
+            assert headers["Authorization"] == f"Bearer {token}"
+            return FakeResponse(
+                200,
+                json_data={
+                    "assets": [
+                        {"name": DATA_V4_MANIFEST, "url": manifest_api_url},
+                        {"name": DATA_V4_ASSET, "url": asset_api_url},
+                    ]
+                },
+            )
+        if url == manifest_api_url:
+            return FakeResponse(200, manifest)
+        if url == asset_api_url:
+            return FakeResponse(200, payload)
+        raise AssertionError(f"unexpected url {url}")
+
+    install_transport(monkeypatch, handler)
+    client = ReleaseClient(DATA_V4_TAG, cache_dir=tmp_path, token_provider=lambda: token)
+
+    data, prov = client.fetch(DATA_V4_ASSET)
+
+    assert data == payload
+    assert prov.verified is True
+    assert token not in json.dumps(asdict(prov), sort_keys=True)
+    assert token not in str(client.provenance_table())
+    for path in tmp_path.rglob("*"):
+        assert token not in str(path)
+
+
+@pytest.mark.parametrize("tag", ["data-v1", "data-v2", "data-v3"])
+def test_historical_tags_keep_direct_loading_without_manifest(monkeypatch, tmp_path, tag):
+    payload = f"{tag}-historical".encode()
+    asset = "historical.parquet"
+    expected_url = (
+        "https://github.com/norandom/Global_Macro_AI_Factors/releases/download/"
+        f"{tag}/{asset}"
+    )
+
+    def handler(url, headers):
+        assert url == expected_url
+        return FakeResponse(200, payload)
+
+    calls = install_transport(monkeypatch, handler)
+    data, prov = ReleaseClient(tag, cache_dir=tmp_path, token_provider=no_token).fetch(asset)
+
+    assert data == payload
+    assert [url for url, _ in calls] == [expected_url]
+    assert prov.sha256 == hashlib.sha256(payload).hexdigest()
+    assert prov.expected_sha256 is None
+    assert prov.verified is False
+    assert prov.verification == "historical_direct"
 
 
 # --- dormant token path (R1.3) ----------------------------------------------
