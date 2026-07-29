@@ -12,13 +12,24 @@ exonerated — with its recorded error.
 
 from __future__ import annotations
 
+import dataclasses
 import math
 from dataclasses import dataclass
 
 import pandas as pd
 
 from factor_workbook import certification
-from factor_workbook.contract import load_frame, load_json
+from factor_workbook.contract import (
+    ATTRIBUTION_SCHEMA,
+    CRISIS_SCHEMA,
+    DATA_V4_TAG,
+    READER_SCHEMA,
+    SSR_REPORT_DEFAULTS,
+    SchemaError,
+    load_frame,
+    load_json,
+    load_v4_frame,
+)
 from factor_workbook.rederive import (
     EquityMetrics,
     contamination_premium,
@@ -29,7 +40,7 @@ from factor_workbook.rederive import (
     wilson_ci,
 )
 from factor_workbook.release import ReleaseClient, ReleaseError
-from factor_workbook.vendored_ssr import SSRInference, ssr_inference
+from factor_workbook.vendored_ssr import SSRInference, SSRResult, ssr_inference
 from factor_workbook.verify import Check, compare
 
 _N_SPLITS = 5  # certification_stats default; each arm needs >= this many rows
@@ -897,6 +908,573 @@ def build_s5(client: ReleaseClient) -> StepView:
     return StepView(
         title="S5 — Luck versus skill (contamination premium vs robust inference)",
         framing=S5_FRAMING,
+        tables=tables,
+        checks=checks,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# V4 — corrected canonical data-v4 tables (task 10.5)                          #
+#                                                                              #
+# The corrected canonical release is consumed VERBATIM: every displayed value  #
+# is the published canonical figure, loaded through the tag-bound data-v4      #
+# contracts — this step performs no alternative local calculation. The checks  #
+# re-derive representative rows through the vendored root implementations      #
+# (cash-excess SSR from portfolio returns minus the aligned BIL total          #
+# returns, boundary-anchored crisis values, the differential spread) and flag  #
+# any disagreement. Missing cash, shortened attribution, incomplete windows,   #
+# schema violations, and manifest failures render as visible check rows,       #
+# never silent substitutions. Historical tags keep the immutable S0-S5 audit;  #
+# a non-data-v4 client is refused here exactly as a data-v4 client is refused  #
+# by the historical loaders.                                                   #
+# --------------------------------------------------------------------------- #
+
+#: Framing for the V4 canonical-tables step (R7.3) — displayed with the sheet.
+V4_FRAMING = (
+    "V4 — the corrected canonical data-v4 tables, consumed verbatim under the "
+    "publication manifest: reader (252-trading-day, cash-excess Sharpe/SSR), "
+    "legacy vectorbt/365, differential, raw market-model attribution, "
+    "boundary-anchored crisis, Factor, SJM v3, and Markowitz USD tables. "
+    "Every displayed figure is the published canonical value — no local "
+    "alternative calculation. The checks re-derive representative rows with "
+    "the vendored root implementations: the SSR is reconstructed from "
+    "portfolio returns minus the aligned BIL total returns with all "
+    "deterministic inference settings surfaced, crisis values are re-derived "
+    "boundary-anchored, and the Factor differential is rebuilt from the "
+    "released equity series. Missing cash sessions, shortened attribution, "
+    "incomplete windows, schema violations, and manifest failures render as "
+    "visible check rows. The S0-S5 storyboard remains the immutable data-v2 "
+    "historical audit. No forecast-accuracy claim is made."
+)
+
+#: View table name -> data-v4 registry key; every canonical family verbatim.
+_V4_TABLE_KEYS: dict[str, str] = {
+    "reader": "portfolio_metrics_reader_ext2026",
+    "legacy": "portfolio_metrics_vectorbt365_ext2026",
+    "differential": "portfolio_metrics_differential_ext2026",
+    "attribution": "attribution_raw_market_model_ext2026",
+    "crisis": "crisis_metrics_ext2026",
+    "tear_sheet_ai_variants": "tear_sheet_ai_variants_ext2026",
+    "tear_sheet_sjm": "tear_sheet_sjm_crowding_ext2026",
+    "tear_sheet_trio": "tear_sheet_trio_ext2026",
+    "monthly_returns": "monthly_returns_ext2026",
+    "risk_decomposition": "risk_decomposition_ext2026",
+    "markowitz_10y_moments": "markowitz_10y_moments",
+    "markowitz_10y_frontier": "markowitz_10y_frontier",
+    "markowitz_max_moments": "markowitz_max_moments",
+    "markowitz_max_frontier": "markowitz_max_frontier",
+    "factor_equity": "factor_equity_ext2026",
+    "factor_targets": "factor_targets_ext2026",
+    "factor_nonpit_equity": "factor_nonpit_diagnostic_equity_ext2026",
+    "factor_nonpit_targets": "factor_nonpit_diagnostic_targets_ext2026",
+    "sjm_equity": "sjm_crowding_v3_total_return_bil_equity_ext2026",
+    "sjm_targets": "sjm_crowding_v3_total_return_bil_targets_ext2026",
+    "sjm_daily_returns": "sjm_crowding_v3_total_return_bil_daily_returns_ext2026",
+    "sjm_control_returns": "sjm_crowding_v3_total_return_bil_control_returns_ext2026",
+}
+
+#: Frozen producer identities (scripts/build_tear_sheet.py, sjm producer).
+_V4_FACTOR_PIT = "factor_pit_ext2026"
+_V4_FACTOR_NONPIT = "factor_nonpit_diagnostic_ext2026"
+_V4_FACTOR_DIFFERENTIAL = "factor_nonpit_minus_pit_ext2026"
+_V4_SJM_OVERLAY_BASIS = "sjm_v3_overlay_anchored_equity"
+_V4_SJM_CONTROL_BASIS = "sjm_v3_control_anchored_equity"
+
+#: The pinned deterministic inference settings every canonical row records.
+_V4_SSR_SETTINGS = dict(SSR_REPORT_DEFAULTS)
+
+#: The full published ``ssr_*`` vocabulary, projected from the vendored
+#: (byte-identical to root) SSR dataclasses — the one shared authority.
+_V4_SSR_RESULT_FIELDS = frozenset(f.name for f in dataclasses.fields(SSRResult))
+_V4_SSR_FIELDS = tuple(f.name for f in dataclasses.fields(SSRResult)) + tuple(
+    f.name for f in dataclasses.fields(SSRInference) if f.name != "result"
+)
+
+#: Published crisis column -> re-derived ``EquityMetrics`` attribute. The
+#: volatility comparison assumes the canonical 252-day crisis convention; a
+#: row on any other basis renders as a visible disagreement, by design.
+_V4_CRISIS_VALUE_FIELDS = {
+    "episode_return": "crisis_return",
+    "boundary_anchored_max_drawdown": "crisis_max_drawdown",
+    "volatility_ann": "crisis_vol_ann",
+}
+
+#: Tables that may carry reader rows (attribution-coverage scan).
+_V4_READER_BEARING = ("reader", "tear_sheet_ai_variants", "tear_sheet_sjm", "tear_sheet_trio")
+
+
+def _v4_status(name: str, ok: bool, detail: str = "") -> Check:
+    """A visible pass/fail condition as a check row (1 = holds), never an
+    exception: the failure detail travels in the rendered message (R7.2)."""
+    ok = bool(ok)
+    return Check(name, 1.0, 1.0 if ok else 0.0, 0.0, ok, "" if ok else f"{name}: {detail}")
+
+
+def _v4_ssr_value(inference: SSRInference, name: str) -> float:
+    return getattr(inference.result if name in _V4_SSR_RESULT_FIELDS else inference, name)
+
+
+def _v4_inference_row(line: str, inference: SSRInference, *, differential: bool = False) -> dict:
+    """One re-derived inference row surfacing ALL deterministic metadata under
+    the published ``ssr_*`` column vocabulary, plus the canonical verdict."""
+    row: dict = {"line": line}
+    row.update({f"ssr_{name}": _v4_ssr_value(inference, name) for name in _V4_SSR_FIELDS})
+    row["verdict"] = inference.verdict(differential=differential)
+    return row
+
+
+def _v4_ssr_comparisons(label: str, published_row: pd.Series, inference: SSRInference) -> list[Check]:
+    """Published ``ssr_*`` fields against the vendored re-derivation, one check
+    per field (bootstrap p-values reproduce exactly: same seed, same draws)."""
+    return [
+        compare(
+            f"{label} ssr_{name} vs published",
+            published_row[f"ssr_{name}"],
+            _v4_ssr_value(inference, name),
+        )
+        for name in _V4_SSR_FIELDS
+    ]
+
+
+def _v4_excess_checks(
+    line: str,
+    returns: pd.Series,
+    cash: pd.Series,
+    published_row: pd.Series,
+    inference_rows: list[dict],
+) -> list[Check]:
+    """Cash-excess SSR for one line: portfolio returns minus the aligned BIL
+    total returns over the published window. A session without a cash return
+    is a visible failed coverage check and the SSR is NOT constructed from
+    substitute data (R2.1, R4.2)."""
+    window = returns.loc[published_row["start"] : published_row["end"]]
+    cash_slice = cash.reindex(window.index)
+    n_missing = int(cash_slice.isna().sum())
+    checks = [
+        _v4_status(
+            f"V4 {line} cash coverage (1 = every session has an aligned BIL total return)",
+            n_missing == 0,
+            f"{n_missing} of {len(window)} sessions lack an aligned BIL total return",
+        )
+    ]
+    if n_missing:
+        return checks
+    inference = ssr_inference(window - cash_slice, **_V4_SSR_SETTINGS)
+    inference_rows.append(_v4_inference_row(line, inference))
+    checks += _v4_ssr_comparisons(f"V4 {line}", published_row, inference)
+    checks.append(
+        compare(
+            f"V4 {line} total_return vs published",
+            published_row["total_return"],
+            float((1.0 + window).prod() - 1.0),
+        )
+    )
+    return checks
+
+
+def _v4_crisis_checks(
+    line: str, value: pd.Series, rows: pd.DataFrame, *, required: bool = True
+) -> list[Check]:
+    """Boundary-anchored crisis re-derivation for one published crisis row.
+
+    Values re-derive through ``rederive.equity_metrics`` (task 10.4 parity
+    with the root ``crisis_metrics``); the boundary check re-derives anchor,
+    first return, actual end, and count from the released series itself, so a
+    published crisis window the series does not support — including a wrongly
+    shortened (incomplete) one — goes red instead of passing on trust.
+    """
+    if len(rows) == 0 and not required:
+        return []
+    if len(rows) != 1:
+        return [
+            _v4_status(
+                f"V4 {line} crisis row (1 = exactly one published row)",
+                False,
+                f"found {len(rows)} rows",
+            )
+        ]
+    row = rows.iloc[0]
+    metrics = equity_metrics(value, crisis=(row["requested_start"], row["requested_end"]))
+    checks = [
+        compare(f"V4 {line} crisis {column} vs published", row[column], getattr(metrics, attr))
+        for column, attr in _V4_CRISIS_VALUE_FIELDS.items()
+    ]
+    anchors = value.index[value.index < row["requested_start"]]
+    window = value.index[
+        (value.index >= row["requested_start"]) & (value.index <= row["requested_end"])
+    ]
+    mismatches: list[str] = []
+    if not len(anchors) or not len(window):
+        mismatches.append("released series does not span the requested window")
+    else:
+        for name, published, rederived in (
+            ("anchor", row["anchor"], anchors[-1]),
+            ("first_return_date", row["first_return_date"], window[0]),
+            ("actual_end", row["actual_end"], window[-1]),
+            ("n_returns", row["n_returns"], len(window)),
+        ):
+            if published != rederived:
+                mismatches.append(f"{name}: published {published!r} != released-series {rederived!r}")
+    checks.append(
+        _v4_status(
+            f"V4 {line} crisis boundary (1 = anchor, first return, actual end, and "
+            "count match the released series)",
+            not mismatches,
+            "; ".join(mismatches),
+        )
+    )
+    return checks
+
+
+def _v4_sjm_checks(loaded: dict[str, pd.DataFrame], inference_rows: list[dict]) -> list[Check]:
+    """SJM overlay + control re-derivations against the published tear sheet."""
+    missing = [
+        name
+        for name in ("sjm_equity", "sjm_daily_returns", "sjm_control_returns", "tear_sheet_sjm")
+        if name not in loaded
+    ]
+    checks = [
+        _v4_status(
+            "V4 sjm re-derivation inputs (1 = equity, daily returns, control returns, "
+            "and tear sheet loaded)",
+            not missing,
+            f"missing tables: {', '.join(missing)}",
+        )
+    ]
+    if missing:
+        return checks
+    value = loaded["sjm_equity"]["value"]
+    cash = loaded["sjm_daily_returns"]["cash_return"]
+    sheet = loaded["tear_sheet_sjm"]
+    # the control line ships as returns; the anchored curve mirrors the SJM
+    # producer's own reconstruction (1.0 on the overlay's first session)
+    control_value = pd.concat(
+        [
+            pd.Series([1.0], index=pd.DatetimeIndex([value.index[0]])),
+            (1.0 + loaded["sjm_control_returns"]["control_return"]).cumprod(),
+        ]
+    )
+    readers = sheet[sheet["schema"] == READER_SCHEMA]
+    for line, basis, curve in (
+        ("sjm overlay", _V4_SJM_OVERLAY_BASIS, value),
+        ("sjm control", _V4_SJM_CONTROL_BASIS, control_value),
+    ):
+        rows = readers[
+            (readers["return_basis"] == basis)
+            & readers["window_label"].astype(str).str.startswith("full")
+        ]
+        if len(rows) != 1:
+            checks.append(
+                _v4_status(
+                    f"V4 {line} full reader row (1 = exactly one published row)",
+                    False,
+                    f"found {len(rows)} rows",
+                )
+            )
+            continue
+        checks += _v4_excess_checks(
+            line, curve.pct_change().dropna(), cash, rows.iloc[0], inference_rows
+        )
+    checks += _v4_crisis_checks(
+        "sjm overlay",
+        value,
+        sheet[
+            (sheet["schema"] == CRISIS_SCHEMA)
+            & (sheet["return_basis"] == _V4_SJM_OVERLAY_BASIS)
+        ],
+    )
+    return checks
+
+
+def _v4_factor_checks(loaded: dict[str, pd.DataFrame], inference_rows: list[dict]) -> list[Check]:
+    """Factor reader endpoints plus the differential spread re-derivation."""
+    missing = [
+        name
+        for name in ("reader", "differential", "factor_equity", "factor_nonpit_equity")
+        if name not in loaded
+    ]
+    checks = [
+        _v4_status(
+            "V4 factor re-derivation inputs (1 = reader, differential, and both "
+            "equity series loaded)",
+            not missing,
+            f"missing tables: {', '.join(missing)}",
+        )
+    ]
+    if missing:
+        return checks
+    pit_returns = loaded["factor_equity"]["value"].pct_change().dropna()
+    nonpit_returns = loaded["factor_nonpit_equity"]["value"].pct_change().dropna()
+    reader = loaded["reader"]
+    for pid, returns in ((_V4_FACTOR_PIT, pit_returns), (_V4_FACTOR_NONPIT, nonpit_returns)):
+        rows = reader[(reader["schema"] == READER_SCHEMA) & (reader["portfolio_id"] == pid)]
+        if len(rows) != 1:
+            checks.append(
+                _v4_status(
+                    f"V4 factor {pid} reader row (1 = exactly one published row)",
+                    False,
+                    f"found {len(rows)} rows",
+                )
+            )
+            continue
+        row = rows.iloc[0]
+        window = returns.loc[row["start"] : row["end"]]
+        checks.append(compare(f"V4 factor {pid} n_obs vs released series", row["n_obs"], len(window)))
+        checks.append(
+            compare(
+                f"V4 factor {pid} total_return vs released series",
+                row["total_return"],
+                float((1.0 + window).prod() - 1.0),
+            )
+        )
+    rows = loaded["differential"][
+        loaded["differential"]["portfolio_id"] == _V4_FACTOR_DIFFERENTIAL
+    ]
+    if len(rows) != 1:
+        checks.append(
+            _v4_status(
+                "V4 factor differential row (1 = exactly one published row)",
+                False,
+                f"found {len(rows)} rows",
+            )
+        )
+        return checks
+    row = rows.iloc[0]
+    comparison = nonpit_returns.loc[row["start"] : row["end"]]
+    reference = pit_returns.loc[row["start"] : row["end"]]
+    aligned = comparison.index.equals(reference.index)
+    checks.append(
+        _v4_status(
+            "V4 factor differential session alignment (1 = comparison and reference "
+            "share every session)",
+            aligned,
+            "the released equity series disagree on sessions inside the published window",
+        )
+    )
+    if not aligned:
+        return checks
+    spread = comparison - reference
+    inference = ssr_inference(spread, **_V4_SSR_SETTINGS)
+    inference_rows.append(_v4_inference_row("factor differential", inference, differential=True))
+    checks += _v4_ssr_comparisons("V4 factor differential", row, inference)
+    checks.append(
+        compare(
+            "V4 factor differential total_return vs published",
+            row["total_return"],
+            float((1.0 + spread).prod() - 1.0),
+        )
+    )
+    checks.append(
+        compare(
+            "V4 factor differential endpoint_total_return_difference vs published",
+            row["endpoint_total_return_difference"],
+            float((1.0 + comparison).prod() - (1.0 + reference).prod()),
+        )
+    )
+    return checks
+
+
+def _v4_factor_crisis_checks(loaded: dict[str, pd.DataFrame]) -> list[Check]:
+    """Crisis rows of the standalone table re-derived from the released Factor
+    equity series (rows for portfolios without a released series pass through
+    verbatim — nothing is recomputed from substitute data)."""
+    crisis = loaded.get("crisis")
+    if crisis is None:
+        return []
+    checks: list[Check] = []
+    for pid, table in ((_V4_FACTOR_PIT, "factor_equity"), (_V4_FACTOR_NONPIT, "factor_nonpit_equity")):
+        if table not in loaded:
+            continue
+        checks += _v4_crisis_checks(
+            f"factor {pid}",
+            loaded[table]["value"],
+            crisis[crisis["portfolio_id"] == pid],
+            required=False,
+        )
+    return checks
+
+
+def _v4_attribution_coverage(loaded: dict[str, pd.DataFrame]) -> tuple[pd.DataFrame, list[Check]]:
+    """Shortened attribution surfaced (R3.6, R3.7): every ``performance_only``
+    reader row must have its attribution emitted as a SEPARATE record; the
+    coverage table shows inline/separate/missing per published reader row."""
+    separate: set = set()
+    for name in (*_V4_READER_BEARING, "attribution"):
+        frame = loaded.get(name)
+        if frame is not None and "schema" in frame.columns:
+            separate |= set(frame.loc[frame["schema"] == ATTRIBUTION_SCHEMA, "portfolio_id"])
+    rows: list[dict] = []
+    uncovered: list[str] = []
+    for name in _V4_READER_BEARING:
+        frame = loaded.get(name)
+        if frame is None or "row_kind" not in frame.columns:
+            continue
+        for _, row in frame[frame["schema"] == READER_SCHEMA].iterrows():
+            if row["row_kind"] == "performance_only":
+                attribution = "separate_record" if row["portfolio_id"] in separate else "missing"
+                if attribution == "missing":
+                    uncovered.append(f"{name}:{row['portfolio_id']}")
+            else:
+                attribution = "inline_full_window"
+            rows.append(
+                {
+                    "table": name,
+                    "portfolio_id": row["portfolio_id"],
+                    "window_label": row["window_label"],
+                    "row_kind": row["row_kind"],
+                    "attribution": attribution,
+                }
+            )
+    table = pd.DataFrame(
+        rows, columns=["table", "portfolio_id", "window_label", "row_kind", "attribution"]
+    )
+    check = _v4_status(
+        "V4 attribution coverage (1 = every performance_only reader row has a "
+        "separate attribution record)",
+        not uncovered,
+        f"no shortened-attribution record for: {', '.join(uncovered)}",
+    )
+    return table, [check]
+
+
+_V4_COVERAGE_COLUMNS = [
+    "kind", "table", "identity",
+    "requested_start", "requested_end", "actual_start", "actual_end", "incomplete",
+]
+
+
+def _v4_window_coverage(loaded: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Requested-vs-actual window disclosure: crisis and Markowitz rows with an
+    explicit ``incomplete`` flag wherever the actual coverage falls short of
+    the requested window — disclosed, never fabricated."""
+    rows: list[dict] = []
+    for name in ("crisis", "tear_sheet_sjm"):
+        frame = loaded.get(name)
+        if frame is None or "requested_end" not in frame.columns:
+            continue
+        for _, row in frame[frame["schema"] == CRISIS_SCHEMA].iterrows():
+            rows.append(
+                {
+                    "kind": "crisis",
+                    "table": name,
+                    "identity": row["portfolio_id"],
+                    "requested_start": row["requested_start"],
+                    "requested_end": row["requested_end"],
+                    "actual_start": row["first_return_date"],
+                    "actual_end": row["actual_end"],
+                    "incomplete": bool(row["actual_end"] < row["requested_end"]),
+                }
+            )
+    for name in (
+        "markowitz_10y_moments",
+        "markowitz_10y_frontier",
+        "markowitz_max_moments",
+        "markowitz_max_frontier",
+    ):
+        frame = loaded.get(name)
+        if frame is None:
+            continue
+        for _, row in frame.iterrows():
+            rows.append(
+                {
+                    "kind": "markowitz",
+                    "table": name,
+                    "identity": f"{row['window']}:{row.get('asset', 'frontier')}",
+                    "requested_start": row["requested_start"],
+                    "requested_end": row["requested_end"],
+                    "actual_start": row["actual_start"],
+                    "actual_end": row["actual_end"],
+                    "incomplete": bool(
+                        row["actual_start"] > row["requested_start"]
+                        or row["actual_end"] < row["requested_end"]
+                    ),
+                }
+            )
+    return pd.DataFrame(rows, columns=_V4_COVERAGE_COLUMNS)
+
+
+def _v4_manifest_check(client: ReleaseClient) -> Check:
+    """Manifest status surfaced: every loaded asset must have passed the
+    publication-manifest SHA-256 verification recorded in its provenance."""
+    name = "V4 manifest verification (1 = every loaded asset is manifest-verified)"
+    provenance_table = getattr(client, "provenance_table", None)
+    if provenance_table is None:
+        return _v4_status(name, False, "client exposes no provenance table")
+    records = provenance_table()
+    unverified = [
+        record.asset
+        for record in records
+        if not (record.verified and record.verification == "publication_manifest_sha256")
+    ]
+    detail = (
+        "no asset loaded"
+        if not records
+        else f"unverified assets: {', '.join(unverified)}"
+    )
+    return _v4_status(name, bool(records) and not unverified, detail)
+
+
+def build_v4(client: ReleaseClient) -> StepView:
+    """Assemble the corrected canonical data-v4 view (task 10.5).
+
+    Loads every canonical table verbatim through the tag-bound data-v4
+    contracts — one visible load check per asset, so missing, stale, corrupt,
+    cross-tag, unmanifested, or schema-violating assets each surface as a
+    named failed check rather than an exception or substitute data (R7.2,
+    R7.4, R8.6). On the loaded tables the step re-derives representative
+    published rows with the vendored root implementations: the SJM overlay
+    and control cash-excess SSR (portfolio returns minus the aligned BIL
+    total returns, all deterministic inference metadata surfaced in the
+    ``inference`` table), boundary-anchored crisis values and boundaries, the
+    Factor reader endpoints, and the Factor differential spread. Shortened
+    attribution and requested-vs-actual window coverage are surfaced in their
+    own tables with explicit flags. Historical tags are refused: the S0-S5
+    storyboard remains the immutable data-v2 audit (R7.3).
+
+    Args:
+        client: Release client BOUND to the ``data-v4`` tag.
+
+    Returns:
+        The typed V4 view model with the mandated framing.
+
+    Raises:
+        SchemaError: The client is bound to a historical tag — cross-tag
+            substitution is prohibited in both directions.
+    """
+    tag = getattr(client, "tag", None)
+    if tag != DATA_V4_TAG:
+        raise SchemaError(
+            f"the V4 step consumes the corrected canonical {DATA_V4_TAG!r} release; "
+            f"the client is bound to {tag!r} — historical tags keep the immutable "
+            "S0-S5 audit"
+        )
+    tables: dict[str, pd.DataFrame] = {}
+    checks: list[Check] = []
+    loaded: dict[str, pd.DataFrame] = {}
+    for name, key in _V4_TABLE_KEYS.items():
+        try:
+            frame, _ = load_v4_frame(client, key)
+        except (ReleaseError, SchemaError) as exc:
+            checks.append(_v4_status(f"V4 load {key} (1 = loaded and validated)", False, str(exc)))
+        else:
+            loaded[name] = tables[name] = frame
+            checks.append(_v4_status(f"V4 load {key} (1 = loaded and validated)", True))
+    checks.append(_v4_manifest_check(client))
+    inference_rows: list[dict] = []
+    checks += _v4_sjm_checks(loaded, inference_rows)
+    checks += _v4_factor_checks(loaded, inference_rows)
+    checks += _v4_factor_crisis_checks(loaded)
+    coverage_table, coverage_checks = _v4_attribution_coverage(loaded)
+    tables["attribution_coverage"] = coverage_table
+    checks += coverage_checks
+    tables["window_coverage"] = _v4_window_coverage(loaded)
+    tables["inference"] = pd.DataFrame(
+        inference_rows,
+        columns=["line", *(f"ssr_{name}" for name in _V4_SSR_FIELDS), "verdict"],
+    )
+    return StepView(
+        title="V4 — Corrected canonical tables (data-v4)",
+        framing=V4_FRAMING,
         tables=tables,
         checks=checks,
     )

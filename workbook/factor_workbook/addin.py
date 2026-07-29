@@ -36,6 +36,7 @@ from factor_workbook.steps import (
     build_s3,
     build_s4,
     build_s5,
+    build_v4,
 )
 from factor_workbook.verify import checks_frame
 
@@ -46,6 +47,9 @@ _STEP_BUILDERS = {
     "S3": build_s3,
     "S4": build_s4,
     "S5": build_s5,
+    # corrected canonical data-v4 tables (task 10.5); requires an explicitly
+    # selected data-v4 client — historical tags keep the immutable S0-S5 audit
+    "V4": build_v4,
 }
 
 
