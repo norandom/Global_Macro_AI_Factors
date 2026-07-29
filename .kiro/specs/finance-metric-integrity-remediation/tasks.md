@@ -303,7 +303,7 @@
   - _Depends: 5.4, 6.10_
   - _Requirements: 4.2, 7.4, 7.5, 7.6, 8.2, 8.8_
 
-- [ ] 7.2 Encode and hash the frozen SJM selection protocol (2h)
+- [x] 7.2 Encode and hash the frozen SJM selection protocol (2h)
   - Pin the approved development and holdout dates, development Calmar objective, CAGR budget, seed, dry rounds, iterations, signal cadence, seed configuration, limit table, and ordered mutation registry.
   - Treat `derisk_cash_pin` as the authoritative control identity for the maximum-drawdown gate and reject any conflicting control alias.
   - Hash canonical protocol fields, the read-only limit table, and the fully ordered mutation registry.
