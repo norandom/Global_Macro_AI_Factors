@@ -85,3 +85,6 @@ data/basket_close_2009_2026.parquet
 # appendix D: dividend-adjusted panel for the total-return SSR table;
 # regenerable via scripts/build_appendix_d_total_return.py, shipped via the GH data release.
 data/appendix_d_total_return_2010_2026.parquet
+
+# Local validated data-v4 upload set; generated build output, not source contracts.
+/release_assets/data-v4/
