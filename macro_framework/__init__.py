@@ -5,11 +5,31 @@ from .allocation import bl_mv_weights, hrp_bl_blend, hrp_cvar_weights, hrp_cvar_
 from .anonymize import AssetMap
 from .baseline import hrp_momentum_weights
 from .evaluation import (
+    CrisisMetrics,
     anticipation_lead_time,
     crisis_analytics,
+    crisis_metrics,
     head_to_head_report,
     turnover_stats,
     view_stability,
+)
+from .reporting import (
+    ATTRIBUTION_SCHEMA,
+    CRISIS_SCHEMA,
+    DIFFERENTIAL_SCHEMA,
+    LEGACY_SCHEMA,
+    MONTHLY_SCHEMA,
+    READER_SCHEMA,
+    REQUIRED_PROVENANCE,
+    LineMetadata,
+    build_attribution_record,
+    build_crisis_record,
+    build_differential_metric_row,
+    build_legacy_metric_row,
+    build_monthly_return_rows,
+    build_reader_metric_row,
+    report_table,
+    validate_report_row,
 )
 from .llm_agent import LlmMacroAgent, MacroView
 from .mc_regime import (
@@ -28,16 +48,21 @@ from .backtest import buy_and_hold, single_asset_buy_and_hold, summary
 from .rebalance import annual_rebalance_dates, build_target_weights, run_rebalance_sim
 from .returns import daily_returns
 from .scoring import score_universe, select_top_per_category
-from .ssr import compute_ssr, rolling_sharpe
+from .ssr import SSRInference, SSRResult, compute_ssr, rolling_sharpe, ssr_inference
 from .skill_metric import (
     IDIO_FLOOR,
+    AttributionKind,
     BasketResidual,
     GateConfig,
     GateVerdict,
     MarketAttribution,
     basket_residual,
+    differential_returns,
     evaluate_gates,
+    factor_returns_on,
     market_attribution,
+    portfolio_excess_returns,
+    raw_market_model_attribution,
 )
 from .regime_overlay import (
     avg_pairwise_correlation,
@@ -96,8 +121,13 @@ __all__ = [
     "turnover_stats",
     "view_stability",
     "head_to_head_report",
+    "factor_returns_on",
+    "portfolio_excess_returns",
+    "differential_returns",
     "basket_residual",
+    "raw_market_model_attribution",
     "market_attribution",
+    "AttributionKind",
     "BasketResidual",
     "MarketAttribution",
     "GateConfig",
@@ -108,4 +138,26 @@ __all__ = [
     "avg_pairwise_correlation",
     "correlation_scale",
     "derisk_cash_pin",
+    # completed shared finance contracts (task 4.6)
+    "ssr_inference",
+    "SSRInference",
+    "SSRResult",
+    "crisis_metrics",
+    "CrisisMetrics",
+    "LineMetadata",
+    "REQUIRED_PROVENANCE",
+    "READER_SCHEMA",
+    "LEGACY_SCHEMA",
+    "DIFFERENTIAL_SCHEMA",
+    "ATTRIBUTION_SCHEMA",
+    "CRISIS_SCHEMA",
+    "MONTHLY_SCHEMA",
+    "validate_report_row",
+    "build_reader_metric_row",
+    "build_legacy_metric_row",
+    "build_differential_metric_row",
+    "build_attribution_record",
+    "build_crisis_record",
+    "build_monthly_return_rows",
+    "report_table",
 ]

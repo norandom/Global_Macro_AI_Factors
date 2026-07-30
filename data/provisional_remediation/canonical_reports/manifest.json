@@ -1,0 +1,40 @@
+{
+  "completed": true,
+  "input_manifests": {
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "sjm_run": {
+      "manifest_sha256": "2f3a1f520fb360ab76228b934f57289a835156f853d0df7b5a936d4d564b8f43",
+      "run_id": "sjm_crowding_v3_total_return_bil_provisional"
+    }
+  },
+  "schema": "canonical_reports.v1",
+  "tables": {
+    "tear_sheet_sjm_crowding_ext2026": {
+      "file": "tables/tear_sheet_sjm_crowding_ext2026.parquet",
+      "rows": 10,
+      "sha256": "8f9e9290b764b3f10a50e144462452c60e2cb1c7b5c7457e0344c175a47591c6"
+    },
+    "tear_sheet_static_bh_window_dashboard": {
+      "file": "tables/tear_sheet_static_bh_window_dashboard.parquet",
+      "rows": 8,
+      "sha256": "0323cc522a19506e1432b8a1b3531151abb2a7554b2eefc90c76dd2a38b8f7f9"
+    },
+    "tear_sheet_static_bh_windows": {
+      "file": "tables/tear_sheet_static_bh_windows.parquet",
+      "rows": 4,
+      "sha256": "807d4b65845b801cbc6242123e8f59bb8aead7fe1284490ea7cd060f1ccdf83e"
+    },
+    "tear_sheet_trio_ext2026": {
+      "file": "tables/tear_sheet_trio_ext2026.parquet",
+      "rows": 3,
+      "sha256": "64c540eaa7e7f1e9ce5b275a616d30dd201734846183886067e9ab5a9527c191"
+    }
+  }
+}

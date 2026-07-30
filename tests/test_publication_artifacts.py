@@ -2322,6 +2322,32 @@ def test_sjm_report_tables_project_the_completed_run_with_full_provenance(
     assert result.windows["full"]["n_obs"] == len(r)
 
 
+def test_sjm_report_tables_can_project_an_explicit_common_performance_window(
+    canonical_case,
+):
+    import pandas as pd
+
+    bts = _reports_producer()
+    case = canonical_case
+    start = pd.Timestamp("2021-01-05")
+    result = bts.build_sjm_report_tables(
+        bts.load_sjm_report_input(
+            case["sjm_run_dir"],
+            run_id=case["sjm_run_id"],
+            manifest_sha256=case["sjm_sha"],
+        ),
+        _load_market(bts, case),
+        performance_start=start,
+        ssr_settings=_SJM_TEST_SSR,
+    )
+    readers = result.tables["tear_sheet_sjm_crowding_ext2026"]
+    readers = readers[readers["schema"] == "portfolio_metrics.reader.v2"]
+    end = pd.read_parquet(case["sjm_run_dir"] / "sjm_equity.parquet").index[-1]
+    assert set(readers["start"]) == {start}
+    assert set(readers["end"]) == {end}
+    assert set(readers["n_obs"]) == {len(pd.bdate_range(start, end))}
+
+
 def test_sjm_report_windows_split_and_input_gates(canonical_case, tmp_path):
     import shutil
 
@@ -2427,9 +2453,19 @@ def test_trio_static_and_dashboard_tables_share_one_validated_identity(
     pub = _publisher()
     case = canonical_case
     factor = _load_factor(bts, case)
-    sjm_reports = _sjm_reports(bts, case)
     market = _load_market(bts, case)
     rung_full, rung_late = _static_specs(bts, case)
+    factor_reader = next(
+        row
+        for row in factor.metric_records["records"]
+        if (row["portfolio_id"], row["schema"])
+        == ("factor_pit_ext2026", "portfolio_metrics.reader.v2")
+    )
+    sjm_reports = _sjm_reports(
+        bts,
+        case,
+        performance_start=factor_reader["start"],
+    )
 
     result = bts.build_trio_report_tables(
         factor,
@@ -2470,6 +2506,17 @@ def test_trio_static_and_dashboard_tables_share_one_validated_identity(
     # one cash benchmark and one currency basis across the whole trio
     assert set(trio["cash_benchmark_id"]) == {f"BIL@{case['snapshot_id']}"}
     assert set(trio["currency_basis"]) == {"legacy_mixed_local_quotes"}
+    assert len(
+        {
+            (
+                pd.Timestamp(row.start),
+                pd.Timestamp(row.end),
+                int(row.n_obs),
+                int(row.periods_per_year),
+            )
+            for row in trio.itertuples()
+        }
+    ) == 1
 
     # static rungs: exact fresh-buy window identity, reproducible from the
     # snapshot alone; Sharpe is CASH-EXCESS based (the corrected convention)
@@ -2517,6 +2564,49 @@ def test_trio_static_and_dashboard_tables_share_one_validated_identity(
         rung_full.label,
         rung_late.label,
     }
+
+
+def test_trio_tables_reject_mixed_performance_signatures(canonical_case):
+    import dataclasses
+
+    bts = _reports_producer()
+    case = canonical_case
+    factor = _load_factor(bts, case)
+    sjm_reports = _sjm_reports(bts, case)
+    market = _load_market(bts, case)
+    rung_full, rung_late = _static_specs(bts, case)
+
+    mismatched_rows = []
+    for row in sjm_reports.rows:
+        altered = dict(row)
+        if (
+            altered["schema"] == "portfolio_metrics.reader.v2"
+            and altered["portfolio_id"] == sjm_reports.portfolios["overlay"]
+        ):
+            altered["n_obs"] = int(altered["n_obs"]) - 1
+            altered["raw_market_model_n_obs"] = int(
+                altered["raw_market_model_n_obs"]
+            ) - 1
+        mismatched_rows.append(altered)
+    mismatched_sjm = dataclasses.replace(
+        sjm_reports,
+        rows=tuple(mismatched_rows),
+        tables={
+            "tear_sheet_sjm_crowding_ext2026": bts._ordered_report_table(
+                mismatched_rows
+            )
+        },
+    )
+
+    with pytest.raises(ValueError, match="performance start/end/count/annualization"):
+        bts.build_trio_report_tables(
+            factor,
+            mismatched_sjm,
+            market,
+            static_windows=(rung_full, rung_late),
+            trio_static_window=rung_full,
+            ssr_settings=_SJM_TEST_SSR,
+        )
 
 
 def test_trio_tables_reject_lineage_divergence_and_tampered_component_rows(

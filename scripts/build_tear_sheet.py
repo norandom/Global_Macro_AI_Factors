@@ -1021,6 +1021,24 @@ def _ordered_report_table(rows: Sequence[Mapping[str, object]]) -> pd.DataFrame:
     return table.reindex(columns=list(report_row_table_columns(list(rows))))
 
 
+def parquet_safe_report_table(table: pd.DataFrame) -> pd.DataFrame:
+    """Normalize mixed-schema date objects before a canonical Parquet write.
+
+    Report tables intentionally combine reader, attribution, and crisis rows.
+    Their sparse date fields therefore become object columns containing both
+    ``Timestamp`` values and nulls. PyArrow cannot infer that mixed physical
+    representation, so canonical persistence normalizes every date-bearing
+    column to pandas ``datetime64[ns]`` without changing row values or order.
+    """
+    if not isinstance(table, pd.DataFrame):
+        raise TypeError("canonical report table must be a pandas DataFrame")
+    normalized = table.copy()
+    for column in normalized.columns:
+        if column in {"start", "end", "actual_end", "anchor", "first_return_date", "requested_start", "requested_end", "raw_market_model_start", "raw_market_model_end"} or column.endswith("_date"):
+            normalized[column] = pd.to_datetime(normalized[column], errors="raise")
+    return normalized
+
+
 def _values_equal(left: object, right: object) -> bool:
     left_nan = isinstance(left, float) and math.isnan(left)
     right_nan = isinstance(right, float) and math.isnan(right)
@@ -1228,6 +1246,7 @@ def build_sjm_report_tables(
     sjm_input: VerifiedReportInput,
     market_input: VerifiedReportInput,
     *,
+    performance_start: str | pd.Timestamp | None = None,
     ssr_settings: Mapping[str, object] | None = None,
     crisis_start: str | pd.Timestamp = SJM_CRISIS_START,
     crisis_end: str | pd.Timestamp = SJM_CRISIS_END,
@@ -1239,7 +1258,10 @@ def build_sjm_report_tables(
     market-snapshot lineage must be the very snapshot supplied here. Every
     persisted stream is re-read under its manifest inventory hash, and every
     displayed field reproduces from the shared macro_framework calculators —
-    no notebook-local finance formulas.
+    no notebook-local finance formulas. ``performance_start`` optionally
+    selects one explicit later reporting window while preserving the last
+    prior run level as its return anchor; it is used when a consumer requires
+    a common Factor/SJM/static comparison window.
     """
     _require_family(sjm_input, "sjm_run")
     _require_family(market_input, "market_snapshot")
@@ -1266,14 +1288,26 @@ def build_sjm_report_tables(
     control_value = _anchored_curve(
         control_frame["control_return"], equity.index[0]
     )
+    if performance_start is not None:
+        requested_start = pd.Timestamp(performance_start)
+        eligible = equity.index[equity.index < requested_start]
+        if eligible.empty or requested_start not in equity.index:
+            raise ValueError(
+                f"performance_start {requested_start.date()} requires a preceding "
+                "SJM anchor and an exact persisted run observation"
+            )
+        anchor = eligible[-1]
+        equity = equity.loc[anchor:]
+        control_value = control_value.loc[anchor:]
+        cash = cash.loc[equity.index[1:]]
 
     run_id = str(manifest["run_id"])
     snapshot_id = market_input.identity
     cash_benchmark_id = f"BIL@{snapshot_id}"
     dev_end = pd.Timestamp(manifest["protocol"]["dev_end"])
     windows = sjm_report_windows(
-        pd.Timestamp(manifest["coverage"]["start"]),
-        pd.Timestamp(manifest["coverage"]["end"]),
+        equity.index[1],
+        equity.index[-1],
         dev_end=dev_end,
     )
 
@@ -1608,6 +1642,20 @@ def build_trio_report_tables(
     ) != 1:
         raise ValueError(
             "trio rows must share one cash benchmark and one currency basis"
+        )
+    performance_signatures = {
+        (
+            pd.Timestamp(row["start"]),
+            pd.Timestamp(row["end"]),
+            int(row["n_obs"]),
+            int(row["periods_per_year"]),
+        )
+        for row in trio_rows
+    }
+    if len(performance_signatures) != 1:
+        raise ValueError(
+            "trio rows must share one performance start/end/count/annualization "
+            f"signature; found {sorted(performance_signatures, key=repr)!r}"
         )
 
     rows_map = {

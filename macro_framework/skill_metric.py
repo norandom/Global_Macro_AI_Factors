@@ -1,23 +1,15 @@
-"""Own-basket appraisal ratio (HAC) and single-factor market attribution.
+"""Strict return construction and raw-return HAC attribution.
 
-Isolates *timing skill* from static own-factor exposure: the strategy's daily
-returns are regressed on the four own-factor ETF daily returns with a **constant
-beta** over the window, so allocation-timing shows up in the residual rather than
-in the fitted factor loadings. This mirrors the own-4-ETF-basket regression in
-``scripts/build_tear_sheet.py`` (``_ols`` / ``BASKET`` / ``residual_vol_ann_basket``)
-but adds a Newey-West (HAC) t-statistic on the intercept.
-
-Annualization basis (reused from ``macro_framework.ssr.TRADING_DAYS``):
-- mean/alpha are scaled by ``periods_per_year`` (×252),
-- volatility is scaled by ``sqrt(periods_per_year)`` (√252).
-
-Pure and deterministic; no IO. Equal inputs → equal output.
+Price levels are selected on an explicit anchored calendar before returns are
+calculated. Return pairs and regressions require the same complete, ordered,
+finite observation set; no helper sorts, intersects, fills, or drops rows.
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from numbers import Integral
 from typing import Literal
 
 import numpy as np
@@ -27,82 +19,328 @@ import statsmodels.api as sm
 from macro_framework.ssr import TRADING_DAYS, SSRInference, SSRResult
 
 IDIO_FLOOR: float = 1e-4  # annualized residual-vol floor below which appraisal is undefined
+AttributionKind = Literal["raw_market_model"]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class BasketResidual:
-    alpha_ann: float
-    t_alpha_hac: float
+    intercept_native_period: float
+    intercept_ann_arithmetic: float
+    intercept_t_hac: float
     r2: float
     idio_vol_ann: float
-    appraisal: float | None  # alpha_ann / idio_vol_ann, or None if idio < IDIO_FLOOR
+    appraisal: float | None
     n_obs: int
+    start: pd.Timestamp
+    end: pd.Timestamp
+    periods_per_year: int
     hac_maxlags: int
+
+    def __init__(
+        self,
+        *,
+        intercept_native_period: float | None = None,
+        intercept_ann_arithmetic: float | None = None,
+        intercept_t_hac: float | None = None,
+        r2: float = float("nan"),
+        idio_vol_ann: float = float("nan"),
+        appraisal: float | None = None,
+        n_obs: int = 0,
+        start: pd.Timestamp = pd.NaT,
+        end: pd.Timestamp = pd.NaT,
+        periods_per_year: int = TRADING_DAYS,
+        hac_maxlags: int = 5,
+        alpha_ann: float | None = None,
+        t_alpha_hac: float | None = None,
+    ) -> None:
+        """Build the explicit result while accepting legacy fixture keywords temporarily.
+
+        Keyword-only: a legacy 7-field POSITIONAL construction would be silently
+        reinterpreted under the new field order, so positional use raises instead.
+        """
+        ann = intercept_ann_arithmetic if intercept_ann_arithmetic is not None else alpha_ann
+        t_hac = intercept_t_hac if intercept_t_hac is not None else t_alpha_hac
+        if ann is None or t_hac is None:
+            raise TypeError("intercept_ann_arithmetic and intercept_t_hac are required")
+        native = ann / periods_per_year if intercept_native_period is None else intercept_native_period
+        for name, value in (
+            ("intercept_native_period", native),
+            ("intercept_ann_arithmetic", ann),
+            ("intercept_t_hac", t_hac),
+            ("r2", r2),
+            ("idio_vol_ann", idio_vol_ann),
+            ("appraisal", appraisal),
+            ("n_obs", n_obs),
+            ("start", start),
+            ("end", end),
+            ("periods_per_year", periods_per_year),
+            ("hac_maxlags", hac_maxlags),
+        ):
+            object.__setattr__(self, name, value)
+
+    @property
+    def alpha_ann(self) -> float:
+        """Compatibility attribute for callers pending repository-wide migration."""
+        return self.intercept_ann_arithmetic
+
+    @property
+    def t_alpha_hac(self) -> float:
+        """Compatibility attribute for callers pending repository-wide migration."""
+        return self.intercept_t_hac
 
 
 @dataclass(frozen=True)
 class MarketAttribution:
-    alpha_ann: float
+    kind: AttributionKind
+    intercept_native_period: float
+    intercept_ann_arithmetic: float
+    intercept_se_hac: float
+    intercept_t_hac: float
     beta: float
     r2: float
+    n_obs: int
+    start: pd.Timestamp
+    end: pd.Timestamp
+    periods_per_year: int
+    hac_maxlags: int
+
+    @property
+    def alpha_ann(self) -> float:
+        """Compatibility attribute for callers pending repository-wide migration."""
+        return self.intercept_ann_arithmetic
 
 
-def _align(y: pd.Series, x: pd.DataFrame) -> tuple[pd.Series, pd.DataFrame]:
-    """Inner-join on the shared daily index and drop any NaN rows (LSE/US holiday mismatch)."""
-    joined = pd.concat([y.rename("__y__"), x], axis=1, join="inner").dropna()
-    return joined["__y__"], joined.drop(columns="__y__")
+def _validate_datetime_index(index: pd.Index, name: str) -> pd.DatetimeIndex:
+    if not isinstance(index, pd.DatetimeIndex):
+        raise ValueError(f"{name} must be a pandas DatetimeIndex")
+    if index.empty:
+        raise ValueError(f"{name} must not be empty")
+    if index.tz is not None:
+        raise ValueError(f"{name} must be timezone-naive")
+    if index.hasnans:
+        raise ValueError(f"{name} must not contain NaT labels")
+    if not index.is_unique:
+        raise ValueError(f"{name} must contain unique labels")
+    if not index.is_monotonic_increasing:
+        raise ValueError(f"{name} must be strictly increasing")
+    return index
+
+
+def _validate_finite(values: pd.Series | pd.DataFrame, name: str) -> None:
+    dtypes = [values.dtype] if isinstance(values, pd.Series) else list(values.dtypes)
+    if any(
+        not pd.api.types.is_numeric_dtype(dtype)
+        or pd.api.types.is_bool_dtype(dtype)
+        or pd.api.types.is_complex_dtype(dtype)
+        for dtype in dtypes
+    ):
+        raise ValueError(f"{name} must contain only finite real numeric values")
+    try:
+        finite = np.isfinite(values.to_numpy())
+    except TypeError as exc:
+        raise ValueError(f"{name} must contain only finite real numeric values") from exc
+    if bool(finite.all()):
+        return
+    row, *column = np.argwhere(~finite)[0]
+    label = values.index[int(row)]
+    if isinstance(values, pd.Series):
+        raise ValueError(f"{name} contains a non-finite value at {label}")
+    col = values.columns[int(column[0])]
+    raise ValueError(f"{name} contains a non-finite value at {label}, column {col!r}")
+
+
+def _validate_series(series: pd.Series, name: str) -> pd.Series:
+    if not isinstance(series, pd.Series):
+        raise TypeError(f"{name} must be a pandas Series")
+    _validate_datetime_index(series.index, f"{name}.index")
+    _validate_finite(series, name)
+    return series
+
+
+def _validate_periods_and_lags(periods_per_year: int, hac_maxlags: int) -> None:
+    if isinstance(periods_per_year, bool) or not isinstance(periods_per_year, Integral):
+        raise ValueError("periods_per_year must be a positive integer")
+    if periods_per_year <= 0:
+        raise ValueError("periods_per_year must be a positive integer")
+    if isinstance(hac_maxlags, bool) or not isinstance(hac_maxlags, Integral):
+        raise ValueError("hac_maxlags must be a non-negative integer")
+    if hac_maxlags < 0:
+        raise ValueError("hac_maxlags must be a non-negative integer")
+
+
+def factor_returns_on(
+    prices: pd.Series | pd.DataFrame,
+    return_index: pd.DatetimeIndex,
+    *,
+    anchor: pd.Timestamp,
+) -> pd.Series | pd.DataFrame:
+    """Select anchored price levels first, then return exactly ``return_index``."""
+    if not isinstance(prices, (pd.Series, pd.DataFrame)):
+        raise TypeError("prices must be a pandas Series or DataFrame")
+    source_index = _validate_datetime_index(prices.index, "prices.index")
+    requested = _validate_datetime_index(return_index, "return_index")
+    try:
+        anchor = pd.Timestamp(anchor)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("anchor must be a valid pandas Timestamp") from exc
+    if pd.isna(anchor):
+        raise ValueError("anchor must not be NaT")
+    if anchor.tz is not None:
+        raise ValueError("anchor must be timezone-naive")
+    if anchor >= requested[0]:
+        raise ValueError("anchor must be strictly before the first requested return date")
+
+    required = requested.insert(0, anchor)
+    positions = source_index.get_indexer(required)
+    if (positions < 0).any():
+        missing = required[positions < 0]
+        raise ValueError(
+            f"prices.index is missing {len(missing)} required label(s); first missing {missing[0]}"
+        )
+
+    selected = prices.iloc[positions]
+    _validate_finite(selected, "selected price levels")
+    returns = selected.pct_change(fill_method=None).iloc[1:]
+    _validate_finite(returns, "constructed returns")
+    returns.index = requested.copy()
+    return returns
+
+
+def _exact_return_difference(
+    left: pd.Series,
+    right: pd.Series,
+    *,
+    left_name: str,
+    right_name: str,
+) -> pd.Series:
+    left = _validate_series(left, left_name)
+    right = _validate_series(right, right_name)
+    if not left.index.equals(right.index):
+        raise ValueError(f"{left_name} and {right_name} must have identical indexes")
+    return pd.Series(
+        left.to_numpy() - right.to_numpy(),
+        index=left.index.copy(),
+        name=left.name,
+    )
+
+
+def portfolio_excess_returns(
+    portfolio_returns: pd.Series,
+    cash_returns: pd.Series,
+) -> pd.Series:
+    """Return portfolio minus cash under an exact-index, finite-value contract."""
+    return _exact_return_difference(
+        portfolio_returns,
+        cash_returns,
+        left_name="portfolio_returns",
+        right_name="cash_returns",
+    )
+
+
+def differential_returns(
+    comparison_returns: pd.Series,
+    reference_returns: pd.Series,
+) -> pd.Series:
+    """Return comparison minus reference under an exact-index, finite-value contract."""
+    return _exact_return_difference(
+        comparison_returns,
+        reference_returns,
+        left_name="comparison_returns",
+        right_name="reference_returns",
+    )
+
+
+def _strict_hac_ols(
+    y: pd.Series,
+    x: pd.DataFrame,
+    *,
+    periods_per_year: int,
+    hac_maxlags: int,
+):
+    y = _validate_series(y, "dependent_returns")
+    if not isinstance(x, pd.DataFrame):
+        raise TypeError("explanatory_returns must be a pandas DataFrame")
+    _validate_datetime_index(x.index, "explanatory_returns.index")
+    _validate_finite(x, "explanatory_returns")
+    if x.shape[1] == 0:
+        raise ValueError("explanatory_returns must contain at least one column")
+    if not y.index.equals(x.index):
+        raise ValueError("dependent and explanatory returns must have identical indexes")
+    if len(y) <= x.shape[1] + 1:
+        raise ValueError("regression requires more observations than fitted parameters")
+    _validate_periods_and_lags(periods_per_year, hac_maxlags)
+    design = np.column_stack((np.ones(len(x)), x.to_numpy()))
+    return sm.OLS(y.to_numpy(), design).fit(cov_type="HAC", cov_kwds={"maxlags": hac_maxlags})
 
 
 def basket_residual(
     strategy_returns: pd.Series,
-    factor_returns: pd.DataFrame,  # own 4-ETF daily returns
+    factor_returns: pd.DataFrame,
     *,
     periods_per_year: int = TRADING_DAYS,
     hac_maxlags: int = 5,
 ) -> BasketResidual:
-    """Constant-beta regression of strategy returns on the own factor basket.
-
-    Reports annualized alpha, its Newey-West HAC t-statistic, R², annualized
-    residual (idiosyncratic) volatility, and the appraisal ratio
-    (alpha_ann / idio_vol_ann), returned as ``None`` when residual vol < IDIO_FLOOR.
-    """
-    y, x = _align(strategy_returns, factor_returns)
-    res = sm.OLS(y.to_numpy(), sm.add_constant(x.to_numpy())).fit(
-        cov_type="HAC", cov_kwds={"maxlags": hac_maxlags}
-    )
-    alpha_ann = float(res.params[0] * periods_per_year)
-    t_alpha_hac = float(res.tvalues[0])
-    r2 = float(res.rsquared)
-    idio_vol_ann = float(np.asarray(res.resid).std(ddof=1) * np.sqrt(periods_per_year))
-    appraisal = None if idio_vol_ann < IDIO_FLOOR else alpha_ann / idio_vol_ann
-    return BasketResidual(
-        alpha_ann=alpha_ann,
-        t_alpha_hac=t_alpha_hac,
-        r2=r2,
-        idio_vol_ann=idio_vol_ann,
-        appraisal=appraisal,
-        n_obs=int(len(y)),
+    """Strict raw-return regression of strategy returns on its own factor basket."""
+    res = _strict_hac_ols(
+        strategy_returns,
+        factor_returns,
+        periods_per_year=periods_per_year,
         hac_maxlags=hac_maxlags,
     )
+    intercept = float(res.params[0])
+    intercept_ann = intercept * periods_per_year
+    idio_vol_ann = float(np.asarray(res.resid).std(ddof=1) * np.sqrt(periods_per_year))
+    appraisal = None if idio_vol_ann < IDIO_FLOOR else intercept_ann / idio_vol_ann
+    return BasketResidual(
+        intercept_native_period=intercept,
+        intercept_ann_arithmetic=intercept_ann,
+        intercept_t_hac=float(res.tvalues[0]),
+        r2=float(res.rsquared),
+        idio_vol_ann=idio_vol_ann,
+        appraisal=appraisal,
+        n_obs=len(strategy_returns),
+        start=strategy_returns.index[0],
+        end=strategy_returns.index[-1],
+        periods_per_year=int(periods_per_year),
+        hac_maxlags=int(hac_maxlags),
+    )
 
 
-def market_attribution(
-    strategy_returns: pd.Series,
+def raw_market_model_attribution(
+    portfolio_returns: pd.Series,
     market_returns: pd.Series,
     *,
     periods_per_year: int = TRADING_DAYS,
     hac_maxlags: int = 5,
 ) -> MarketAttribution:
-    """Single-factor market attribution: annualized alpha, beta, and R²."""
-    y, x = _align(strategy_returns, market_returns.to_frame("__mkt__"))
-    res = sm.OLS(y.to_numpy(), sm.add_constant(x.to_numpy())).fit(
-        cov_type="HAC", cov_kwds={"maxlags": hac_maxlags}
+    """Regress raw portfolio returns on raw market returns with HAC uncertainty."""
+    if not isinstance(market_returns, pd.Series):
+        raise TypeError("market_returns must be a pandas Series")
+    res = _strict_hac_ols(
+        portfolio_returns,
+        market_returns.to_frame("market_returns"),
+        periods_per_year=periods_per_year,
+        hac_maxlags=hac_maxlags,
     )
+    intercept = float(res.params[0])
     return MarketAttribution(
-        alpha_ann=float(res.params[0] * periods_per_year),
+        kind="raw_market_model",
+        intercept_native_period=intercept,
+        intercept_ann_arithmetic=intercept * periods_per_year,
+        intercept_se_hac=float(res.bse[0]),
+        intercept_t_hac=float(res.tvalues[0]),
         beta=float(res.params[1]),
         r2=float(res.rsquared),
+        n_obs=len(portfolio_returns),
+        start=portfolio_returns.index[0],
+        end=portfolio_returns.index[-1],
+        periods_per_year=int(periods_per_year),
+        hac_maxlags=int(hac_maxlags),
     )
+
+
+# Temporary compatibility name; removed after the repository-wide caller migration task.
+market_attribution = raw_market_model_attribution
 
 
 # --- Composite acceptance gates (Requirement 2) ----------------------------------

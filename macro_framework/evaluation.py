@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from numbers import Integral
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -120,25 +122,115 @@ def anticipation_lead_time(
     return hit.index[0] if len(hit) else None
 
 
+@dataclass(frozen=True)
+class CrisisMetrics:
+    requested_start: pd.Timestamp
+    requested_end: pd.Timestamp
+    anchor: pd.Timestamp
+    first_return_date: pd.Timestamp
+    actual_end: pd.Timestamp
+    episode_return: float
+    boundary_anchored_max_drawdown: float
+    volatility_ann: float
+    n_returns: int
+    periods_per_year: int
+
+
+def crisis_metrics(
+    value: pd.Series,
+    crisis_start: str | pd.Timestamp,
+    crisis_end: str | pd.Timestamp,
+    *,
+    periods_per_year: int = TRADING_DAYS,
+) -> CrisisMetrics | None:
+    """Measure returns whose right endpoints fall within a requested crisis window."""
+    if not isinstance(value, pd.Series):
+        raise ValueError("value must be a pandas Series")
+    if value.empty:
+        raise ValueError("value must not be empty")
+    if not isinstance(value.index, pd.DatetimeIndex):
+        raise ValueError("value.index must be a pandas DatetimeIndex")
+    if value.index.tz is not None:
+        raise ValueError("value.index must be timezone-naive")
+    if value.index.hasnans:
+        raise ValueError("value.index must not contain NaT labels")
+    if not value.index.is_unique:
+        raise ValueError("value.index must contain unique labels")
+    if not value.index.is_monotonic_increasing:
+        raise ValueError("value.index must be strictly increasing")
+    if (
+        not pd.api.types.is_numeric_dtype(value.dtype)
+        or pd.api.types.is_bool_dtype(value.dtype)
+        or pd.api.types.is_complex_dtype(value.dtype)
+    ):
+        raise ValueError("value must contain only finite real numeric values")
+    try:
+        finite = np.isfinite(value.to_numpy())
+    except TypeError as exc:
+        raise ValueError("value must contain only finite numeric values") from exc
+    if not bool(finite.all()):
+        label = value.index[int(np.flatnonzero(~finite)[0])]
+        raise ValueError(f"value contains a non-finite value at {label}")
+    if isinstance(periods_per_year, bool) or not isinstance(periods_per_year, Integral):
+        raise ValueError("periods_per_year must be a positive integer")
+    if periods_per_year <= 0:
+        raise ValueError("periods_per_year must be a positive integer")
+
+    try:
+        requested_start = pd.Timestamp(crisis_start)
+        requested_end = pd.Timestamp(crisis_end)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("crisis bounds must be valid timestamps") from exc
+    if pd.isna(requested_start) or pd.isna(requested_end):
+        raise ValueError("crisis bounds must not be NaT")
+    if requested_start.tz is not None or requested_end.tz is not None:
+        raise ValueError("crisis bounds must be timezone-naive")
+    if requested_start > requested_end:
+        raise ValueError("crisis_start must be on or before crisis_end")
+
+    anchors = value.loc[value.index < requested_start]
+    window = value.loc[
+        (value.index >= requested_start) & (value.index <= requested_end)
+    ]
+    if anchors.empty or window.empty:
+        return None
+
+    anchor = anchors.index[-1]
+    episode_values = pd.concat([value.loc[[anchor]], window])
+    returns = episode_values.pct_change(fill_method=None).iloc[1:]
+    if not bool(np.isfinite(returns.to_numpy()).all()):
+        # finite VALUES can still produce an infinite return (a zero level)
+        raise ValueError("constructed episode returns contain a non-finite value")
+    drawdown = episode_values / episode_values.cummax() - 1.0
+    return CrisisMetrics(
+        requested_start=requested_start,
+        requested_end=requested_end,
+        anchor=anchor,
+        first_return_date=returns.index[0],
+        actual_end=returns.index[-1],
+        episode_return=float(episode_values.iloc[-1] / episode_values.iloc[0] - 1.0),
+        boundary_anchored_max_drawdown=float(drawdown.min()),
+        volatility_ann=float(returns.std(ddof=1) * np.sqrt(periods_per_year)),
+        n_returns=len(returns),
+        periods_per_year=periods_per_year,
+    )
+
+
 def crisis_analytics(
     pfs: dict[str, "vbt.Portfolio"],
     crisis_start: str = "2022-01-01",
     crisis_end: str = "2022-12-31",
 ) -> pd.DataFrame:
-    """Within-crisis DD + period return + vol per portfolio."""
+    """Legacy multi-portfolio projection of boundary-inclusive crisis metrics."""
     rows: dict[str, dict[str, float]] = {}
     for name, pf in pfs.items():
-        val = pf.value()
-        window = val.loc[crisis_start:crisis_end]
-        if window.empty:
+        result = crisis_metrics(pf.value(), crisis_start, crisis_end)
+        if result is None:
             continue
-        peak = window.cummax()
-        dd = (window / peak) - 1.0
-        period_return = window.iloc[-1] / window.iloc[0] - 1.0
         rows[name] = {
-            "crisis_return": float(period_return),
-            "crisis_max_drawdown": float(dd.min()),
-            "crisis_vol_ann": float(window.pct_change().std(ddof=1) * np.sqrt(252)),
+            "crisis_return": result.episode_return,
+            "crisis_max_drawdown": result.boundary_anchored_max_drawdown,
+            "crisis_vol_ann": result.volatility_ann,
         }
     return pd.DataFrame(rows).T
 
