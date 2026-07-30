@@ -12,10 +12,10 @@ Hit Rate,0.570732,0.570732,0.569648,0.570732
 SSR (Sharpe Stability),0.133965,0.137899,0.131180,0.131507
 SSR verdict,"SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.14: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim"
 "HAC t (mean, NW)",3.808852,4.019026,3.853234,3.708078
-Beta (SPY),0.234572,0.177839,0.156160,0.220209
-SPY regression intercept (ann.),0.102573,0.102675,0.081524,0.092881
-SPY regression R2,0.239683,0.176092,0.196886,0.230427
-Basket R2 (4-ETF),0.810993,0.750213,0.758282,0.793211
-Basket intercept (ann.),0.011910,0.021708,0.017167,0.006892
-Basket appraisal ratio,0.290465,0.522127,0.503758,0.167607
-Basket intercept t-stat (HAC),0.860604,1.584809,1.474077,0.490719
+Beta (SPY),0.235832,0.178691,0.157343,0.221592
+SPY regression intercept (ann.),0.098908,0.100279,0.079377,0.089056
+SPY regression R2,0.240777,0.176599,0.198464,0.232087
+Basket R2 (4-ETF),0.898701,0.863896,0.860150,0.889799
+Basket intercept (ann.),0.013883,0.012239,0.009534,0.003864
+Basket appraisal ratio,0.463094,0.398090,0.368298,0.129132
+Basket intercept t-stat (HAC),1.066723,1.020866,0.878028,0.293262

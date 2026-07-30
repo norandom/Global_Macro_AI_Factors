@@ -9,8 +9,11 @@ dependencies = [
     "ipykernel",
     "jupyter",
     "jupyterlab>=4.5.6",
+    "joblib",
     "llvmlite==0.43.0",
+    "matplotlib",
     "numba==0.60.0",
+    "numpy",
     "openai>=2.32.0",
     "pandas",
     "psycopg[binary]",
@@ -18,10 +21,14 @@ dependencies = [
     "python-dotenv",
     "quantstats>=0.0.81",
     "recall-guard",
+    "requests",
     "riskfolio-lib>=7.2.1",
+    "scikit-learn",
+    "scipy",
     "sqlalchemy",
     "statsmodels>=0.14",
     "vectorbt>=0.28.2",
+    "yfinance",
 ]
 
 [dependency-groups]
@@ -29,8 +36,15 @@ dev = [
     "openpyxl>=3.1.5",
     "pytest>=9.1.1",
     "pytest-mock>=3.15.1",
+    "pytest-xdist>=3.8.0",
     "pyxll>=5.12.3",
 ]
 
+[tool.pytest.ini_options]
+strict_markers = true
+markers = [
+    "live_network: fetches a real GitHub release asset; opt in with FW_LIVE_NETWORK=1",
+]
+
 [tool.uv.sources]
-recall-guard = { git = "https://github.com/norandom/memguard_alpha.git", rev = "v0.1.0" }
+recall-guard = { git = "https://github.com/norandom/memguard_alpha.git", rev = "v0.2.0" }

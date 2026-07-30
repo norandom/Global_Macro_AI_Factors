@@ -96,7 +96,7 @@ def client():
 
 
 @pytest.fixture(scope="module")
-def views(client):
+def views(client, _compact_fixture_ssr_compatibility):
     """Every step view built once through FW_STEP for read-only assertions."""
     return {step: asyncio.run(addin.fw_step(client, step)) for step in STEPS}
 

@@ -1,0 +1,5 @@
+line,label,beta_spy,alpha_ann_vs_spy,r2_capm,corr_spy,systematic_share_capm,idio_vol_ann_capm,r2_basket_4etf,residual_vol_ann_basket,note
+factor_pit_ext2026,"PIT recall-guarded factor, extended to 2026-06",0.24599799,0.13451969,0.24867390,0.49867213,0.24867390,0.10094485,0.89344221,0.03804106,extended-span re-cut; conventions identical to tear_sheet.csv
+factor_nonpit_diag_ext2026,"Non-PIT DIAGNOSTIC, extended to 2026-06",0.25690821,0.13717749,0.26526608,0.51503988,0.26526608,0.10093822,0.94835128,0.02663096,extended-span re-cut; conventions identical to tear_sheet.csv
+baseline_ext2026,"Baseline HRP+momentum, extended to 2026-06",0.05851482,0.02965294,0.06230427,0.24960823,0.06230427,0.05359094,0.08712610,0.05311885,extended-span re-cut; conventions identical to tear_sheet.csv
+track_b_ext2026,"Track B (MC/Nash), extended to 2026-06",0.52025540,0.07930059,0.57134464,0.75587343,0.57134464,0.10638370,0.75972692,0.07976410,extended-span re-cut; conventions identical to tear_sheet.csv

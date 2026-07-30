@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import shutil
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import MappingProxyType
@@ -62,6 +63,16 @@ _APPROVED_LIMIT_ROWS = (
     ("neutral", (1.0, 0.9, 0.8)),
     ("bear", (1.0, 0.8, 0.5)),
 )
+
+# The crowding and regime features intentionally remain a separate immutable
+# source from the Factor and market manifests. The market snapshot only carries
+# the five instruments needed to price the strategy; the frozen SJM method needs
+# the wider 112-ETF cross-section to measure market-wide crowding.
+SJM_SIGNAL_SOURCE_SCHEMA = "sjm_signal_source.v1"
+SJM_SIGNAL_SOURCE_FILENAME = "etf_prices_wide_2013_2026.parquet"
+SJM_SIGNAL_SOURCE_MANIFEST = "sjm_signal_source_manifest.json"
+SJM_SIGNAL_SOURCE_MIN_COLUMNS = 100
+SJM_SIGNAL_WARMUP_START = pd.Timestamp("2013-01-02")
 
 
 def _canonical_sha256(payload: object) -> str:
@@ -1072,6 +1083,358 @@ def load_sjm_inputs(
     )
 
 
+@dataclass(frozen=True, eq=False)
+class SJMSignalSource:
+    """Verified immutable wide-panel input for the frozen SJM methodology."""
+
+    panel_path: Path
+    manifest_path: Path
+    manifest_sha256: str
+    content_sha256: str
+    panel: pd.DataFrame
+    manifest: Mapping[str, object]
+
+
+def _signal_source_repository_root() -> Path:
+    return Path(__file__).resolve().parents[1]
+
+
+def _validated_signal_panel(panel: object, *, name: str) -> pd.DataFrame:
+    if not isinstance(panel, pd.DataFrame):
+        raise ValueError(f"{name} must be a pandas DataFrame")
+    index = _validate_index(panel.index, f"{name}.index")
+    if len(panel.columns) < SJM_SIGNAL_SOURCE_MIN_COLUMNS:
+        raise ValueError(
+            f"{name} must retain the frozen wide cross-section of at least "
+            f"{SJM_SIGNAL_SOURCE_MIN_COLUMNS} instruments"
+        )
+    if panel.columns.has_duplicates or not all(
+        isinstance(column, str) and column for column in panel.columns
+    ):
+        raise ValueError(f"{name} must carry unique non-empty string columns")
+    if "SWDA.L" not in panel.columns:
+        raise ValueError(f"{name} must carry SWDA.L for the frozen SJM regime feature")
+    if panel.loc[:, "SWDA.L"].dropna().empty:
+        raise ValueError(f"{name} SWDA.L column must contain observed prices")
+    if index[0] > SJM_SIGNAL_WARMUP_START:
+        raise ValueError(
+            f"{name} must begin no later than {SJM_SIGNAL_WARMUP_START.date()} "
+            "to preserve the frozen signal warm-up"
+        )
+    try:
+        finite_or_missing = np.isfinite(panel.to_numpy(dtype=float)) | panel.isna().to_numpy()
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must contain numeric price observations") from exc
+    if not bool(finite_or_missing.all()):
+        raise ValueError(f"{name} contains a non-finite observed price")
+    return panel.copy(deep=False)
+
+
+def _signal_source_artifact(panel_path: Path, panel: pd.DataFrame) -> dict[str, object]:
+    repo = _signal_source_repository_root()
+    resolved = panel_path.resolve()
+    try:
+        relative_path = str(resolved.relative_to(repo))
+    except ValueError:
+        relative_path = str(resolved)
+    return {
+        "path": relative_path,
+        "sha256": _sha256_file(resolved),
+        "rows": int(len(panel)),
+        "start": panel.index[0].date().isoformat(),
+        "end": panel.index[-1].date().isoformat(),
+        "columns": list(panel.columns),
+        "columns_sha256": _canonical_sha256(list(panel.columns)),
+    }
+
+
+def write_sjm_signal_source_manifest(
+    panel_path: Path | str,
+    *,
+    output_dir: Path | str,
+    build_time: str | None = None,
+) -> Path:
+    """Freeze the source identity of the wide cross-section before SJM replay.
+
+    The panel remains read-only at its declared path; this append-only manifest
+    pins the exact bytes, index coverage, and ordered cross-section consumed by
+    the frozen regime/crowding procedure. Repeated calls validate an existing
+    completed source manifest and never overwrite it.
+    """
+    panel_path = Path(panel_path).resolve()
+    if not panel_path.is_file():
+        raise ValueError(f"SJM signal panel is absent: {panel_path}")
+    panel = _validated_signal_panel(pd.read_parquet(panel_path), name="SJM signal panel")
+    output_dir = Path(output_dir)
+    manifest_path = output_dir / SJM_SIGNAL_SOURCE_MANIFEST
+    marker_path = output_dir / "COMPLETED"
+    if manifest_path.exists() or marker_path.exists():
+        if not (manifest_path.is_file() and marker_path.is_file()):
+            raise ValueError(
+                f"SJM signal source staging is incomplete and cannot be reused: {output_dir}"
+            )
+        load_sjm_signal_source(panel_path, manifest_path=manifest_path)
+        return manifest_path
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise ValueError(
+            f"refusing to write SJM signal source manifest into non-empty directory {output_dir}"
+        )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "schema": SJM_SIGNAL_SOURCE_SCHEMA,
+        "build_time": _normalize_build_time(build_time),
+        "completed": True,
+        "panel": _signal_source_artifact(panel_path, panel),
+        "method": {
+            "regime_asset": "SWDA.L",
+            "regime_min_observations": 504,
+            "cross_section_return_fill_limit": 5,
+            "cross_section_min_row_coverage": 0.5,
+            "n_crowding_buckets": 3,
+            "signal_steps": dict(_SIGNAL_STEPS),
+            "signal_lag_rows": 1,
+            "factor_rebalance_cadence": "monthly_first_factor_session",
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    digest = _sha256_file(manifest_path)
+    marker_path.write_text(f"manifest_sha256={digest}\n")
+    return manifest_path
+
+
+def load_sjm_signal_source(
+    panel_path: Path | str,
+    *,
+    manifest_path: Path | str,
+) -> SJMSignalSource:
+    """Load one hash-verified wide panel under the frozen signal contract."""
+    panel_path = Path(panel_path).resolve()
+    manifest_path = Path(manifest_path).resolve()
+    if not panel_path.is_file():
+        raise ValueError(f"SJM signal panel is absent: {panel_path}")
+    if not manifest_path.is_file():
+        raise ValueError(f"SJM signal source manifest is absent: {manifest_path}")
+    marker_path = manifest_path.parent / "COMPLETED"
+    if not marker_path.is_file():
+        raise ValueError("SJM signal source COMPLETED marker is absent")
+    manifest = json.loads(manifest_path.read_text())
+    if not isinstance(manifest, dict) or manifest.get("schema") != SJM_SIGNAL_SOURCE_SCHEMA:
+        raise ValueError("SJM signal source manifest schema is invalid")
+    if manifest.get("completed") is not True:
+        raise ValueError("SJM signal source manifest must declare completed=true")
+    manifest_sha256 = _sha256_file(manifest_path)
+    if f"manifest_sha256={manifest_sha256}" not in marker_path.read_text():
+        raise ValueError("SJM signal source COMPLETED marker does not match manifest bytes")
+    panel = _validated_signal_panel(pd.read_parquet(panel_path), name="SJM signal panel")
+    expected = manifest.get("panel")
+    actual = _signal_source_artifact(panel_path, panel)
+    if not isinstance(expected, Mapping) or dict(expected) != actual:
+        raise ValueError("SJM signal source manifest does not match the panel bytes or schema")
+    method = manifest.get("method")
+    expected_method = {
+        "regime_asset": "SWDA.L",
+        "regime_min_observations": 504,
+        "cross_section_return_fill_limit": 5,
+        "cross_section_min_row_coverage": 0.5,
+        "n_crowding_buckets": 3,
+        "signal_steps": dict(_SIGNAL_STEPS),
+        "signal_lag_rows": 1,
+        "factor_rebalance_cadence": "monthly_first_factor_session",
+    }
+    if not isinstance(method, Mapping) or dict(method) != expected_method:
+        raise ValueError("SJM signal source method contract diverges from the frozen protocol")
+    return SJMSignalSource(
+        panel_path=panel_path,
+        manifest_path=manifest_path,
+        manifest_sha256=manifest_sha256,
+        content_sha256=str(actual["sha256"]),
+        panel=panel,
+        manifest=MappingProxyType(dict(manifest)),
+    )
+
+
+def _monthly_factor_rebalance_dates(index: pd.DatetimeIndex) -> pd.DatetimeIndex:
+    """First Factor session of every month, exactly matching the frozen replay."""
+    _validate_index(index, "factor return index")
+    dates = pd.Series(index, index=index).groupby(index.to_period("M")).first()
+    return _validate_index(pd.DatetimeIndex(dates.to_list()), "monthly factor rebalance dates")
+
+
+def _signal_modules():
+    from macro_framework.crowding import absorption_ratio, crowding_bucket, turbulence
+    from macro_framework.jump_regime import NEUTRAL, JumpRegimeConfig, fit_labels_walk_forward, sjm_features
+    from macro_framework.regime_overlay import derisk_cash_pin
+
+    return (
+        absorption_ratio,
+        crowding_bucket,
+        turbulence,
+        NEUTRAL,
+        JumpRegimeConfig,
+        fit_labels_walk_forward,
+        sjm_features,
+        derisk_cash_pin,
+    )
+
+
+@dataclass(frozen=True, eq=False)
+class SJMTargetStream:
+    """Frozen-source candidate targets and same-cash control exposures."""
+
+    targets: pd.DataFrame
+    control_exposure: pd.Series
+    selection: "SJMSelectionResult"
+    signal_source: SJMSignalSource
+    rebalance_dates: pd.DatetimeIndex
+
+
+def build_sjm_target_stream(inputs: SJMInputs, signal_source: SJMSignalSource) -> SJMTargetStream:
+    """Replay caps from the verified wide panel and select the corrected winner.
+
+    This is the production bridge between the manifest-gated Factor/market
+    inputs and the immutable run writer. It preserves the prior SJM method:
+    112-ETF union-calendar returns are forward-filled for at most five sessions,
+    crowding uses a trailing PIT signal followed by one signal-row lag, regimes
+    are fit strictly before each monthly Factor rebalance, and both overlay and
+    control are priced on the exact Factor/BIL calendar.
+    """
+    _exact_type("inputs", inputs, SJMInputs)
+    _exact_type("signal_source", signal_source, SJMSignalSource)
+    panel = _validated_signal_panel(signal_source.panel, name="SJM signal panel")
+    return_index = inputs.factor_returns.index
+    required = ("SWDA.L", "XLK", "IAU", "BIL")
+    missing_columns = [column for column in required if column not in panel.columns]
+    if missing_columns:
+        raise ValueError(f"SJM signal panel is missing required control columns {missing_columns}")
+
+    (
+        absorption_ratio,
+        crowding_bucket,
+        turbulence,
+        neutral,
+        jump_config,
+        fit_labels_walk_forward,
+        sjm_features,
+        derisk_cash_pin,
+    ) = _signal_modules()
+    protocol = inputs.protocol
+    rebalance_dates = _monthly_factor_rebalance_dates(return_index)
+    available = panel.index.get_indexer(rebalance_dates, method="ffill")
+    if bool((available < 0).any()):
+        missing = rebalance_dates[int(np.flatnonzero(available < 0)[0])]
+        raise ValueError(
+            f"SJM signal panel has no point-in-time observation at or before "
+            f"rebalance date {missing}"
+        )
+
+    wide_returns = panel.ffill(limit=5).pct_change(fill_method=None)
+    wide_returns = wide_returns.loc[wide_returns.notna().mean(axis=1) > 0.5]
+    if wide_returns.empty:
+        raise ValueError("SJM signal panel produces no usable cross-sectional returns")
+    features = sjm_features(panel["SWDA.L"].dropna())
+    regime_cache: dict[float, pd.Series] = {}
+    signal_cache: dict[tuple[str, int], pd.Series] = {}
+    cap_cache: dict[str, pd.Series] = {}
+
+    def caps_for(config: SJMConfig) -> pd.Series:
+        cache_key = _canonical_sha256(_sjm_config_payload(config))
+        cached = cap_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        labels = regime_cache.get(config.lam)
+        if labels is None:
+            labels = fit_labels_walk_forward(
+                features,
+                rebalance_dates,
+                config=jump_config(lam=config.lam),
+                min_obs=504,
+            )
+            regime_cache[config.lam] = labels
+        signal_key = (config.signal, config.window)
+        signal = signal_cache.get(signal_key)
+        if signal is None:
+            if config.signal == "absorption":
+                signal = absorption_ratio(
+                    wide_returns,
+                    window=config.window,
+                    step=protocol.signal_step["absorption"],
+                )
+            else:
+                signal = turbulence(
+                    wide_returns,
+                    window=config.window,
+                    step=protocol.signal_step["turbulence"],
+                )
+            signal_cache[signal_key] = signal
+        regimes = labels.reindex(return_index, method="ffill").fillna(neutral)
+        buckets = (
+            crowding_bucket(signal, n_buckets=3)
+            .shift(1)
+            .reindex(rebalance_dates, method="ffill")
+            .fillna(1)
+            .astype(int)
+            .reindex(return_index, method="ffill")
+            .fillna(1)
+            .astype(int)
+        )
+        values = np.array(
+            [
+                max(config.floor, min(1.0, config.limits[str(regime)][int(bucket)] * config.scale))
+                for regime, bucket in zip(regimes.to_numpy(), buckets.to_numpy(), strict=True)
+            ],
+            dtype=float,
+        )
+        caps = pd.Series(values, index=return_index, name="target_exposure")
+        _validate_exposure_bounds(caps, "SJM target exposure")
+        cap_cache[cache_key] = caps
+        return caps
+
+    control_returns = panel.loc[:, required].pct_change(fill_method=None)
+    control_at_rebalance: dict[pd.Timestamp, float] = {}
+    for date in rebalance_dates:
+        history = control_returns.loc[control_returns.index < date].tail(252).dropna()
+        cash_pin = derisk_cash_pin(
+            history,
+            base_risky_symbols=("SWDA.L", "XLK", "IAU"),
+            base_cash_pin=0.0,
+        )
+        control_at_rebalance[date] = float(np.clip(1.0 - cash_pin, 0.4, 1.0))
+    control_exposure = (
+        pd.Series(control_at_rebalance, dtype=float)
+        .reindex(return_index, method="ffill")
+        .fillna(1.0)
+        .rename("control_exposure")
+    )
+    _validate_exposure_bounds(control_exposure, "control exposure")
+    anchor = inputs.factor_value.index[0]
+
+    def candidate_returns(config: SJMConfig) -> pd.Series:
+        caps = caps_for(config)
+        exposure = drawdown_armed_exposure(
+            caps,
+            _anchored_value_curve(inputs.factor_returns, anchor),
+            arm=config.arm,
+        )
+        return overlay_returns(inputs.factor_returns, exposure, inputs.cash_returns)
+
+    selection = select_sjm_config(
+        protocol,
+        candidate_returns,
+        factor_returns=inputs.factor_returns,
+        control_returns=build_control_returns(
+            inputs.factor_returns, control_exposure, inputs.cash_returns
+        ),
+    )
+    targets = caps_for(selection.selected_config).to_frame("target_exposure")
+    return SJMTargetStream(
+        targets=targets,
+        control_exposure=control_exposure,
+        selection=selection,
+        signal_source=signal_source,
+        rebalance_dates=rebalance_dates,
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Task 7.5 / 7.6: ordered deterministic registry replay + development gates     #
 # --------------------------------------------------------------------------- #
@@ -1117,33 +1480,43 @@ def sjm_mutation_candidates(
 def development_metrics(
     returns: pd.Series,
     *,
-    anchor: pd.Timestamp,
+    dev_start: pd.Timestamp,
     dev_end: pd.Timestamp,
     name: str,
 ) -> Mapping[str, float | int]:
-    """Elapsed-time CAGR, max drawdown, and Calmar on the development window ONLY.
+    """Measure only the declared development window from its local return anchor.
 
-    Observations after ``dev_end`` are physically excluded before any
-    compounding, so no holdout value can reach the objective or the gates
-    (task 7.6).  The anchored value curve starts at 1.0 one session before the
-    first development return.
+    Both bounds are applied before compounding, so neither pre-development nor
+    holdout returns can reach the objective or gates.  The curve begins at 1.0
+    on the immediately preceding *available return session*, which makes
+    elapsed-time CAGR describe the selected window rather than the full run.
+    Missing preceding return sessions are rejected rather than using an unrelated
+    full-run valuation anchor.
     """
     series = _validate_series(returns, name)
-    anchor_ts = _date_field("anchor", anchor)
-    if anchor_ts >= series.index[0]:
-        raise ValueError(f"anchor must precede the first {name} observation")
+    start = _date_field("dev_start", dev_start)
     end = _date_field("dev_end", dev_end)
-    dev = series.loc[series.index <= end]
+    dev = series.loc[(series.index >= start) & (series.index <= end)]
     if dev.empty:
         raise ValueError(
-            f"{name} has no development observations at or before {end.date()}"
+            f"{name} has no development observations between "
+            f"{start.date()} and {end.date()}"
         )
+    first_position = series.index.get_loc(dev.index[0])
+    if not isinstance(first_position, (int, np.integer)):
+        raise ValueError(f"{name} development window cannot resolve its local anchor")
+    if first_position == 0:
+        raise ValueError(
+            f"{name} has no preceding return session for the selected "
+            "development window"
+        )
+    local_anchor = series.index[int(first_position) - 1]
     values = dev.to_numpy(dtype=float)
     if bool((values <= -1.0).any()):
         raise ValueError(f"{name} must stay above -100% per session")
     curve = pd.Series(
         np.r_[1.0, np.cumprod(1.0 + values)],
-        index=dev.index.insert(0, anchor_ts),
+        index=dev.index.insert(0, local_anchor),
     )
     evaluation = _evaluation_module()
     return MappingProxyType(
@@ -1267,6 +1640,7 @@ class SJMSelectionResult:
     ledger_sha256: str
     protocol_sha256: str
     baselines: Mapping[str, float]
+    dev_start: pd.Timestamp
     dev_end: pd.Timestamp
 
     def __post_init__(self) -> None:
@@ -1289,7 +1663,10 @@ class SJMSelectionResult:
         if not isinstance(self.baselines, Mapping):
             raise ValueError("baselines must be a mapping")
         object.__setattr__(self, "baselines", MappingProxyType(dict(self.baselines)))
+        object.__setattr__(self, "dev_start", _date_field("dev_start", self.dev_start))
         object.__setattr__(self, "dev_end", _date_field("dev_end", self.dev_end))
+        if self.dev_start > self.dev_end:
+            raise ValueError("dev_start must not fall after dev_end")
 
 
 def select_sjm_config(
@@ -1298,7 +1675,6 @@ def select_sjm_config(
     *,
     factor_returns: pd.Series,
     control_returns: pd.Series,
-    anchor: pd.Timestamp,
 ) -> SJMSelectionResult:
     """Replay the frozen ordered mutation registry and pick the gated winner.
 
@@ -1328,12 +1704,19 @@ def select_sjm_config(
             "factor_returns and control_returns must share one identical index"
         )
 
+    dev_start = protocol.dev_start
     dev_end = protocol.dev_end
     factor_dev = development_metrics(
-        factor, anchor=anchor, dev_end=dev_end, name="factor_returns"
+        factor,
+        dev_start=dev_start,
+        dev_end=dev_end,
+        name="factor_returns",
     )
     control_dev = development_metrics(
-        control, anchor=anchor, dev_end=dev_end, name="control_returns"
+        control,
+        dev_start=dev_start,
+        dev_end=dev_end,
+        name="control_returns",
     )
     baselines = {
         "factor_dev_cagr": factor_dev["dev_cagr"],
@@ -1347,7 +1730,10 @@ def select_sjm_config(
                 "candidate returns must sit on exactly the factor return index"
             )
         metrics = development_metrics(
-            series, anchor=anchor, dev_end=dev_end, name="candidate returns"
+            series,
+            dev_start=dev_start,
+            dev_end=dev_end,
+            name="candidate returns",
         )
         gates = sjm_selection_gates(
             metrics,
@@ -1398,6 +1784,7 @@ def select_sjm_config(
         ledger_sha256=_canonical_sha256(canonical_ledger_payload(entries)),
         protocol_sha256=protocol.protocol_sha256,
         baselines=baselines,
+        dev_start=dev_start,
         dev_end=dev_end,
     )
 
@@ -1490,6 +1877,7 @@ def build_sjm_run(
     output_root: Path | str,
     targets: pd.DataFrame,
     control_exposure: pd.Series,
+    signal_source: SJMSignalSource | None = None,
     build_time: str | None = None,
 ) -> Path:
     """Assemble ONE immutable SJM v3 run; COMPLETED is written LAST (7.7/7.8).
@@ -1508,6 +1896,8 @@ def build_sjm_run(
     """
     _exact_type("inputs", inputs, SJMInputs)
     _exact_type("selection", selection, SJMSelectionResult)
+    if signal_source is not None:
+        _exact_type("signal_source", signal_source, SJMSignalSource)
     if type(run_id) is not str or not run_id.strip():
         raise ValueError("run_id must be a non-empty string")
     protocol = inputs.protocol
@@ -1515,6 +1905,8 @@ def build_sjm_run(
         raise ValueError(
             "selection protocol_sha256 does not match the gated inputs' frozen protocol"
         )
+    if selection.dev_start != protocol.dev_start:
+        raise ValueError("selection dev_start does not match the frozen protocol")
     if selection.dev_end != protocol.dev_end:
         raise ValueError("selection dev_end does not match the frozen protocol")
 
@@ -1631,6 +2023,7 @@ def build_sjm_run(
             "objective": protocol.objective,
             "control_rule": protocol.control_rule,
             "seed": protocol.seed,
+            "dev_start": protocol.dev_start.date().isoformat(),
             "dev_end": protocol.dev_end.date().isoformat(),
             "protocol_sha256": protocol.protocol_sha256,
             "limit_table_sha256": protocol.limit_table_sha256,
@@ -1650,6 +2043,21 @@ def build_sjm_run(
                 "manifest_sha256": inputs.market_snapshot_sha256,
             },
         },
+        "signal_source": (
+            None
+            if signal_source is None
+            else {
+                "schema": SJM_SIGNAL_SOURCE_SCHEMA,
+                "manifest_path": str(signal_source.manifest_path),
+                "manifest_sha256": signal_source.manifest_sha256,
+                "panel_path": str(signal_source.panel_path),
+                "content_sha256": signal_source.content_sha256,
+                "rows": int(len(signal_source.panel)),
+                "start": signal_source.panel.index[0].date().isoformat(),
+                "end": signal_source.panel.index[-1].date().isoformat(),
+                "columns_sha256": _canonical_sha256(list(signal_source.panel.columns)),
+            }
+        ),
         "files": files,
         "completed": True,
     }
@@ -1664,6 +2072,61 @@ def build_sjm_run(
     (run_dir / "COMPLETED").write_text(
         f"{build_time}\nmanifest_sha256={manifest_sha}\n"
     )
+    return run_dir
+
+
+def build_provisional_sjm_run(
+    *,
+    factor_run_dir: Path | str,
+    market_snapshot_dir: Path | str,
+    signal_panel_path: Path | str,
+    signal_source_dir: Path | str,
+    output_root: Path | str,
+    run_id: str,
+    build_time: str | None = None,
+) -> Path:
+    """Build one corrected provisional SJM run from declared immutable inputs.
+
+    This is deliberately the only operational adapter around the task-7 core:
+    Factor and market identities come from their completed manifests, the wide
+    signal panel is frozen into its own manifest before consumption, selection
+    is replayed from the frozen protocol, and the run is validated before this
+    function returns. It cannot substitute the retired SJM artifact or loose
+    legacy targets.
+    """
+    factor_run_dir = Path(factor_run_dir)
+    market_snapshot_dir = Path(market_snapshot_dir)
+    factor_manifest = json.loads((factor_run_dir / "manifest.json").read_text())
+    market_manifest = json.loads((market_snapshot_dir / "manifest.json").read_text())
+    inputs = load_sjm_inputs(
+        factor_run_dir,
+        market_snapshot_dir,
+        factor_run_id=str(factor_manifest["run_id"]),
+        factor_manifest_sha256=_sha256_file(factor_run_dir / "manifest.json"),
+        market_snapshot_id=str(market_manifest["snapshot_id"]),
+        market_snapshot_sha256=_sha256_file(market_snapshot_dir / "manifest.json"),
+    )
+    signal_manifest_path = write_sjm_signal_source_manifest(
+        signal_panel_path,
+        output_dir=signal_source_dir,
+        build_time=build_time,
+    )
+    source = load_sjm_signal_source(
+        signal_panel_path,
+        manifest_path=signal_manifest_path,
+    )
+    stream = build_sjm_target_stream(inputs, source)
+    run_dir = build_sjm_run(
+        inputs,
+        stream.selection,
+        run_id=run_id,
+        output_root=output_root,
+        targets=stream.targets,
+        control_exposure=stream.control_exposure,
+        signal_source=source,
+        build_time=build_time,
+    )
+    validate_sjm_run(run_dir)
     return run_dir
 
 
@@ -1729,6 +2192,7 @@ def validate_sjm_run(
         ("objective", frozen.objective),
         ("control_rule", frozen.control_rule),
         ("seed", frozen.seed),
+        ("dev_start", frozen.dev_start.date().isoformat()),
         ("dev_end", frozen.dev_end.date().isoformat()),
         ("protocol_sha256", frozen.protocol_sha256),
         ("limit_table_sha256", frozen.limit_table_sha256),
@@ -1885,6 +2349,37 @@ def validate_sjm_run(
             f"{CASH_SEMANTICS} from the lineage market snapshot"
         )
 
+    # New candidate runs must pin the independent 112-ETF signal source. The
+    # None allowance retains validation of historical v3 fixtures, which lack
+    # this field by schema version rather than silently claiming its lineage.
+    signal_decl = manifest.get("signal_source")
+    if signal_decl is not None:
+        if not isinstance(signal_decl, Mapping):
+            raise ValueError(f"{run_dir}: signal_source must be a mapping or null")
+        if signal_decl.get("schema") != SJM_SIGNAL_SOURCE_SCHEMA:
+            raise ValueError(f"{run_dir}: signal_source schema is invalid")
+        try:
+            source = load_sjm_signal_source(
+                signal_decl["panel_path"], manifest_path=signal_decl["manifest_path"]
+            )
+        except KeyError as exc:
+            raise ValueError(f"{run_dir}: signal_source is missing {exc.args[0]!r}") from exc
+        expected_source = {
+            "schema": SJM_SIGNAL_SOURCE_SCHEMA,
+            "manifest_path": str(source.manifest_path),
+            "manifest_sha256": source.manifest_sha256,
+            "panel_path": str(source.panel_path),
+            "content_sha256": source.content_sha256,
+            "rows": int(len(source.panel)),
+            "start": source.panel.index[0].date().isoformat(),
+            "end": source.panel.index[-1].date().isoformat(),
+            "columns_sha256": _canonical_sha256(list(source.panel.columns)),
+        }
+        if dict(signal_decl) != expected_source:
+            raise ValueError(
+                f"{run_dir}: signal_source declaration diverges from the verified wide panel"
+            )
+
     # equation + reconstruction equality (max abs error strictly below 1e-9)
     caps = _validate_series(
         frames["targets"]["target_exposure"], "targets.target_exposure"
@@ -1983,6 +2478,8 @@ __all__ = [
     "SJM_RUN_MANIFEST_SCHEMA",
     "SJMConfig",
     "SJMInputs",
+    "SJMSignalSource",
+    "SJMTargetStream",
     "SJMLoopEntry",
     "SJMMutation",
     "SJMSelectionProtocol",
@@ -1991,7 +2488,9 @@ __all__ = [
     "approved_limit_table",
     "approved_mutation_registry",
     "build_control_returns",
+    "build_provisional_sjm_run",
     "build_sjm_run",
+    "build_sjm_target_stream",
     "canonical_ledger_payload",
     "cash_returns_on_factor_calendar",
     "development_metrics",
@@ -1999,6 +2498,7 @@ __all__ = [
     "frozen_signal_cadence",
     "load_sjm_inputs",
     "make_sjm_selection_protocol",
+    "load_sjm_signal_source",
     "overlay_returns",
     "require_snapshot_coverage",
     "select_sjm_config",
@@ -2006,4 +2506,5 @@ __all__ = [
     "sjm_selection_gates",
     "validate_sjm_run",
     "validate_sjm_selection_protocol",
+    "write_sjm_signal_source_manifest",
 ]

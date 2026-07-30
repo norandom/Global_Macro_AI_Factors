@@ -120,8 +120,6 @@ def test_crisis_metrics_include_entry_return() -> None:  # defect 8 shared bound
     test_crisis_metrics_include_the_return_entering_the_first_session()
 
 
-def test_ac_4_4() -> None:
-    test_crisis_metrics_include_the_return_entering_the_first_session()
 
 
 def test_crisis_metrics_reject_zero_level_producing_nonfinite_returns() -> None:

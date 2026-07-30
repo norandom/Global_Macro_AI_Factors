@@ -208,37 +208,3 @@ def test_invalid_inference_parameter_matrix():  # defect 14 shared boundary
         test_invalid_seed_is_rejected(seed)
     for sr_star in _INVALID_SR_STARS:
         test_invalid_sharpe_benchmark_is_rejected(sr_star)
-
-
-def test_ac_2_3():
-    for alpha in _INVALID_ALPHAS:
-        test_invalid_alpha_is_rejected(alpha)
-
-
-def test_ac_2_4():
-    for n_boot in _INVALID_BOOTS:
-        test_invalid_bootstrap_count_is_rejected(n_boot)
-
-
-def test_ac_2_5():
-    for window in _INVALID_WINDOWS:
-        test_invalid_window_is_rejected(window)
-
-
-def test_ac_2_6():
-    for sr_star in _INVALID_SR_STARS:
-        test_invalid_sharpe_benchmark_is_rejected(sr_star)
-
-
-def test_ac_2_8():
-    test_deterministic_given_seed_with_complete_metadata()
-
-
-def test_ac_8_4():
-    # SSR suite coverage: excess-return construction is pinned at the
-    # factor-loop boundary (test_ac_2_1); here determinism, metadata,
-    # insufficiency, and invalid settings (R8.4)
-    test_deterministic_given_seed_with_complete_metadata()
-    test_nondefault_window_metadata_keeps_fixed_daily_scaling()
-    test_valid_short_series_preserves_insufficient_inference()
-    test_invalid_inference_parameter_matrix()

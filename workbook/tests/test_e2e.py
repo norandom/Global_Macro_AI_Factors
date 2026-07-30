@@ -50,7 +50,7 @@ IDENTITY_CHECKS = {"S3 guarded_tilt equals raw*(1-p)"}
 
 
 @pytest.fixture(scope="module")
-def pipeline():
+def pipeline(_compact_fixture_ssr_compatibility):
     """The whole fixture-driven pipeline once, through the FW_* surface only."""
     real = addin.ReleaseClient
     addin.ReleaseClient = FakeClient  # module-scoped monkeypatch

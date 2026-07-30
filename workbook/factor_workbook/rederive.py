@@ -73,13 +73,14 @@ class EquityMetrics:
             downside risk, as used by vectorbt).
         calmar: annualized_return / abs(max_drawdown).
         max_drawdown: Minimum of the running-max drawdown of the value line.
-        crisis_return: Period return inside the fixed crisis window (NaN when
-            the series does not overlap the window).
-        crisis_max_drawdown: Within-window running-max drawdown minimum (NaN
-            when no overlap).
-        crisis_vol_ann: Annualized sample std of within-window returns (NaN
-            when no overlap); annualized on 252 trading days, mirroring
-            ``evaluation.crisis_analytics``.
+        crisis_return: Boundary-inclusive period return from the last value
+            strictly before the fixed crisis window through its actual end
+            (NaN without both an anchor and overlap).
+        crisis_max_drawdown: Running-max drawdown minimum over that anchored
+            episode (NaN without both an anchor and overlap).
+        crisis_vol_ann: Annualized sample std of episode returns whose right
+            endpoints are inside the crisis window; annualized on 252 trading
+            days, mirroring ``evaluation.crisis_analytics``.
     """
 
     total_return: float
@@ -252,8 +253,9 @@ def equity_metrics(
     calendar year — geometric compounding for the return, arithmetic
     mean-over-std for sharpe, and the empyrical downside RMS for sortino.
     The crisis block mirrors ``macro_framework.evaluation.crisis_analytics``
-    on the fixed 2022 window (252-day vol basis there); a series with no
-    window overlap reports NaN crisis fields.
+    on the fixed 2022 window: it includes the return from the last observation
+    strictly before the start into the first crisis session and uses the
+    252-day volatility basis there. Missing anchor or overlap reports NaN.
 
     Args:
         value: The equity value series (datetime index, e.g. the released
@@ -287,13 +289,18 @@ def equity_metrics(
     max_drawdown = float(drawdown.min()) if n else 0.0
     calmar = annualized_return / abs(max_drawdown) if max_drawdown < 0.0 else 0.0
 
-    window = value.loc[crisis[0] : crisis[1]]
-    if window.empty:
+    start, end = pd.Timestamp(crisis[0]), pd.Timestamp(crisis[1])
+    anchors = value.loc[value.index < start]
+    window = value.loc[(value.index >= start) & (value.index <= end)]
+    if anchors.empty or window.empty:
         crisis_return = crisis_max_dd = crisis_vol = float("nan")
     else:
-        crisis_return = float(window.iloc[-1] / window.iloc[0] - 1.0)
-        crisis_max_dd = float((window / window.cummax() - 1.0).min())
-        crisis_vol = float(window.pct_change().std(ddof=1)) * math.sqrt(_TRADING_DAYS)
+        episode = pd.concat([anchors.iloc[[-1]], window])
+        crisis_return = float(episode.iloc[-1] / episode.iloc[0] - 1.0)
+        crisis_max_dd = float((episode / episode.cummax() - 1.0).min())
+        crisis_vol = float(episode.pct_change(fill_method=None).iloc[1:].std(ddof=1)) * math.sqrt(
+            _TRADING_DAYS
+        )
 
     return EquityMetrics(
         total_return=total_return,

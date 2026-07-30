@@ -90,7 +90,7 @@ class FakeClient:
 
 
 @pytest.fixture(scope="module")
-def s1() -> StepView:
+def s1(_compact_fixture_ssr_compatibility) -> StepView:
     """One S1 view over the fixtures for all read-only assertions."""
     return build_s1(FakeClient())
 
@@ -409,7 +409,7 @@ S2_CHECK_NAME = "S2 accuracy vs published (full data)"
 
 
 @pytest.fixture(scope="module")
-def s2() -> StepView:
+def s2(_compact_fixture_ssr_compatibility) -> StepView:
     """One S2 view over the 5-row fixture subset for read-only assertions."""
     return build_s2(FakeClient())
 
@@ -516,7 +516,7 @@ GUARD_CHECK_NAME = "S3 guarded_tilt equals raw*(1-p)"
 
 
 @pytest.fixture(scope="module")
-def s3() -> StepView:
+def s3(_compact_fixture_ssr_compatibility) -> StepView:
     """One S3 view over the fixture subsets for all read-only assertions."""
     return build_s3(FakeClient())
 
@@ -687,7 +687,7 @@ DETAIL_FIELDS = ["p_memorized", "steered", "parse_ok", "conviction"]
 
 
 @pytest.fixture(scope="module")
-def s4() -> StepView:
+def s4(_compact_fixture_ssr_compatibility) -> StepView:
     """One S4 view over the fixture subsets for all read-only assertions."""
     return build_s4(FakeClient())
 
@@ -828,23 +828,23 @@ S4_REAL_ASSETS = [
     not all((REAL_DATA / asset).exists() for asset in S4_REAL_ASSETS),
     reason="real release assets not present locally",
 )
-def test_s4_metric_checks_pass_on_full_data():
-    """R5.3 agreement proof (Implementation Note 3.1): on the REAL published
-    assets every equity-derivable metric recomputed from the full 2014-2024
-    series matches the published pit/nonpit figure within the documented S4
-    tolerance — all 18 checks pass. The producer convention is vectorbt's
-    (365-day calendar year, day-0 return included, ddof=1, arithmetic
-    sharpe, downside-RMS sortino); the loosest reproduction is the pit
-    crisis_return at rel err 1.7e-6, covered by tol=1e-5."""
+def test_s4_noncrisis_metric_checks_pass_on_full_data():
+    """The corrected workbook retains every historical vectorbt/365 and day-zero
+    metric. Only the two published crisis returns retain the old unanchored
+    boundary and therefore disagree with the corrected re-derivation."""
     overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S4_REAL_ASSETS}
     view = build_s4(FakeClient(overrides))
     assert len(view.checks) == 2 * len(S4_METRIC_FIELDS)
-    failing = [check.message for check in view.checks if not check.ok]
-    assert failing == []
+    failing = [check.name for check in view.checks if not check.ok]
+    assert failing == [
+        "S4 pit crisis_return vs published",
+        "S4 nonpit crisis_return vs published",
+    ]
     for check in view.checks:
-        assert check.message == ""
+        if "crisis_return" not in check.name:
+            assert check.ok, check.message
+            assert check.message == ""
         assert check.tolerance == pytest.approx(1e-5)
-    # the full series spans the fixed 2022 crisis window: crisis figures real
     metrics = view.tables["metrics"]
     assert metrics[["crisis_return_rederived", "crisis_return_published"]].notna().all().all()
 
@@ -878,7 +878,7 @@ S5_EXPECTED_CHECKS = 4 + 3 * len(S5_LINES) + 1
 
 
 @pytest.fixture(scope="module")
-def s5() -> StepView:
+def s5(_compact_fixture_ssr_compatibility) -> StepView:
     """One S5 view over the fixture subsets for all read-only assertions."""
     return build_s5(FakeClient())
 
@@ -1125,7 +1125,7 @@ S0_CLAIM_CHECK = "S0 {} framing claim 'SSR tests stably above zero' (1 = holds)"
 
 
 @pytest.fixture(scope="module")
-def s0() -> StepView:
+def s0(_compact_fixture_ssr_compatibility) -> StepView:
     """One S0 view over the fixture subsets for all read-only assertions."""
     return build_s0(FakeClient())
 
@@ -1273,17 +1273,27 @@ S0_REAL_ASSETS = [
     not all((REAL_DATA / asset).exists() for asset in S0_REAL_ASSETS),
     reason="real release assets not present locally",
 )
-def test_s0_checks_pass_on_full_data():
-    """Agreement proof: build_static_bh.py WROTE the published stats with
-    rederive.equity_metrics and (macro_framework's) compute_ssr over the same
-    series it released — so on the REAL parquets every S0 check reproduces the
-    published metrics, SSR fields, and crisis episodes exactly, and the
-    framing's MBB claim re-derives as holding."""
+def test_s0_noncrisis_checks_pass_on_full_data():
+    """The corrected workbook keeps historical vectorbt/365, day-zero, and SSR
+    results unchanged. Historical crisis records retain the old unanchored
+    boundary and are visibly flagged instead of overriding corrected values."""
     overrides = {asset: (REAL_DATA / asset).read_bytes() for asset in S0_REAL_ASSETS}
     view = build_s0(FakeClient(overrides))
     assert len(view.checks) == S0_EXPECTED_CHECKS
-    failing = [check.message for check in view.checks if not check.ok]
-    assert failing == []
+    failing = [check.name for check in view.checks if not check.ok]
+    assert failing == [
+        "S0 2016_2026 covid_2020 crisis_return vs published",
+        "S0 2016_2026 covid_2020 crisis_vol_ann vs published",
+        "S0 2016_2026 inflation_2022 crisis_return vs published",
+        "S0 2016_2026 inflation_2022 crisis_max_drawdown vs published",
+        "S0 2016_2026 inflation_2022 crisis_vol_ann vs published",
+        "S0 2014_2024 covid_2020 crisis_return vs published",
+        "S0 2014_2024 covid_2020 crisis_vol_ann vs published",
+        "S0 2014_2024 inflation_2022 crisis_return vs published",
+        "S0 2014_2024 inflation_2022 crisis_max_drawdown vs published",
+        "S0 2014_2024 inflation_2022 crisis_vol_ann vs published",
+    ]
+    assert all(check.ok for check in view.checks if "crisis_" not in check.name)
     # the framing's headline figure: the 10y line's own SSR effect size
     ssr_row = view.tables["stats"]
     ssr_2016 = ssr_row[(ssr_row["window"] == "2016_2026") & (ssr_row["metric"] == "ssr")]

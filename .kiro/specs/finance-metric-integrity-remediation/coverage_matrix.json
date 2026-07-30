@@ -1,0 +1,745 @@
+{
+  "acceptance_criteria": [
+    {
+      "check_id": "tests/test_reporting.py::test_reader_row_uses_elapsed_cagr_and_252_conventions",
+      "command": "uv run --frozen pytest -q tests/test_reporting.py::test_reader_row_uses_elapsed_cagr_and_252_conventions",
+      "criterion": "1.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.2",
+      "text": "When a report presents reader-facing metrics from business-daily returns, the reporting system shall calculate compound growth from elapsed time and annualize volatility-based statistics using the established trading-day convention."
+    },
+    {
+      "check_id": "tests/test_reporting.py::test_legacy_annualization_basis_is_explicit_and_never_the_reader_convention",
+      "command": "uv run --frozen pytest -q tests/test_reporting.py::test_legacy_annualization_basis_is_explicit_and_never_the_reader_convention",
+      "criterion": "1.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.1",
+      "text": "Where a legacy release-parity metric uses a different annualization basis, the reporting system shall identify that basis explicitly and shall not present it as the reader-facing convention."
+    },
+    {
+      "check_id": "tests/test_reporting.py::test_full_rows_use_one_window_stream_and_observation_set",
+      "command": "uv run --frozen pytest -q tests/test_reporting.py::test_full_rows_use_one_window_stream_and_observation_set",
+      "criterion": "1.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.2",
+      "text": "When multiple statistics appear in one report row, the reporting system shall derive them from the same portfolio definition, return stream, and measurement window unless the differing basis is explicitly identified in that row."
+    },
+    {
+      "check_id": "tests/test_reporting.py::test_differential_statistics_share_one_daily_spread",
+      "command": "uv run --frozen pytest -q tests/test_reporting.py::test_differential_statistics_share_one_daily_spread",
+      "criterion": "1.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.3",
+      "text": "When a differential portfolio is reported, the reporting system shall derive total return, risk statistics, and SSR statistics from one consistent differential-return definition."
+    },
+    {
+      "check_id": "tests/test_reporting.py::test_endpoint_wealth_difference_is_a_separately_named_descriptive_field",
+      "command": "uv run --frozen pytest -q tests/test_reporting.py::test_endpoint_wealth_difference_is_a_separately_named_descriptive_field",
+      "criterion": "1.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.3",
+      "text": "If an endpoint wealth difference is retained alongside statistics derived from a daily return spread, the reporting system shall label them as distinct measures rather than presenting them as statistics of one portfolio."
+    },
+    {
+      "check_id": "tests/test_reporting.py::test_annualization_alternatives_stay_separately_named",
+      "command": "uv run --frozen pytest -q tests/test_reporting.py::test_annualization_alternatives_stay_separately_named",
+      "criterion": "1.6",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.1",
+      "text": "The reporting system shall preserve all intentional annualization alternatives as separately named and testable outputs rather than silently replacing or mixing them."
+    },
+    {
+      "check_id": "tests/test_factor_loop.py::test_verify_passes_exact_cash_excess_returns_to_ssr",
+      "command": "uv run --frozen pytest -q tests/test_factor_loop.py::test_verify_passes_exact_cash_excess_returns_to_ssr",
+      "criterion": "2.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.3",
+      "text": "When SSR is calculated for a portfolio, the SSR system shall calculate rolling Sharpe inputs from portfolio returns in excess of the designated total-return cash benchmark over matching sessions."
+    },
+    {
+      "check_id": "tests/test_factor_loop.py::test_verify_propagates_nondefault_ssr_alpha",
+      "command": "uv run --frozen pytest -q tests/test_factor_loop.py::test_verify_propagates_nondefault_ssr_alpha",
+      "criterion": "2.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.3",
+      "text": "When an SSR result is evaluated against a configured significance level, the SSR system shall use that same significance level throughout inference and gate evaluation."
+    },
+    {
+      "check_id": "tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "criterion": "2.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.1",
+      "text": "If the configured significance level is not strictly between zero and one, the SSR system shall reject the inference request with a clear validation error."
+    },
+    {
+      "check_id": "tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "criterion": "2.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.1",
+      "text": "If the bootstrap count is not a positive integer, the SSR system shall reject the inference request with a clear validation error."
+    },
+    {
+      "check_id": "tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "criterion": "2.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.1",
+      "text": "If the rolling window is invalid for the supplied series or is less than two observations, the SSR system shall reject the inference request with a clear validation error."
+    },
+    {
+      "check_id": "tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "criterion": "2.6",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.1",
+      "text": "If the Sharpe benchmark is non-finite, the SSR system shall reject the inference request with a clear validation error."
+    },
+    {
+      "check_id": "tests/test_factor_loop.py::test_ac_2_7",
+      "command": "uv run --frozen pytest -q tests/test_factor_loop.py::test_ac_2_7",
+      "criterion": "2.7",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.3",
+      "text": "When a non-default valid significance level is configured, the gate-verification workflow shall complete without an inference-configuration mismatch."
+    },
+    {
+      "check_id": "tests/test_ssr_inference.py::test_deterministic_given_seed_with_complete_metadata",
+      "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_deterministic_given_seed_with_complete_metadata",
+      "criterion": "2.8",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.1",
+      "text": "The SSR system shall retain deterministic inference metadata sufficient to reproduce the reported verdict under the same inputs and settings."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_factor_returns_on_selects_anchor_before_compounding_holiday_gap",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_factor_returns_on_selects_anchor_before_compounding_holiday_gap",
+      "criterion": "3.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.1",
+      "text": "When factor or benchmark prices are aligned to strategy sessions, the attribution system shall align price levels before calculating returns."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_holiday_gap_levels_align_before_returns",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_holiday_gap_levels_align_before_returns",
+      "criterion": "3.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.1",
+      "text": "When a strategy return spans one or more sessions absent from the strategy calendar, the attribution system shall compound the corresponding factor or benchmark movement over the same interval."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_factor_returns_on_rejects_absent_anchor_or_requested_label",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_factor_returns_on_rejects_absent_anchor_or_requested_label",
+      "criterion": "3.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.1",
+      "text": "If a requested benchmark date label is absent, the attribution system shall reject the calculation rather than silently shorten the sample."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_factor_returns_reject_present_nonfinite_levels",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_factor_returns_reject_present_nonfinite_levels",
+      "criterion": "3.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.1",
+      "text": "If a requested benchmark price value is missing or non-finite, the attribution system shall reject the calculation rather than silently remove affected observations."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_anchor_retains_first_strategy_return",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_anchor_retains_first_strategy_return",
+      "criterion": "3.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.1",
+      "text": "When attribution starts at the first reported strategy return, the attribution system shall include the preceding benchmark price anchor required to retain that first return."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_full_report_rows_bind_attribution_to_the_performance_window",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_full_report_rows_bind_attribution_to_the_performance_window",
+      "criterion": "3.6",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.2",
+      "text": "When a report row combines performance and attribution statistics, the reporting system shall use one common end date and observation set for both groups of statistics."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_shortened_attribution_is_identified_as_a_separate_window",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_shortened_attribution_is_identified_as_a_separate_window",
+      "criterion": "3.7",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.4",
+      "text": "If attribution coverage cannot reach the performance end date, the reporting system shall either fail the report or identify the attribution start date, end date, and observation count as a separate measurement window."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_raw_market_model_has_unambiguous_labels",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_raw_market_model_has_unambiguous_labels",
+      "criterion": "3.8",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.1",
+      "text": "When an intercept is labeled CAPM alpha or Jensen alpha, the attribution system shall regress portfolio excess returns on market excess returns using the same cash benchmark."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_raw_market_model_has_unambiguous_labels",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_raw_market_model_has_unambiguous_labels",
+      "criterion": "3.9",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.3",
+      "text": "Where a regression uses raw portfolio and market returns, the reporting system shall label the intercept as a raw-return market-model intercept rather than CAPM alpha or Jensen alpha."
+    },
+    {
+      "check_id": "tests/test_sjm_crowding.py::test_ac_4_1",
+      "command": "uv run --frozen pytest -q tests/test_sjm_crowding.py::test_ac_4_1",
+      "criterion": "4.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "7.4",
+      "text": "When a strategy allocates less than full weight to risky assets, the portfolio system shall apply the designated cash benchmark's total return to the residual allocation."
+    },
+    {
+      "check_id": "tests/test_sjm_crowding.py::test_ac_4_2",
+      "command": "uv run --frozen pytest -q tests/test_sjm_crowding.py::test_ac_4_2",
+      "criterion": "4.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "7.3",
+      "text": "If a cash-benchmark return is unavailable for a required interval, the portfolio system shall reject or explicitly flag the calculation rather than substitute zero without evidence that the economic return was zero."
+    },
+    {
+      "check_id": "tests/test_sjm_crowding.py::test_ac_4_3",
+      "command": "uv run --frozen pytest -q tests/test_sjm_crowding.py::test_ac_4_3",
+      "criterion": "4.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "7.4",
+      "text": "When an overlay and its control are compared, the portfolio system shall apply the same cash-return convention to both portfolios."
+    },
+    {
+      "check_id": "tests/test_evaluation.py::test_crisis_metrics_include_the_return_entering_the_first_session",
+      "command": "uv run --frozen pytest -q tests/test_evaluation.py::test_crisis_metrics_include_the_return_entering_the_first_session",
+      "criterion": "4.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.2",
+      "text": "When a crisis window begins on a trading session after an earlier portfolio observation, the crisis-analysis system shall include the return from the preceding observation into the first crisis session."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_crisis_exports_reproduce_the_shared_boundary_inclusive_result",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_crisis_exports_reproduce_the_shared_boundary_inclusive_result",
+      "criterion": "4.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.4",
+      "text": "When crisis metrics are exported, the reporting system shall reproduce the same boundary-inclusive crisis return shown by the shared crisis calculation."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_ac_5_1",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_ac_5_1",
+      "criterion": "5.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "8.1",
+      "text": "When assets quoted in different currencies are included in one opportunity set, the Markowitz analysis shall convert their returns to one disclosed base currency before calculating portfolio statistics."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_ac_5_2",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_ac_5_2",
+      "criterion": "5.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "8.1",
+      "text": "When assets trade on different exchange calendars, the Markowitz analysis shall ensure each return observation represents a consistent measurement interval across the opportunity set."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_ac_5_3",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_ac_5_3",
+      "criterion": "5.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "8.2",
+      "text": "If exchange-specific sessions are removed or combined, the Markowitz analysis shall use an annualization factor consistent with the effective observation frequency."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_ac_5_4",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_ac_5_4",
+      "criterion": "5.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "8.2",
+      "text": "The Markowitz analysis shall disclose the base currency, analysis start date, analysis end date, and effective observation count used for each displayed frontier."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_frontier_discloses_window_snapshot_and_annualization",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_frontier_discloses_window_snapshot_and_annualization",
+      "criterion": "5.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "9.5",
+      "text": "When a figure claims one full analysis window, the strategy points, benchmark, opportunity set, and frontier shall share the stated start and end boundaries."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_ac_5_6",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_ac_5_6",
+      "criterion": "5.6",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "8.1",
+      "text": "If complete market data do not cover the claimed analysis window, the reporting system shall stop generation or label the shorter window explicitly."
+    },
+    {
+      "check_id": "tests/test_stream_ext2026.py::test_duplicate_prompt_dates_persist_independent_records",
+      "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_duplicate_prompt_dates_persist_independent_records",
+      "criterion": "6.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "6.2",
+      "text": "When identical prompt text occurs on multiple rebalance dates, the replay system shall preserve a distinct response, score set, and derived portfolio record for each date."
+    },
+    {
+      "check_id": "tests/test_stream_ext2026.py::test_dated_replay_identical_prompts_consume_their_own_dated_evidence",
+      "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_dated_replay_identical_prompts_consume_their_own_dated_evidence",
+      "criterion": "6.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "6.3",
+      "text": "When dated records are persisted and replayed, the replay system shall associate each response and score with its original rebalance date rather than with prompt text alone."
+    },
+    {
+      "check_id": "tests/test_stream_ext2026.py::test_replay_audit_cross_date_swap_blocks_every_publishable_output",
+      "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_replay_audit_cross_date_swap_blocks_every_publishable_output",
+      "criterion": "6.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "6.4",
+      "text": "If a dated response or score is missing, duplicated inconsistently, or associated with another date, the replay system shall fail validation before publishing portfolio artifacts."
+    },
+    {
+      "check_id": "tests/test_stream_ext2026.py::test_replay_audit_clean_run_passes_and_persists_summary",
+      "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_replay_audit_clean_run_passes_and_persists_summary",
+      "criterion": "6.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "6.4",
+      "text": "When a replay completes, the replay system shall demonstrate equality between the dated source records and the dated values consumed by the simulation."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_ac_7_1",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_ac_7_1",
+      "criterion": "7.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "9.8",
+      "text": "When a shared financial calculation changes, the artifact-generation workflow shall regenerate every directly affected user-visible output from the corrected producer."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_trio_static_and_dashboard_tables_share_one_validated_identity",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_trio_static_and_dashboard_tables_share_one_validated_identity",
+      "criterion": "7.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "13.3",
+      "text": "When the same portfolio and window appear in multiple outputs, the artifact-generation workflow shall produce matching values within the documented numeric tolerance."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_legacy_convention_is_identified_on_the_emitted_row",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_legacy_convention_is_identified_on_the_emitted_row",
+      "criterion": "7.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "4.1",
+      "text": "If an output retains a deliberate legacy convention, the artifact-generation workflow shall identify that convention in the output or its accompanying provenance."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_factor_tables_project_validated_run_local_records_with_lineage",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_factor_tables_project_validated_run_local_records_with_lineage",
+      "criterion": "7.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "15.7",
+      "text": "When generation completes, the artifact-generation workflow shall record the input window, observation count, annualization basis, cash benchmark, base currency where applicable, and deterministic inference settings needed to interpret the output."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_every_source_fault_blocks_staging_and_leaves_no_manifest",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_every_source_fault_blocks_staging_and_leaves_no_manifest",
+      "criterion": "7.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "10.9",
+      "text": "If any affected artifact cannot be regenerated successfully, the artifact-generation workflow shall report the failure and shall not represent the remediation as complete."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_artifact_edit_cannot_stand_in_for_the_owning_producer",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_artifact_edit_cannot_stand_in_for_the_owning_producer",
+      "criterion": "7.6",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "9.1",
+      "text": "The artifact-generation workflow shall not correct a published value solely by editing the artifact when its owning producer remains incorrect."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_direct_staging_validators_reject_each_integrity_dimension",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_direct_staging_validators_reject_each_integrity_dimension",
+      "criterion": "8.1",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "13.1",
+      "text": "When the remediation is validated, the validation suite shall include at least one deterministic regression check for each of the 15 confirmed defect classes."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_auxiliary_tables_reconcile_to_canonical_portfolio_rows",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_auxiliary_tables_reconcile_to_canonical_portfolio_rows",
+      "criterion": "8.2",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "13.1",
+      "text": "When a defect belongs to a shared calculation, the validation suite shall verify the invariant at the shared calculation boundary and at one affected report or artifact boundary."
+    },
+    {
+      "check_id": "tests/test_skill_metric.py::test_factor_returns_on_selects_anchor_before_compounding_holiday_gap",
+      "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_factor_returns_on_selects_anchor_before_compounding_holiday_gap",
+      "criterion": "8.3",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "2.1",
+      "text": "When calendar alignment is tested, the validation suite shall include exchange-holiday gaps, a required first-return anchor, absent date labels, and present-but-missing price values."
+    },
+    {
+      "check_id": "tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+      "criterion": "8.4",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "3.1",
+      "text": "When SSR behavior is tested, the validation suite shall include excess-return construction, non-default valid significance levels, invalid inference parameters, and deterministic verdict reproduction."
+    },
+    {
+      "check_id": "tests/test_markowitz.py::test_ac_8_5",
+      "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_ac_8_5",
+      "criterion": "8.5",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "8.4",
+      "text": "When Markowitz behavior is tested, the validation suite shall include mixed-currency inputs, cross-exchange calendars, and consistency between effective observation frequency and annualization."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_ac_8_6",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_ac_8_6",
+      "criterion": "8.6",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "9.8",
+      "text": "When report parity is tested, the validation suite shall detect mixed measurement windows, mixed portfolio definitions, undisclosed annualization bases, and stale generated values."
+    },
+    {
+      "check_id": "tests/test_stream_ext2026.py::test_duplicate_prompt_dates_keep_distinct_evidence",
+      "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_duplicate_prompt_dates_keep_distinct_evidence",
+      "criterion": "8.7",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "6.5",
+      "text": "When dated replay behavior is tested, the validation suite shall include identical prompts occurring on different rebalance dates and shall verify that their dated records remain distinct."
+    },
+    {
+      "check_id": "tests/test_publication_artifacts.py::test_finalization_failure_reports_and_leaves_candidate_incomplete",
+      "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_finalization_failure_reports_and_leaves_candidate_incomplete",
+      "criterion": "8.8",
+      "evidence_state": "assigned",
+      "final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+      "owner_task": "15.10",
+      "text": "While any required regression or artifact-parity check is failing, the remediation project shall remain incomplete."
+    }
+  ],
+  "confirmed_defects": [
+    {
+      "defect_id": 1,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_factor_source_to_consumption_equality_blocks_publish",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_factor_source_to_consumption_equality_blocks_publish"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "dated_prompt_collisions",
+        "manifest_failures"
+      ],
+      "owner_task": "6.5",
+      "shared_boundary": {
+        "check_id": "tests/test_stream_ext2026.py::test_duplicate_prompt_dates_keep_distinct_evidence",
+        "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_duplicate_prompt_dates_keep_distinct_evidence"
+      },
+      "summary": "Duplicate prompts overwrite dated replies/scores"
+    },
+    {
+      "defect_id": 2,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_reader_outputs_disclose_annualization_basis",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_reader_outputs_disclose_annualization_basis"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "stale_artifacts"
+      ],
+      "owner_task": "4.2",
+      "shared_boundary": {
+        "check_id": "tests/test_reporting.py::test_reader_and_legacy_annualization_are_separate",
+        "command": "uv run --frozen pytest -q tests/test_reporting.py::test_reader_and_legacy_annualization_are_separate"
+      },
+      "summary": "Business-daily metrics annualized with 365 under generic fields"
+    },
+    {
+      "defect_id": 3,
+      "downstream_boundary": {
+        "check_id": "tests/test_stream_ext2026.py::test_factor_metric_records_use_completed_snapshot_cash_and_shared_contracts",
+        "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_factor_metric_records_use_completed_snapshot_cash_and_shared_contracts"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "cash_returns"
+      ],
+      "owner_task": "3.3",
+      "shared_boundary": {
+        "check_id": "tests/test_factor_loop.py::test_verify_passes_exact_cash_excess_returns_to_ssr",
+        "command": "uv run --frozen pytest -q tests/test_factor_loop.py::test_verify_passes_exact_cash_excess_returns_to_ssr"
+      },
+      "summary": "Portfolio SSR uses raw returns"
+    },
+    {
+      "defect_id": 4,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_markowitz_tables_disclose_windows_moments_weights_and_diagnostics",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_markowitz_tables_disclose_windows_moments_weights_and_diagnostics"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "mixed_currencies"
+      ],
+      "owner_task": "8.4",
+      "shared_boundary": {
+        "check_id": "tests/test_markowitz.py::test_gbp_assets_convert_to_usd_before_returns",
+        "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_gbp_assets_convert_to_usd_before_returns"
+      },
+      "summary": "Markowitz mixes GBP/GBp and USD"
+    },
+    {
+      "defect_id": 5,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_sjm_report_tables_project_the_completed_run_with_full_provenance",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_sjm_report_tables_project_the_completed_run_with_full_provenance"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "cash_returns",
+        "manifest_failures"
+      ],
+      "owner_task": "7.9",
+      "shared_boundary": {
+        "check_id": "tests/test_sjm_crowding.py::test_overlay_and_control_share_total_return_cash",
+        "command": "uv run --frozen pytest -q tests/test_sjm_crowding.py::test_overlay_and_control_share_total_return_cash"
+      },
+      "summary": "SJM cash sleeve uses price-only BIL and zero fill"
+    },
+    {
+      "defect_id": 6,
+      "downstream_boundary": {
+        "check_id": "tests/test_stream_ext2026.py::test_factor_records_project_strict_attribution_and_crisis_contracts",
+        "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_factor_records_project_strict_attribution_and_crisis_contracts"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "holiday_gaps",
+        "anchors"
+      ],
+      "owner_task": "2.1",
+      "shared_boundary": {
+        "check_id": "tests/test_skill_metric.py::test_holiday_gap_levels_align_before_returns",
+        "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_holiday_gap_levels_align_before_returns"
+      },
+      "summary": "Release attribution differences before reindexing"
+    },
+    {
+      "defect_id": 7,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_reports_reject_capm_labels_for_raw_regression",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_reports_reject_capm_labels_for_raw_regression"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [],
+      "owner_task": "2.3",
+      "shared_boundary": {
+        "check_id": "tests/test_skill_metric.py::test_raw_market_model_has_unambiguous_labels",
+        "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_raw_market_model_has_unambiguous_labels"
+      },
+      "summary": "Raw SPY intercept labeled CAPM/Jensen alpha"
+    },
+    {
+      "defect_id": 8,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_crisis_exports_reproduce_the_shared_boundary_inclusive_result",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_crisis_exports_reproduce_the_shared_boundary_inclusive_result"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "anchors"
+      ],
+      "owner_task": "3.2",
+      "shared_boundary": {
+        "check_id": "tests/test_evaluation.py::test_crisis_metrics_include_entry_return",
+        "command": "uv run --frozen pytest -q tests/test_evaluation.py::test_crisis_metrics_include_entry_return"
+      },
+      "summary": "Crisis analytics omit first crisis return"
+    },
+    {
+      "defect_id": 9,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_differential_artifacts_separate_endpoint_gap",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_differential_artifacts_separate_endpoint_gap"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [],
+      "owner_task": "4.3",
+      "shared_boundary": {
+        "check_id": "tests/test_reporting.py::test_differential_statistics_share_one_daily_spread",
+        "command": "uv run --frozen pytest -q tests/test_reporting.py::test_differential_statistics_share_one_daily_spread"
+      },
+      "summary": "Differential row mixes endpoint and spread definitions"
+    },
+    {
+      "defect_id": 10,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_report_parity_rejects_mixed_windows",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_report_parity_rejects_mixed_windows"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "stale_artifacts"
+      ],
+      "owner_task": "4.4",
+      "shared_boundary": {
+        "check_id": "tests/test_reporting.py::test_short_attribution_is_emitted_separately",
+        "command": "uv run --frozen pytest -q tests/test_reporting.py::test_short_attribution_is_emitted_separately"
+      },
+      "summary": "Report rows mix performance and attribution windows"
+    },
+    {
+      "defect_id": 11,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_markowitz_tables_disclose_windows_moments_weights_and_diagnostics",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_markowitz_tables_disclose_windows_moments_weights_and_diagnostics"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "holiday_gaps",
+        "mixed_currencies"
+      ],
+      "owner_task": "8.4",
+      "shared_boundary": {
+        "check_id": "tests/test_markowitz.py::test_weekly_grid_uses_matching_annualization",
+        "command": "uv run --frozen pytest -q tests/test_markowitz.py::test_weekly_grid_uses_matching_annualization"
+      },
+      "summary": "Markowitz intersection calendar scaled by 252"
+    },
+    {
+      "defect_id": 12,
+      "downstream_boundary": {
+        "check_id": "tests/test_stream_ext2026.py::test_factor_records_stop_on_invalid_required_spy_coverage",
+        "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_factor_records_stop_on_invalid_required_spy_coverage"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "holiday_gaps"
+      ],
+      "owner_task": "2.1",
+      "shared_boundary": {
+        "check_id": "tests/test_skill_metric.py::test_factor_returns_reject_present_nonfinite_levels",
+        "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_factor_returns_reject_present_nonfinite_levels"
+      },
+      "summary": "factor_returns_on permits present missing values"
+    },
+    {
+      "defect_id": 13,
+      "downstream_boundary": {
+        "check_id": "tests/test_stream_ext2026.py::test_factor_metric_records_use_completed_snapshot_cash_and_shared_contracts",
+        "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_factor_metric_records_use_completed_snapshot_cash_and_shared_contracts"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "invalid_ssr_settings"
+      ],
+      "owner_task": "3.3",
+      "shared_boundary": {
+        "check_id": "tests/test_factor_loop.py::test_verify_propagates_nondefault_ssr_alpha",
+        "command": "uv run --frozen pytest -q tests/test_factor_loop.py::test_verify_propagates_nondefault_ssr_alpha"
+      },
+      "summary": "factor_loop.verify ignores configured SSR alpha"
+    },
+    {
+      "defect_id": 14,
+      "downstream_boundary": {
+        "check_id": "tests/test_publication_artifacts.py::test_finalization_failure_reports_and_leaves_candidate_incomplete",
+        "command": "uv run --frozen pytest -q tests/test_publication_artifacts.py::test_finalization_failure_reports_and_leaves_candidate_incomplete"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "invalid_ssr_settings",
+        "manifest_failures"
+      ],
+      "owner_task": "3.1",
+      "shared_boundary": {
+        "check_id": "tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix",
+        "command": "uv run --frozen pytest -q tests/test_ssr_inference.py::test_invalid_inference_parameter_matrix"
+      },
+      "summary": "SSR inference accepts invalid parameters"
+    },
+    {
+      "defect_id": 15,
+      "downstream_boundary": {
+        "check_id": "tests/test_stream_ext2026.py::test_factor_records_project_strict_attribution_and_crisis_contracts",
+        "command": "uv run --frozen pytest -q tests/test_stream_ext2026.py::test_factor_records_project_strict_attribution_and_crisis_contracts"
+      },
+      "evidence_state": "assigned",
+      "fixtures": [
+        "anchors"
+      ],
+      "owner_task": "2.1",
+      "shared_boundary": {
+        "check_id": "tests/test_skill_metric.py::test_anchor_retains_first_strategy_return",
+        "command": "uv run --frozen pytest -q tests/test_skill_metric.py::test_anchor_retains_first_strategy_return"
+      },
+      "summary": "Trio regression drops first return"
+    }
+  ],
+  "criterion_count": 52,
+  "defect_count": 15,
+  "required_fixture_classes": [
+    "anchors",
+    "holiday_gaps",
+    "invalid_ssr_settings",
+    "dated_prompt_collisions",
+    "cash_returns",
+    "mixed_currencies",
+    "stale_artifacts",
+    "manifest_failures"
+  ],
+  "root_final_validation_command": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+  "schema": "finance_remediation.coverage_matrix.v1",
+  "workbook_final_validation_command": "uv run --project workbook --frozen --with pytest==9.1.1 python -m pytest -q workbook/tests"
+}

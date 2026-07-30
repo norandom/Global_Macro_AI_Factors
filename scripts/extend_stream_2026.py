@@ -41,7 +41,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from numbers import Integral, Real
 from pathlib import Path
-from types import MappingProxyType
+from types import MappingProxyType, SimpleNamespace
 from typing import Callable, Iterable, Literal, Mapping, get_args
 
 REPO = Path(__file__).resolve().parent.parent
@@ -72,9 +72,13 @@ TEAR_OUT = OUT / "tear_sheet"
 INIT_CASH = 10_000.0
 SIM_START = os.environ.get("STREAM_SIM_START") or "2019-01-01"
 SIM_END_EXT = "2026-06-30"  # task 8.1: extend to 2026-06 (~18 new monthly rebalances)
+PRICE_WINDOW_START = "2014-01-01"  # preserve the historical simulation lookback window
 PRICE_FETCH_END = "2026-07-01"
 LOOKBACK_DAYS = 756
 TILT = 0.30  # nb09 final blend = 0.7*HRP + 0.3*BL
+FACTOR_REPLAY_EVIDENCE_ENV = "FACTOR_REPLAY_EVIDENCE_TABLE"
+FACTOR_REPLAY_NAIVE_ENV = "FACTOR_REPLAY_NAIVE_ARTIFACT"
+SNAPSHOT_PRICE_EQUIVALENCE_REL_TOL = 1e-6  # documented max observed rel diff ~= 9.5e-7
 
 # task 4.2: OFF by default -> byte-identical published behavior. When set to a
 # dict (e.g. {"min_scale": 0.20}) the combine seam swaps the constant BIL 0.25
@@ -270,16 +274,25 @@ def _fetch_fred_series_web(series_id: str) -> pd.Series:
     return out
 
 
-def build_panel() -> tuple[pd.DataFrame, str]:
+def build_panel(*, force_committed_fallback: bool = False) -> tuple[pd.DataFrame, str]:
     """FRED-live macro panel via ``mf.build_macro_panel``; committed fallback.
 
     Patches the module-global ``load_fred_series`` (DB-backed; the Postgres DB
     is absent here) with the fredgraph.csv web loader so the UNCHANGED
     ``build_macro_panel`` assembly/z-scoring runs against live FRED. When FRED
-    is unreachable the committed ``data/macro_panel_monthly.parquet`` is used
-    (the exact panel nb13/nb14 consumed). Either way only completed months
-    are kept and the source is returned for the run header.
+    is unreachable — or replay mode demands zero provider calls — the committed
+    ``data/macro_panel_monthly.parquet`` is used (the exact panel nb13/nb14
+    consumed). Either way only completed months are kept and the source is
+    returned for the run header.
     """
+    if force_committed_fallback:
+        panel = pd.read_parquet(DATA / "macro_panel_monthly.parquet")
+        panel.index = pd.DatetimeIndex(panel.index)
+        return (
+            completed_months_only(panel),
+            "committed data/macro_panel_monthly.parquet (replay mode: zero-provider panel replay)",
+        )
+
     original = macro_module.load_fred_series
     macro_module.load_fred_series = _fetch_fred_series_web
     try:
@@ -299,14 +312,19 @@ def build_panel() -> tuple[pd.DataFrame, str]:
 
 
 def fetch_prices(symbols: list[str]) -> pd.DataFrame:
-    """Daily adjusted closes via yfinance (nb13's fetch, extended to mid-2026)."""
+    """Legacy diagnostic helper: daily adjusted closes via yfinance.
+
+    Retained only for forensic comparison with the immutable completed snapshot.
+    ``main()`` never calls this path; production simulation prices now come from
+    :func:`load_completed_snapshot_price_frame`.
+    """
     import yfinance as yf
 
     want = symbols + ["SPY"]
     last_exc: Exception | None = None
     for _attempt in range(6):
         try:
-            raw = yf.download(want, start="2014-01-01", end=PRICE_FETCH_END,
+            raw = yf.download(want, start=PRICE_WINDOW_START, end=PRICE_FETCH_END,
                               auto_adjust=True, progress=False, threads=False)
             close = raw["Close"] if ("Close" in raw.columns.get_level_values(0)) else raw
             close = close[want].copy()
@@ -317,6 +335,118 @@ def fetch_prices(symbols: list[str]) -> pd.DataFrame:
             last_exc = exc
         time.sleep(8)
     raise RuntimeError(f"price fetch failed after retries: {last_exc!r}")
+
+
+def resolve_market_snapshot_dir(snapshot_id: str | None = None, path: str | None = None) -> Path:
+    """Resolve the completed market snapshot directory for Factor inputs."""
+    from scripts import build_basket_long as snapshot_producer
+
+    if path:
+        candidate = Path(path)
+        return candidate if candidate.is_absolute() else REPO / candidate
+    configured = (os.environ.get("MARKET_SNAPSHOT_DIR") or "").strip()
+    if configured:
+        return Path(configured)
+    return DATA / "market_snapshots" / (snapshot_id or snapshot_producer.SNAPSHOT_ID)
+
+
+def _load_completed_snapshot_tables(
+    snapshot_dir: Path | str,
+) -> tuple[dict[str, object], dict[str, pd.DataFrame], dict[str, object]]:
+    """Validated completed-snapshot manifest plus its normalized parquet tables."""
+    from scripts import build_basket_long as snapshot_producer
+
+    snapshot_dir = Path(snapshot_dir)
+    report = snapshot_producer.validate_market_snapshot(snapshot_dir)
+    manifest_path = snapshot_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    if manifest.get("completed") is not True:
+        raise ValueError(f"{snapshot_dir}: snapshot manifest is not completed")
+    if manifest.get("total_return_field") != snapshot_producer.TOTAL_RETURN_FIELD:
+        raise ValueError(
+            f"{snapshot_dir}: snapshot total_return_field is not the approved adjusted total-return field"
+        )
+    tables = {
+        "basket_adjusted_close_local.parquet": pd.read_parquet(
+            snapshot_dir / "basket_adjusted_close_local.parquet"
+        ),
+        "cash_market_total_return.parquet": pd.read_parquet(
+            snapshot_dir / "cash_market_total_return.parquet"
+        ),
+        "fx_usd_per_gbp.parquet": pd.read_parquet(snapshot_dir / "fx_usd_per_gbp.parquet"),
+    }
+    return manifest, tables, report
+
+
+def price_frame_content_sha256(frame: pd.DataFrame) -> str:
+    """Stable content hash of a date-indexed price frame, including NaN placement."""
+    if not isinstance(frame, pd.DataFrame) or frame.empty:
+        raise ValueError("price frame must be a non-empty DataFrame")
+    if not isinstance(frame.index, pd.DatetimeIndex):
+        raise ValueError("price frame index must be a DatetimeIndex")
+    header = json.dumps(
+        {
+            "columns": [str(c) for c in frame.columns],
+            "dtypes": [str(dtype) for dtype in frame.dtypes],
+            "index_dtype": str(frame.index.dtype),
+            "index_name": frame.index.name,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    digest = hashlib.sha256(header.encode("utf-8"))
+    digest.update(pd.util.hash_pandas_object(frame, index=True).to_numpy().tobytes())
+    return digest.hexdigest()
+
+
+def price_frame_lineage(frame: pd.DataFrame) -> dict[str, object]:
+    """Declared lineage of the derived simulation price frame."""
+    if frame.empty:
+        raise ValueError("price frame must be non-empty")
+    return {
+        "rows": int(len(frame)),
+        "start": frame.index.min().date().isoformat(),
+        "end": frame.index.max().date().isoformat(),
+        "columns": [str(c) for c in frame.columns],
+        "content_sha256": price_frame_content_sha256(frame),
+    }
+
+
+def load_completed_snapshot_price_frame(
+    snapshot_dir: Path | str,
+    symbols: list[str],
+    *,
+    start: str | pd.Timestamp = PRICE_WINDOW_START,
+    end: str | pd.Timestamp = SIM_END_EXT,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Validated union-calendar factor price frame sourced from the market snapshot.
+
+    Preserves the prior simulation semantics exactly: outer-joined adjusted level
+    tables, columns ordered ``[*symbols, "SPY"]``, no complete-case filter, and
+    the fixed 2014-01-01..2026-06-30 slice used by the walk-forward stream.
+    """
+    manifest, tables, _report = _load_completed_snapshot_tables(snapshot_dir)
+    want = list(symbols) + ["SPY"]
+    basket = tables["basket_adjusted_close_local.parquet"]
+    cash_market = tables["cash_market_total_return.parquet"]
+    missing = [symbol for symbol in want if symbol not in basket.columns and symbol not in cash_market.columns]
+    if missing:
+        raise ValueError(
+            f"{snapshot_dir}: completed snapshot is missing required Factor price symbol(s) {missing}"
+        )
+    prices = basket.join(cash_market, how="outer")
+    prices = prices.loc[:, want].copy()
+    prices.index = pd.DatetimeIndex(prices.index)
+    window = prices.loc[(prices.index >= pd.Timestamp(start)) & (prices.index <= pd.Timestamp(end))].copy()
+    if window.empty:
+        raise ValueError(
+            f"{snapshot_dir}: snapshot-sourced Factor price window is empty for {start}..{end}"
+        )
+    return window, {
+        "snapshot_id": manifest["snapshot_id"],
+        "manifest_sha256": sha256_file(Path(snapshot_dir) / "manifest.json"),
+        "price_frame": price_frame_lineage(window),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -669,6 +799,198 @@ def write_evidence_table(
     return path
 
 
+@dataclass(frozen=True)
+class FactorReplaySources:
+    """Persisted zero-provider replay sources for a full Factor rerun."""
+
+    evidence_path: Path
+    evidence_records: tuple[DatedFactorEvidence, ...]
+    evidence: Mapping[EvidenceKey, DatedFactorEvidence]
+    naive_path: Path
+    naive_rows_by_prompt: Mapping[str, dict[str, object]]
+
+
+
+def _default_replay_naive_artifact(evidence_path: Path) -> Path | None:
+    """Best-effort sibling lookup for the persisted naive artifact."""
+    candidates = (
+        Path(os.environ.get(FACTOR_REPLAY_NAIVE_ENV) or ""),
+        evidence_path.parent.parent / "naive_directional_eval_ext2026.parquet",
+        OUT / "naive_directional_eval_ext2026.parquet",
+        DATA / "naive_directional_eval_ext2026.parquet",
+    )
+    for candidate in candidates:
+        if str(candidate) and candidate.is_file():
+            return candidate
+    return None
+
+
+
+def load_factor_replay_sources(
+    evidence_path: Path | str,
+    *,
+    naive_path: Path | str | None = None,
+) -> FactorReplaySources:
+    """Load the committed zero-provider replay inputs from persisted artifacts."""
+    evidence_path = Path(evidence_path)
+    if not evidence_path.is_file():
+        raise ReplayValidationError(f"replay evidence table is absent: {evidence_path}")
+    frame = pd.read_parquet(evidence_path)
+    records = tuple(_factor_evidence_records_from_frame(frame))
+    evidence = validate_evidence_records(
+        records, [(record.variant, record.rebalance_date) for record in records]
+    )
+
+    resolved_naive = Path(naive_path) if naive_path is not None else _default_replay_naive_artifact(evidence_path)
+    if resolved_naive is None or not resolved_naive.is_file():
+        raise ReplayValidationError(
+            "replay mode requires a persisted naive directional artifact with zero provider calls"
+        )
+    naive = pd.read_parquet(resolved_naive)
+    required = {"prompt", "reply"}
+    missing = sorted(required - set(naive.columns))
+    if missing:
+        raise ReplayValidationError(
+            f"{resolved_naive}: naive replay artifact is missing column(s) {missing}"
+        )
+    rows_by_prompt: dict[str, dict[str, object]] = {}
+    for row in naive.to_dict("records"):
+        prompt = row.get("prompt")
+        if not isinstance(prompt, str) or not prompt:
+            raise ReplayValidationError(
+                f"{resolved_naive}: naive replay artifact contains a blank prompt"
+            )
+        if prompt in rows_by_prompt and rows_by_prompt[prompt] != row:
+            raise ReplayValidationError(
+                f"{resolved_naive}: naive replay artifact contains inconsistent duplicate prompt {prompt!r}"
+            )
+        rows_by_prompt[prompt] = row
+    return FactorReplaySources(
+        evidence_path=evidence_path,
+        evidence_records=records,
+        evidence=evidence,
+        naive_path=resolved_naive,
+        naive_rows_by_prompt=MappingProxyType(rows_by_prompt),
+    )
+
+
+
+def replay_factor_outputs(
+    replay: FactorReplaySources,
+    *,
+    factor_meta: list[tuple],
+    variant: Variant,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Rebuild full-stream loadings/scores tables from persisted dated evidence."""
+    load_rows: list[dict[str, object]] = []
+    score_rows: list[dict[str, object]] = []
+    for rb, _macro_state, _raw_levels, pit_prompt, nonpit_prompt in factor_meta:
+        rec = resolve_dated_evidence(replay.evidence, variant, rb)
+        source_prompt = pit_prompt if variant == "pit" else nonpit_prompt
+        if (
+            source_prompt != rec.source_prompt_text
+            or sha256_text(source_prompt) != rec.source_prompt_sha256
+        ):
+            raise ReplayValidationError(
+                f"replay source prompt diverges from persisted evidence for "
+                f"({variant!r}, {rec.rebalance_date.isoformat()})"
+            )
+        parsed = fs.parse_loadings(rec.response_text, pd.Timestamp(rb))
+        loadings: dict[str, float] | None = None
+        if rec.loadings_parse_ok:
+            if parsed is None:
+                raise ReplayValidationError(
+                    f"persisted replay response failed to parse for ({variant!r}, {rec.rebalance_date.isoformat()})"
+                )
+            got = {axis: float(parsed.loadings[axis]) for axis in fs.MACRO_AXES}
+            exp = {axis: float(getattr(rec, f"loading_{axis}")) for axis in fs.MACRO_AXES}
+            if got != exp:
+                raise ReplayValidationError(
+                    f"replayed loadings diverge from persisted evidence for "
+                    f"({variant!r}, {rec.rebalance_date.isoformat()})"
+                )
+            loadings = exp
+        elif parsed is not None:
+            raise ReplayValidationError(
+                f"persisted replay response parsed unexpectedly for ({variant!r}, {rec.rebalance_date.isoformat()})"
+            )
+
+        score = factor_score_from_row(rec.score_p_memorized, rec.score_fail_reason)
+        if bool(score.parse_ok) != bool(rec.score_parse_ok) or score.p_memorized != rec.score_p_memorized:
+            raise ReplayValidationError(
+                f"replayed score diverges from persisted evidence for ({variant!r}, {rec.rebalance_date.isoformat()})"
+            )
+        lrow = {
+            "date": pd.Timestamp(rb),
+            "parse_ok": loadings is not None,
+            "segment": rec.segment,
+            "variant": variant,
+        }
+        for axis in fs.MACRO_AXES:
+            lrow[axis] = loadings[axis] if loadings is not None else float("nan")
+        load_rows.append(lrow)
+        score_rows.append(
+            {
+                "date": pd.Timestamp(rb),
+                "p_memorized": score.p_memorized,
+                "fail_reason": score.fail_reason,
+                "segment": rec.segment,
+                "variant": variant,
+            }
+        )
+    return (
+        pd.DataFrame(load_rows).set_index("date"),
+        pd.DataFrame(score_rows).set_index("date"),
+    )
+
+
+
+def replay_naive_directional_rows(
+    replay: FactorReplaySources,
+    prompts: Iterable[tuple[pd.Timestamp, str, int]],
+) -> list[dict[str, object]]:
+    """Replay persisted naive directional rows with zero provider calls."""
+    rows: list[dict[str, object]] = []
+    for rb, prompt, realized in prompts:
+        payload = replay.naive_rows_by_prompt.get(prompt)
+        if payload is None:
+            raise ReplayValidationError(
+                "naive prompt not found in persisted artifact — refusing live call"
+            )
+        reply = payload["reply"]
+        if not isinstance(reply, str):
+            raise ReplayValidationError(
+                f"naive replay reply must be a string for {pd.Timestamp(rb).date()}"
+            )
+        if reply.startswith("<generate failed:"):
+            rows.append(
+                {
+                    "date": pd.Timestamp(rb),
+                    "prompt": prompt,
+                    "reply": reply,
+                    "predicted_direction": None,
+                    "confidence": None,
+                    "realized_direction": realized,
+                    "correct": None,
+                }
+            )
+            continue
+        dm, cm = _DIR_RE.findall(reply), _CONF_RE.findall(reply)
+        pred = int(dm[-1]) if dm else None
+        rows.append(
+            {
+                "date": pd.Timestamp(rb),
+                "prompt": prompt,
+                "reply": reply,
+                "predicted_direction": pred,
+                "confidence": float(cm[-1]) if cm else None,
+                "realized_direction": realized,
+                "correct": (pred == realized) if pred is not None else None,
+            }
+        )
+    return rows
+
+
 # --------------------------------------------------------------------------- #
 # Dated Factor replay (task 6.3 — exact (variant, date) resolution)            #
 # --------------------------------------------------------------------------- #
@@ -744,6 +1066,22 @@ def dated_replay_closures(
 
     def gen(prompt: str) -> str:
         _require_prompt_match(rec, prompt, "generate_loadings")
+        parsed = fs.parse_loadings(rec.response_text, pd.Timestamp(rec.rebalance_date))
+        if rec.loadings_parse_ok:
+            if parsed is None:
+                raise ReplayValidationError(
+                    f"persisted replay response failed to parse for ({rec.variant!r}, {rec.rebalance_date.isoformat()})"
+                )
+            got = {axis: float(parsed.loadings[axis]) for axis in fs.MACRO_AXES}
+            exp = {axis: float(getattr(rec, f'loading_{axis}')) for axis in fs.MACRO_AXES}
+            if got != exp:
+                raise ReplayValidationError(
+                    f"replayed loadings diverge from persisted evidence for ({rec.variant!r}, {rec.rebalance_date.isoformat()})"
+                )
+        elif parsed is not None:
+            raise ReplayValidationError(
+                f"persisted replay response parsed unexpectedly for ({rec.variant!r}, {rec.rebalance_date.isoformat()})"
+            )
         return rec.response_text
 
     return gen, _ReplayScorer(rec)
@@ -1037,26 +1375,16 @@ def load_completed_snapshot_bil_returns(
     returns. Missing or non-finite required BIL observations fail rather than
     widening an interval, being filled, or being set to zero (R2.1, R7.4).
     """
-    from scripts import build_basket_long as snapshot_producer
-
+    manifest, tables, _report = _load_completed_snapshot_tables(snapshot_dir)
     snapshot_dir = Path(snapshot_dir)
-    snapshot_producer.validate_market_snapshot(snapshot_dir)
-    manifest_path = snapshot_dir / "manifest.json"
-    manifest = json.loads(manifest_path.read_text())
-    if manifest.get("completed") is not True:
-        raise ValueError(f"{snapshot_dir}: snapshot manifest is not completed")
     if manifest.get("cash_symbol") != "BIL":
         raise ValueError(
             f"{snapshot_dir}: Factor SSR requires cash_symbol 'BIL', got "
             f"{manifest.get('cash_symbol')!r}"
         )
-    if manifest.get("total_return_field") != snapshot_producer.TOTAL_RETURN_FIELD:
-        raise ValueError(
-            f"{snapshot_dir}: BIL cash input is not the approved adjusted total-return field"
-        )
 
     cash_path = snapshot_dir / "cash_market_total_return.parquet"
-    levels = pd.read_parquet(cash_path)
+    levels = tables["cash_market_total_return.parquet"]
     if "BIL" not in levels:
         raise ValueError(f"{cash_path}: required BIL total-return level is absent")
     bil = levels["BIL"].rename("BIL")
@@ -1065,7 +1393,7 @@ def load_completed_snapshot_bil_returns(
     return cash_returns, {
         "schema": manifest["schema"],
         "snapshot_id": manifest["snapshot_id"],
-        "manifest_sha256": sha256_file(manifest_path),
+        "manifest_sha256": sha256_file(snapshot_dir / "manifest.json"),
         "cash_benchmark_id": "BIL",
         "cash_semantics": "adjusted_total_return",
         "cash_file": cash_path.name,
@@ -1091,21 +1419,13 @@ def load_completed_snapshot_market_returns(
     non-finite selected values, and absent endpoint coverage fail rather than being
     intersected or dropped (R3.3, R3.4, R3.7).
     """
-    from scripts import build_basket_long as snapshot_producer
-
+    manifest, tables, _report = _load_completed_snapshot_tables(snapshot_dir)
     snapshot_dir = Path(snapshot_dir)
-    snapshot_producer.validate_market_snapshot(snapshot_dir)
-    manifest_path = snapshot_dir / "manifest.json"
-    manifest = json.loads(manifest_path.read_text())
     benchmark_id = manifest.get("benchmark_symbol")
     if benchmark_id != "SPY":
         raise ValueError(
             f"{snapshot_dir}: Factor attribution requires benchmark_symbol 'SPY', got "
             f"{benchmark_id!r}"
-        )
-    if manifest.get("total_return_field") != snapshot_producer.TOTAL_RETURN_FIELD:
-        raise ValueError(
-            f"{snapshot_dir}: SPY benchmark is not the approved adjusted total-return field"
         )
     if not isinstance(return_index, pd.DatetimeIndex) or return_index.empty:
         raise ValueError("performance return_index must be a non-empty DatetimeIndex")
@@ -1117,7 +1437,7 @@ def load_completed_snapshot_market_returns(
         )
 
     market_path = snapshot_dir / "cash_market_total_return.parquet"
-    levels = pd.read_parquet(market_path)
+    levels = tables["cash_market_total_return.parquet"]
     if benchmark_id not in levels:
         raise ValueError(f"{market_path}: required SPY total-return level is absent")
     observed = levels[benchmark_id].dropna().rename(benchmark_id)
@@ -2551,6 +2871,16 @@ _FACTOR_RUN_FILE_ENTRY_FIELDS = (
     "schema_id",
     "lineage",
 )
+_FACTOR_RUN_PRICE_INPUT_FIELDS = (
+    "snapshot_id",
+    "manifest_sha256",
+    "path",
+    "rows",
+    "start",
+    "end",
+    "columns",
+    "content_sha256",
+)
 _FACTOR_RUN_MANIFEST_FIELDS = (
     "schema",
     "run_id",
@@ -2560,6 +2890,7 @@ _FACTOR_RUN_MANIFEST_FIELDS = (
     "prompt_renderer",
     "model",
     "input_manifests",
+    "price_input",
     "expected_evidence",
     "replay_audit",
     "files",
@@ -2812,6 +3143,37 @@ def validate_factor_run_bundle(
         snapshot_input["manifest_sha256"],
         "input_manifests.market_snapshot.manifest_sha256",
     )
+    price_input = _factor_mapping(manifest["price_input"], "price_input")
+    _factor_exact_fields(price_input, _FACTOR_RUN_PRICE_INPUT_FIELDS, "price_input")
+    if (
+        price_input["snapshot_id"] != snapshot_input["snapshot_id"]
+        or price_input["manifest_sha256"] != snapshot_input["manifest_sha256"]
+    ):
+        raise ValueError(
+            f"{run_dir}: price_input market snapshot lineage must bind exactly to input_manifests.market_snapshot"
+        )
+    if not isinstance(price_input["path"], str) or not price_input["path"].strip():
+        raise ValueError(f"{run_dir}: price_input.path must be non-empty")
+    _factor_sha256(price_input["content_sha256"], "price_input.content_sha256")
+    price_rows = _factor_integer(
+        price_input["rows"],
+        "price_input.rows",
+        minimum=0,
+        strictly_greater=True,
+    )
+    price_start = _factor_timestamp(price_input["start"], "price_input.start")
+    price_end = _factor_timestamp(price_input["end"], "price_input.end")
+    price_columns = price_input["columns"]
+    if not isinstance(price_columns, list) or not price_columns:
+        raise ValueError(f"{run_dir}: price_input.columns must be a non-empty list")
+    if price_columns != ["SWDA.L", "XLK", "IAU", "BIL", "SPY"]:
+        raise ValueError(
+            f"{run_dir}: price_input.columns must be ['SWDA.L', 'XLK', 'IAU', 'BIL', 'SPY']"
+        )
+    if price_start > price_end:
+        raise ValueError(
+            f"{run_dir}: price_input start must be on or before end"
+        )
     for name, entry in input_manifests.items():
         if name == "market_snapshot":
             continue
@@ -2923,11 +3285,24 @@ def validate_factor_run_bundle(
                 f"{run_dir}: {role} rebalance dates do not equal the expected "
                 "evidence dates"
             )
-    for role in ("targets_pit", "targets_nonpit"):
-        got = {stamp.date() for stamp in payloads[role].index}
-        if not expected_set <= got:
+    for role, equity_role in (("targets_pit", "equity_pit"), ("targets_nonpit", "equity_nonpit")):
+        target_index = payloads[role].index
+        factor_index = payloads[equity_role].index
+        if not target_index.equals(factor_index):
             raise ValueError(
-                f"{run_dir}: {role} does not cover every expected rebalance date"
+                f"{run_dir}: {role} target calendar must equal the executed factor calendar"
+            )
+        populated = {
+            stamp.date()
+            for stamp in target_index[payloads[role].notna().any(axis=1)]
+        }
+        expected_on_factor_calendar = {
+            stamp.date() for stamp in factor_index if stamp.date() in expected_set
+        }
+        if populated != expected_on_factor_calendar:
+            raise ValueError(
+                f"{run_dir}: {role} populated rows do not equal the expected "
+                "rebalance dates that executed on the factor calendar"
             )
     for role in ("equity_pit", "equity_nonpit"):
         idx = payloads[role].index
@@ -2992,6 +3367,32 @@ def validate_factor_run_bundle(
             f"{run_dir}: metric-record market snapshot lineage diverges from "
             "input_manifests"
         )
+    _rebuilt_prices, rebuilt_price_input = load_completed_snapshot_price_frame(
+        resolve_market_snapshot_dir(
+            snapshot_input["snapshot_id"], path=price_input["path"]
+        ),
+        ["SWDA.L", "XLK", "IAU", "BIL"],
+        start=price_start,
+        end=price_end,
+    )
+    rebuilt_declared = {
+        "snapshot_id": rebuilt_price_input["snapshot_id"],
+        "manifest_sha256": rebuilt_price_input["manifest_sha256"],
+        **rebuilt_price_input["price_frame"],
+    }
+    declared_price = {
+        "snapshot_id": snapshot_input["snapshot_id"],
+        "manifest_sha256": snapshot_input["manifest_sha256"],
+        "rows": price_rows,
+        "start": price_start.date().isoformat(),
+        "end": price_end.date().isoformat(),
+        "columns": price_columns,
+        "content_sha256": price_input["content_sha256"],
+    }
+    if declared_price != rebuilt_declared:
+        raise ValueError(
+            f"{run_dir}: declared price frame lineage cannot be reproduced from the completed market snapshot"
+        )
     for portfolio_id, role in (
         ("factor_pit_ext2026", "equity_pit"),
         ("factor_nonpit_diagnostic_ext2026", "equity_nonpit"),
@@ -3022,6 +3423,56 @@ def load_completed_factor_run(run_dir: Path | str) -> dict[str, object]:
     return json.loads((Path(run_dir) / "manifest.json").read_text())
 
 
+def _canonicalize_bundle_targets_on_factor_calendar(
+    target_path: Path, equity_path: Path, *, role: str
+) -> None:
+    """Project bundle target artifacts onto the executed factor calendar.
+
+    ``build_walk_forward_targets`` emits full price-calendar frames on the
+    snapshot union calendar. The immutable Factor bundle publishes the executed
+    factor-calendar view consumed downstream: rows between executed rebalances,
+    and any populated monthly target rows that landed on sessions absent from
+    the all-asset executable calendar, are projected onto the paired equity
+    calendar by reindexing to that exact calendar.
+    """
+    targets = pd.read_parquet(target_path)
+    if not isinstance(targets, pd.DataFrame):
+        raise ValueError(f"{target_path}: {role} must deserialize to a DataFrame")
+    target_index = pd.DatetimeIndex(targets.index)
+    if target_index.tz is not None:
+        raise ValueError(f"{target_path.name}: {role} index must be timezone-naive")
+    if not target_index.is_unique:
+        raise ValueError(f"{target_path.name}: {role} index must be unique")
+    if not target_index.is_monotonic_increasing:
+        raise ValueError(
+            f"{target_path.name}: {role} index must be sorted in increasing order"
+        )
+    targets.index = target_index
+
+    equity_frame = pd.read_parquet(equity_path)
+    if "value" not in equity_frame.columns:
+        raise ValueError(
+            f"{equity_path}: paired equity artifact must carry a 'value' column"
+        )
+    factor_value = equity_frame["value"]
+    factor_calendar = pd.DatetimeIndex(factor_value.index)
+    if factor_calendar.tz is not None:
+        raise ValueError(f"{equity_path.name}: paired equity index must be timezone-naive")
+    if not factor_calendar.is_unique:
+        raise ValueError(f"{equity_path.name}: paired equity index must be unique")
+    if not factor_calendar.is_monotonic_increasing:
+        raise ValueError(
+            f"{equity_path.name}: paired equity index must be sorted in increasing order"
+        )
+    if factor_value.isna().any():
+        raise ValueError(f"{equity_path.name}: paired equity value contains NaN")
+
+    canonical = targets.reindex(factor_calendar)
+    canonical.index.name = targets.index.name
+    canonical.to_parquet(target_path)
+
+
+
 def build_factor_run_bundle(
     *,
     run_id: str,
@@ -3031,6 +3482,7 @@ def build_factor_run_bundle(
     source_commit: str,
     model: Mapping[str, object],
     input_manifests: Mapping[str, Mapping[str, object]],
+    price_input: Mapping[str, object],
     expected_evidence: Mapping[str, object],
     prompt_renderer: Mapping[str, str] | None = None,
     build_time: str | None = None,
@@ -3083,6 +3535,15 @@ def build_factor_run_bundle(
 
     for role, spec in FACTOR_RUN_ARTIFACTS.items():
         shutil.copyfile(sources[role], run_dir / spec["file"])
+    for role, equity_role in (
+        ("targets_pit", "equity_pit"),
+        ("targets_nonpit", "equity_nonpit"),
+    ):
+        _canonicalize_bundle_targets_on_factor_calendar(
+            run_dir / FACTOR_RUN_ARTIFACTS[role]["file"],
+            run_dir / FACTOR_RUN_ARTIFACTS[equity_role]["file"],
+            role=role,
+        )
 
     files: dict[str, dict[str, object]] = {}
     for role, spec in FACTOR_RUN_ARTIFACTS.items():
@@ -3114,6 +3575,7 @@ def build_factor_run_bundle(
         "input_manifests": {
             name: dict(entry) for name, entry in dict(input_manifests).items()
         },
+        "price_input": dict(price_input),
         "expected_evidence": expected,
         "replay_audit": {
             "result": _factor_mapping(audit_payload, "replay audit file").get("result"),
@@ -3154,25 +3616,63 @@ def _flatten_decision_log(payload: dict) -> pd.DataFrame:
     return df.sort_index()
 
 
+
+def load_factor_scorer_metadata(cal_dir: Path | str = CAL_DIR) -> SimpleNamespace:
+    """Load persisted calibrator metadata without attaching a live model."""
+    stats = json.loads((Path(cal_dir) / "stats.json").read_text())
+    return SimpleNamespace(
+        holdout_auc=float(stats["holdout_auc"]),
+        is_weak=bool(stats["is_weak"]),
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Main pipeline                                                                #
 # --------------------------------------------------------------------------- #
 
 
-def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
+def main(
+    *,
+    replay_evidence_table: Path | str | None = None,
+    replay_naive_artifact: Path | str | None = None,
+) -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
     from dotenv import load_dotenv
 
     from recall_guard import NvidiaLM
 
     load_dotenv(REPO / ".env")
-    nvidia_key = (os.environ.get("NVIDIA_API_KEY") or "").strip()
-    if not nvidia_key:
-        raise RuntimeError("NVIDIA_API_KEY not set in .env — required for the live 2025+ NIM calls")
+    replay_arg = replay_evidence_table or (os.environ.get(FACTOR_REPLAY_EVIDENCE_ENV) or "").strip()
+    replay_mode = bool(replay_arg)
+    replay = (
+        load_factor_replay_sources(
+            replay_arg,
+            naive_path=(
+                replay_naive_artifact
+                or (os.environ.get(FACTOR_REPLAY_NAIVE_ENV) or "").strip()
+                or None
+            ),
+        )
+        if replay_mode
+        else None
+    )
+
+    if replay_mode:
+        scorer = load_factor_scorer_metadata(CAL_DIR)
+        nvidia_key = ""
+    else:
+        nvidia_key = (os.environ.get("NVIDIA_API_KEY") or "").strip()
+        if not nvidia_key:
+            raise RuntimeError("NVIDIA_API_KEY not set in .env — required for the live 2025+ NIM calls")
 
     print("=== Task 8.1: extend the stream to 2026 (post-cutoff natural experiment) ===")
+    if replay is not None:
+        print(
+            f"replay mode: evidence={replay.evidence_path} | naive={replay.naive_path} "
+            "| zero provider calls for Factor loadings, scores, and naive direction"
+        )
 
     # --- S0: panel + prices + rebalance stream --------------------------------- #
-    panel, panel_source = build_panel()
+    panel, panel_source = build_panel(force_committed_fallback=replay is not None)
     print(f"macro panel: {panel.shape} | {panel.index.min().date()} -> {panel.index.max().date()}")
     print(f"panel source: {panel_source}")
 
@@ -3183,10 +3683,15 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
         {"id": pseudo, "category": cat} for pseudo, cat in sorted(asset_map.categories.items())
     ]
 
-    prices = fetch_prices(symbols)
+    snapshot_dir = resolve_market_snapshot_dir()
+    prices, price_input = load_completed_snapshot_price_frame(snapshot_dir, symbols)
     all_returns = prices[symbols].pct_change()
     rebalance_dates = mf.monthly_rebalance_dates(prices[symbols], start=SIM_START, end=SIM_END_EXT)
     print(f"prices: {prices.shape} | {prices.index.min().date()} -> {prices.index.max().date()}")
+    print(
+        "price source: completed market snapshot "
+        f"{price_input['snapshot_id']} @ {price_input['manifest_sha256'][:12]}..."
+    )
     print(f"{len(rebalance_dates)} monthly rebalances  "
           f"{rebalance_dates[0].date()} -> {rebalance_dates[-1].date()}")
 
@@ -3233,27 +3738,35 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
           f"{len(factor_meta) - len(new_meta)} | live new (2025+): {len(new_meta)}")
 
     # --- S2: calibrator + live NIM work for the NEW dates only ----------------- #
-    def lm_factory(key: str, model: str) -> NvidiaLM:
-        return NvidiaLM(api_key=key, model=model, timeout_s=TIMEOUT_S)
-
-    lm = NvidiaLM(api_key=nvidia_key, model=NIM_MODEL, timeout_s=TIMEOUT_S)
-    scorer = fs.FactorScorer.load(CAL_DIR, api_key=nvidia_key, lm_factory=lm_factory)
-    print(f"FactorScorer loaded from {CAL_DIR.name}: holdout_auc={scorer.holdout_auc:.4f} "
-          f"is_weak={scorer.is_weak}")
-    assert scorer.is_weak is False, "calibrator weak -> guard would pass through (R4.3)"
-
     new_dates = [m[0] for m in new_meta]
     new_pit = [m[3] for m in new_meta]
     new_nonpit = [m[4] for m in new_meta]
 
-    print(f"[live] PIT loadings generation for {len(new_pit)} new dates ...")
-    new_pit_texts, new_pit_parsed = _generate_and_parse(lm, new_pit, new_dates, "PIT")
-    print(f"[live] PIT scoring ...")
-    new_pit_scores = _score_with_retry(scorer, new_pit)
-    print(f"[live] non-PIT loadings generation (identifying, 2048 up front) ...")
-    new_np_texts, new_np_parsed = _generate_and_parse(lm, new_nonpit, new_dates, "non-PIT")
-    print(f"[live] non-PIT scoring ...")
-    new_np_scores = _score_with_retry(scorer, new_nonpit)
+    if replay is None:
+        def lm_factory(key: str, model: str) -> NvidiaLM:
+            return NvidiaLM(api_key=key, model=model, timeout_s=TIMEOUT_S)
+
+        lm = NvidiaLM(api_key=nvidia_key, model=NIM_MODEL, timeout_s=TIMEOUT_S)
+        scorer = fs.FactorScorer.load(CAL_DIR, api_key=nvidia_key, lm_factory=lm_factory)
+        print(f"FactorScorer loaded from {CAL_DIR.name}: holdout_auc={scorer.holdout_auc:.4f} "
+              f"is_weak={scorer.is_weak}")
+        assert scorer.is_weak is False, "calibrator weak -> guard would pass through (R4.3)"
+
+        print(f"[live] PIT loadings generation for {len(new_pit)} new dates ...")
+        new_pit_texts, new_pit_parsed = _generate_and_parse(lm, new_pit, new_dates, "PIT")
+        print(f"[live] PIT scoring ...")
+        new_pit_scores = _score_with_retry(scorer, new_pit)
+        print(f"[live] non-PIT loadings generation (identifying, 2048 up front) ...")
+        new_np_texts, new_np_parsed = _generate_and_parse(lm, new_nonpit, new_dates, "non-PIT")
+        print(f"[live] non-PIT scoring ...")
+        new_np_scores = _score_with_retry(scorer, new_nonpit)
+    else:
+        lm = None
+        new_pit_texts = new_pit_parsed = new_pit_scores = None
+        new_np_texts = new_np_parsed = new_np_scores = None
+        print(f"FactorScorer metadata loaded from {CAL_DIR.name}: holdout_auc={scorer.holdout_auc:.4f} "
+              f"is_weak={scorer.is_weak} (replay mode)")
+        assert scorer.is_weak is False, "calibrator weak -> guard would pass through (R4.3)"
 
     # --- S3: full-stream loadings/scores artifacts + replay maps ---------------- #
     def _assemble(loadings_old: pd.DataFrame, scores_old: pd.DataFrame,
@@ -3291,20 +3804,27 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
                 pd.DataFrame(score_rows).set_index("date"),
                 evidence)
 
-    loadings_ext, scores_ext, evidence_pit = _assemble(
-        loadings_v1, scores_v1, new_pit_parsed, new_pit_texts, new_pit_scores, "pit",
-        "data/factor_loadings_v1.parquet", sha256_file(DATA / "factor_loadings_v1.parquet"))
-    np_loadings_ext, np_scores_ext, evidence_np = _assemble(
-        np_loadings_v1, np_scores_v1, new_np_parsed, new_np_texts, new_np_scores,
-        "nonpit_diagnostic",
-        "data/factor_nonpit_diagnostic_loadings_v1.parquet",
-        sha256_file(DATA / "factor_nonpit_diagnostic_loadings_v1.parquet"))
+    if replay is None:
+        loadings_ext, scores_ext, evidence_pit = _assemble(
+            loadings_v1, scores_v1, new_pit_parsed, new_pit_texts, new_pit_scores, "pit",
+            "data/factor_loadings_v1.parquet", sha256_file(DATA / "factor_loadings_v1.parquet"))
+        np_loadings_ext, np_scores_ext, evidence_np = _assemble(
+            np_loadings_v1, np_scores_v1, new_np_parsed, new_np_texts, new_np_scores,
+            "nonpit_diagnostic",
+            "data/factor_nonpit_diagnostic_loadings_v1.parquet",
+            sha256_file(DATA / "factor_nonpit_diagnostic_loadings_v1.parquet"))
+        evidence_records = evidence_pit + evidence_np
+    else:
+        loadings_ext, scores_ext = replay_factor_outputs(
+            replay, factor_meta=factor_meta, variant="pit")
+        np_loadings_ext, np_scores_ext = replay_factor_outputs(
+            replay, factor_meta=factor_meta, variant="nonpit_diagnostic")
+        evidence_records = list(replay.evidence_records)
 
     # task 6.2: validate + persist the dated evidence into a NEW empty run
     # staging directory BEFORE any portfolio artifact is written (promotion,
     # manifest and COMPLETED marker are task 6.9).
-    evidence_records = evidence_pit + evidence_np
-    expected_evidence_keys = [(v, rb.date()) for v in _VARIANTS for rb in meta_dates]
+    expected_evidence_keys = [(record.variant, record.rebalance_date) for record in evidence_records]
     evidence_run_dir = OUT / "evidence_staging" / datetime.now(timezone.utc).strftime(
         "run_%Y%m%dT%H%M%SZ")
     evidence_path = write_evidence_table(
@@ -3352,33 +3872,40 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
 
     naive_new_prompts = [steering.render_directional(m[1], _asset_snapshot_stats(m[0]))
                          for m in new_meta]
-    print(f"[live] naive directional generation for {len(naive_new_prompts)} new dates ...")
-    naive_replies = _generate_big(lm, naive_new_prompts, max_tokens=2048)
-    fmt_bad = [i for i, r in enumerate(naive_replies)
-               if isinstance(r, BaseException) or not _DIR_RE.search(r.content)]
-    if fmt_bad:
-        for i, r in zip(fmt_bad, _generate_big(lm, [naive_new_prompts[i] for i in fmt_bad],
-                                               max_tokens=4096)):
-            naive_replies[i] = r
-        print(f"  [naive] format-retried {len(fmt_bad)} replies at max_tokens=4096")
+    if replay is None:
+        print(f"[live] naive directional generation for {len(naive_new_prompts)} new dates ...")
+        naive_replies = _generate_big(lm, naive_new_prompts, max_tokens=2048)
+        fmt_bad = [i for i, r in enumerate(naive_replies)
+                   if isinstance(r, BaseException) or not _DIR_RE.search(r.content)]
+        if fmt_bad:
+            for i, r in zip(fmt_bad, _generate_big(lm, [naive_new_prompts[i] for i in fmt_bad],
+                                                   max_tokens=4096)):
+                naive_replies[i] = r
+            print(f"  [naive] format-retried {len(fmt_bad)} replies at max_tokens=4096")
 
-    naive_new_rows = []
-    for (rb, *_), prompt, reply in zip(new_meta, naive_new_prompts, naive_replies):
-        realized = _realized_dir(rb)
-        if isinstance(reply, BaseException):
-            naive_new_rows.append({"date": rb, "prompt": prompt,
-                                   "reply": f"<generate failed: {type(reply).__name__}>",
-                                   "predicted_direction": None, "confidence": None,
-                                   "realized_direction": realized, "correct": None})
-            continue
-        text = reply.content
-        dm, cm = _DIR_RE.findall(text), _CONF_RE.findall(text)
-        pred = int(dm[-1]) if dm else None
-        naive_new_rows.append({"date": rb, "prompt": prompt, "reply": text,
-                               "predicted_direction": pred,
-                               "confidence": float(cm[-1]) if cm else None,
-                               "realized_direction": realized,
-                               "correct": (pred == realized) if pred is not None else None})
+        naive_new_rows = []
+        for (rb, *_), prompt, reply in zip(new_meta, naive_new_prompts, naive_replies):
+            realized = _realized_dir(rb)
+            if isinstance(reply, BaseException):
+                naive_new_rows.append({"date": rb, "prompt": prompt,
+                                       "reply": f"<generate failed: {type(reply).__name__}>",
+                                       "predicted_direction": None, "confidence": None,
+                                       "realized_direction": realized, "correct": None})
+                continue
+            text = reply.content
+            dm, cm = _DIR_RE.findall(text), _CONF_RE.findall(text)
+            pred = int(dm[-1]) if dm else None
+            naive_new_rows.append({"date": rb, "prompt": prompt, "reply": text,
+                                   "predicted_direction": pred,
+                                   "confidence": float(cm[-1]) if cm else None,
+                                   "realized_direction": realized,
+                                   "correct": (pred == realized) if pred is not None else None})
+    else:
+        print(f"[replay] naive directional replay for {len(naive_new_prompts)} new dates ...")
+        naive_new_rows = replay_naive_directional_rows(
+            replay,
+            [(m[0], prompt, _realized_dir(m[0])) for m, prompt in zip(new_meta, naive_new_prompts)],
+        )
 
     naive_ext = pd.concat([naive_v1, pd.DataFrame(naive_new_rows)], ignore_index=True)
     naive_ext.to_parquet(OUT / "naive_directional_eval_ext2026.parquet")
@@ -3500,12 +4027,6 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
 
     # task 6.6: immutable run-local finance records. The completed snapshot is a
     # mandatory upstream input; no live-price fallback or zero cash substitution.
-    from scripts import build_basket_long as snapshot_producer
-
-    snapshot_dir = Path(
-        os.environ.get("MARKET_SNAPSHOT_DIR")
-        or DATA / "market_snapshots" / snapshot_producer.SNAPSHOT_ID
-    )
     metric_bundle = build_factor_metric_records(
         equity_ext, equity_np_ext, snapshot_dir=snapshot_dir
     )
@@ -3716,11 +4237,13 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
         config={
             "sim_start": SIM_START,
             "sim_end": SIM_END_EXT,
-            "price_fetch_end": PRICE_FETCH_END,
+            "price_window_start": PRICE_WINDOW_START,
+            "price_window_end": SIM_END_EXT,
             "lookback_days": LOOKBACK_DAYS,
             "tilt": TILT,
             "init_cash": INIT_CASH,
             "panel_source": panel_source,
+            "replay_mode": replay is not None,
         },
         source_commit=_git_source_commit(),
         model={
@@ -3732,8 +4255,8 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
         },
         input_manifests={
             "market_snapshot": {
-                "snapshot_id": metric_bundle["market_snapshot"]["snapshot_id"],
-                "manifest_sha256": metric_bundle["market_snapshot"]["manifest_sha256"],
+                "snapshot_id": price_input["snapshot_id"],
+                "manifest_sha256": price_input["manifest_sha256"],
             },
             **{
                 name: {
@@ -3742,6 +4265,12 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
                 }
                 for name in v1_input_names
             },
+        },
+        price_input={
+            "snapshot_id": price_input["snapshot_id"],
+            "manifest_sha256": price_input["manifest_sha256"],
+            "path": str(snapshot_dir),
+            **price_input["price_frame"],
         },
         expected_evidence={
             "variants": sorted(_VARIANTS),
@@ -3765,8 +4294,12 @@ def main() -> None:  # noqa: PLR0915 -- one linear, printed, stage-by-stage run
                          "live_new": len(new_meta)},
         "panel": {"source": panel_source, "rows": int(len(panel)),
                   "span": f"{panel.index.min().date()}..{panel.index.max().date()}"},
-        "prices": {"source": "yfinance (documented DB substitution)",
-                   "span": f"{prices.index.min().date()}..{prices.index.max().date()}"},
+        "prices": {
+            "source": "completed market snapshot",
+            "snapshot_id": price_input["snapshot_id"],
+            "manifest_sha256": price_input["manifest_sha256"],
+            **price_input["price_frame"],
+        },
         "parse": {"pit_parsed": int(loadings_ext["parse_ok"].sum()),
                   "nonpit_parsed": int(np_loadings_ext["parse_ok"].sum()),
                   "n_rows": len(loadings_ext)},

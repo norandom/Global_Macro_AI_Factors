@@ -187,6 +187,7 @@ from macro_framework.skill_metric import (
     GateVerdict,
     basket_residual,
     evaluate_gates,
+    portfolio_excess_returns,
 )
 from macro_framework.ssr import ssr_inference
 
@@ -263,6 +264,7 @@ def verify(
     oos_strategy_returns: pd.Series,
     factor_returns: pd.DataFrame,
     *,
+    cash_returns: pd.Series,
     recall_premium: float,
     baseline_calmar: float,
     baseline_maxdd: float,
@@ -276,7 +278,9 @@ def verify(
     Evaluated strictly on the supplied OOS series — there is NO in-sample window
     input, so nothing here can rank on in-sample Sharpe/return (R3.5). The recall
     premium (PIT-vs-non-PIT memorization delta) is injected so this stays unit-
-    testable without NIM; the loop supplies the real contrast (6.3).
+    testable without NIM; the loop supplies the real contrast (6.3). SSR uses
+    portfolio returns minus matching-session cash returns; basket attribution
+    remains on the raw portfolio and factor returns.
 
     If ``lookahead_reason`` is set, short-circuits to a FAIL verdict with
     ``first_failure="lookahead: <reason>"`` rather than evaluating gates (R3.3).
@@ -287,8 +291,9 @@ def verify(
             verdict=_lookahead_verdict(lookahead_reason),
             recall_premium=recall_premium,
         )
+    excess_returns = portfolio_excess_returns(oos_strategy_returns, cash_returns)
     residual = basket_residual(oos_strategy_returns, factor_returns)
-    ssr = ssr_inference(oos_strategy_returns)
+    ssr = ssr_inference(excess_returns, alpha=gate_config.ssr_alpha)
     verdict = evaluate_gates(
         residual,
         ssr,

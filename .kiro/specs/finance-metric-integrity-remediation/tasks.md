@@ -196,7 +196,7 @@
   - _Boundary: Market Snapshot Tests_
   - _Requirements: 5.1, 5.4, 5.6, 7.4, 7.5, 8.1, 8.2, 8.5, 8.8_
 
-- [ ] 6. Implement dated Factor evidence and immutable replay
+- [x] 6. Implement dated Factor evidence and immutable replay
   - _Boundary: Factor Producer_
 
 - [x] 6.1 (P) Define and validate dated Factor evidence (2h)
@@ -255,7 +255,7 @@
   - _Depends: 3.3, 4.3, 5.4, 6.4_
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 2.1, 2.8, 7.1, 7.3, 7.4, 7.6_
 
-- [ ] 6.7 Integrate run-local attribution, crisis, and window records (2h)
+- [x] 6.7 Integrate run-local attribution, crisis, and window records (2h)
   - Replace local attribution and crisis calculations with the strict shared contracts.
   - Emit exact attribution and crisis records with actual dates, counts, raw market-model labels, annualization, and source lineage.
   - Emit performance-only records when strict attribution coverage is shorter and stop on invalid required benchmark coverage.
@@ -265,7 +265,7 @@
   - _Depends: 4.5, 5.4, 6.6_
   - _Requirements: 3.6, 3.7, 3.9, 4.5, 7.1, 7.2, 7.4, 7.6_
 
-- [ ] 6.8 Verify Factor run-local record parity (2h)
+- [x] 6.8 Verify Factor run-local record parity (2h)
   - Recompute representative reader, legacy, differential, SSR, crisis, and attribution fields from fixture equity, cash, and benchmark inputs.
   - Compare the producer records field-for-field within documented tolerances.
   - Reject mixed windows, stale values, endpoint/spread substitution, and missing provenance.
@@ -274,7 +274,7 @@
   - _Depends: 6.7_
   - _Requirements: 1.3, 1.4, 1.6, 2.1, 2.8, 3.6, 4.5, 7.2, 7.4, 8.2, 8.6_
 
-- [ ] 6.9 Assemble the immutable Factor run manifest and bundle (3h)
+- [x] 6.9 Assemble the immutable Factor run manifest and bundle (3h)
   - Assign a stable run identity and record configuration, source commit, prompt renderer identity, model metadata, input manifests, expected evidence counts, and replay-audit result.
   - Inventory evidence, scores, loadings, targets, equity, decision logs, contrasts, metrics, and report records with hashes, schemas, counts, dates, and lineage.
   - Refuse completed destination overwrite and write the run completion marker only after every inventory and audit validation passes.
@@ -282,7 +282,7 @@
   - _Boundary: Factor Run Manifest_
   - _Requirements: 6.3, 6.4, 7.1, 7.2, 7.3, 7.4, 7.5, 8.8_
 
-- [ ] 6.10 Add Factor manifest, immutability, and completion-order tests (2h)
+- [x] 6.10 Add Factor manifest, immutability, and completion-order tests (2h)
   - Verify manifest inventory, hashes, lineage, expected key counts, completion ordering, and destination immutability.
   - Reject incomplete, stale, or tampered bundles at every downstream reader.
   - Confirm failures leave diagnosable staging output without a completion marker.
@@ -290,10 +290,10 @@
   - _Boundary: Factor Bundle Tests_
   - _Requirements: 6.3, 6.4, 7.2, 7.4, 7.5, 8.2, 8.7, 8.8_
 
-- [ ] 7. Implement the deterministic corrected SJM producer
+- [x] 7. Implement the deterministic corrected SJM producer
   - _Boundary: SJM Producer_
 
-- [ ] 7.1 Gate SJM inputs on completed immutable manifests (2h)
+- [x] 7.1 Gate SJM inputs on completed immutable manifests (2h)
   - Require exact completed Factor and market-snapshot manifest identities and hashes before selection begins.
   - Validate declared coverage, unique ordered indexes, and required observations through the endpoint.
   - Treat the pinned SJM limit table as a read-only input.
@@ -311,7 +311,7 @@
   - _Boundary: SJM Protocol_
   - _Requirements: 4.3, 7.3, 7.4, 7.6, 8.2, 8.8_
 
-- [ ] 7.3 Construct exact factor-calendar BIL total returns (2h)
+- [x] 7.3 Construct exact factor-calendar BIL total returns (2h)
   - Select adjusted BIL levels on the Factor calendar plus one explicit preceding anchor.
   - Calculate returns only after strict level alignment and with filling disabled.
   - Reject missing labels, non-finite values, duplicate dates, or absent anchors rather than substituting zero.
@@ -320,7 +320,7 @@
   - _Boundary: SJM Cash Alignment_
   - _Requirements: 4.1, 4.2, 7.4, 7.6, 8.2, 8.8_
 
-- [ ] 7.4 Implement exact overlay and control return equations (2h)
+- [x] 7.4 Implement exact overlay and control return equations (2h)
   - Apply risky exposure to Factor returns and residual exposure to the aligned cash return.
   - Apply the same cash series and timing to the `derisk_cash_pin` control.
   - Preserve lagged drawdown arming and the frozen crowding-signal cadence.
@@ -329,7 +329,7 @@
   - _Boundary: SJM Portfolio Equations_
   - _Requirements: 4.1, 4.2, 4.3, 7.2, 7.6, 8.2, 8.8_
 
-- [ ] 7.5 Replay the ordered deterministic mutation registry (3h)
+- [x] 7.5 Replay the ordered deterministic mutation registry (3h)
   - Generate candidates only from the frozen seed configuration and ordered mutation registry.
   - Preserve alternate-signal ordering and all configured mutation groups exactly.
   - Record every candidate, mutation, metric, and keep-or-revert decision.
@@ -338,7 +338,7 @@
   - _Boundary: SJM Selection Replay_
   - _Requirements: 7.2, 7.4, 7.6, 8.2, 8.8_
 
-- [ ] 7.6 Apply development-only gates and select the corrected winner (2h)
+- [x] 7.6 Apply development-only gates and select the corrected winner (2h)
   - Evaluate candidates only through the approved development end using development Calmar.
   - Enforce the CAGR budget and maximum drawdown no worse than the same-cash `derisk_cash_pin` control.
   - Keep holdout observations unavailable until after the final configuration is fixed.
@@ -346,7 +346,7 @@
   - _Boundary: SJM Selection Gates_
   - _Requirements: 4.3, 7.2, 7.4, 7.6, 8.2, 8.8_
 
-- [ ] 7.7 Assemble and validate the immutable SJM v3 run (3h)
+- [x] 7.7 Assemble and validate the immutable SJM v3 run (3h)
   - Persist the selected configuration, ledger, targets, exposures, overlay returns, control returns, anchored equity, protocol hashes, and input manifest lineage.
   - Require the selected configuration in the ledger to equal the configuration represented by targets, returns, equity, and manifest provenance.
   - Reconstruct persisted returns and equity with maximum absolute error below `1e-9`.
@@ -354,7 +354,7 @@
   - _Boundary: SJM Run Manifest_
   - _Requirements: 4.1, 4.2, 4.3, 7.1, 7.2, 7.4, 7.5, 7.6, 8.2, 8.8_
 
-- [ ] 7.8 Add immutable SJM staging and command behavior (2h)
+- [x] 7.8 Add immutable SJM staging and command behavior (2h)
   - Accept exact Factor and market manifest inputs and write only into a new run-specific staging directory.
   - Refuse completed-run overwrite or reuse of files from an incomplete prior attempt.
   - Write run data and manifest first, validate them, and write the completion marker last.
@@ -362,7 +362,7 @@
   - _Boundary: SJM Build Command_
   - _Requirements: 7.1, 7.4, 7.5, 7.6, 8.2, 8.8_
 
-- [ ] 7.9 Add serialized SJM protocol, equation, manifest, and reconstruction tests (3h)
+- [x] 7.9 Add serialized SJM protocol, equation, manifest, and reconstruction tests (3h)
   - Cover strict cash alignment, first-return retention, missing cash, overlay/control equality, protocol hashes, candidate order, gate rejection, holdout isolation, and selected-configuration provenance.
   - Verify completed-run overwrite rejection and completion-marker ordering.
   - Keep the tests in one serialized boundary so the producer and shared test file have one owner.
@@ -370,7 +370,7 @@
   - _Boundary: SJM Producer Tests_
   - _Requirements: 4.1, 4.2, 4.3, 7.2, 7.4, 7.5, 7.6, 8.1, 8.2, 8.8_
 
-- [ ] 8. Implement coherent USD weekly Markowitz analytics
+- [x] 8. Implement coherent USD weekly Markowitz analytics
   - _Boundary: Markowitz Producer_
 
 - [x] 8.1 (P) Build Friday as-of USD valuation grids (3h)
@@ -384,7 +384,7 @@
   - _Depends: 5.4_
   - _Requirements: 5.1, 5.2, 5.4, 5.6, 7.4, 7.6_
 
-- [ ] 8.2 Compute coherent weekly returns and annualized moments (2h)
+- [x] 8.2 Compute coherent weekly returns and annualized moments (2h)
   - Calculate returns only between consecutive common Friday valuations with filling disabled.
   - Annualize arithmetic means and covariance using exactly `365.2425 / 7`.
   - Report actual return dates, count, snapshot identity, base currency, valuation rule, and annualization.
@@ -393,7 +393,7 @@
   - _Boundary: Markowitz Moments_
   - _Requirements: 5.2, 5.3, 5.4, 5.6, 7.4, 7.6, 8.5_
 
-- [ ] 8.3 Produce feasible long-only frontiers with diagnostics (3h)
+- [x] 8.3 Produce feasible long-only frontiers with diagnostics (3h)
   - Solve deterministic attainable target returns under fully invested zero-to-one weight bounds.
   - Retain success, status, message, iterations, objective, budget residual, target residual, bound violation, and weights for every target.
   - Surface failed or infeasible targets explicitly rather than silently dropping them.
@@ -402,7 +402,7 @@
   - _Boundary: Markowitz Frontier_
   - _Requirements: 5.1, 5.3, 5.4, 5.6, 7.4, 7.5, 7.6, 8.5, 8.8_
 
-- [ ] 8.4 Add offline Markowitz numerical and validation tests (3h)
+- [x] 8.4 Add offline Markowitz numerical and validation tests (3h)
   - Cover GBp scaling, multiplication by USD-per-GBP, and a counterexample that catches FX inversion.
   - Cover cross-exchange holidays, Friday source dates, no look-ahead, exact three-day acceptance, four-day rejection, and complete weekly intervals.
   - Verify weekly annualization, finite symmetric positive-semidefinite moments, all frontier residuals, and every stored weight vector.
@@ -410,10 +410,10 @@
   - _Boundary: Markowitz Tests_
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.6, 8.1, 8.2, 8.5, 8.8_
 
-- [ ] 9. Build canonical report tables and locale projections
+- [x] 9. Build canonical report tables and locale projections
   - _Boundary: Canonical Report Producer_
 
-- [ ] 9.1 Add manifest-aware canonical input loading (2h)
+- [x] 9.1 Add manifest-aware canonical input loading (2h)
   - Read Factor, SJM, market, and Markowitz inputs only through completed manifests and verified hashes.
   - Reject loose, incomplete, stale, or schema-incompatible inputs.
   - Preserve one explicit owner for assembled report tables and keep strategy producers limited to immutable strategy outputs and run-local records.
@@ -422,7 +422,7 @@
   - _Depends: 4.5, 6.10, 7.9, 8.4_
   - _Requirements: 7.1, 7.2, 7.4, 7.5, 7.6, 8.2, 8.8_
 
-- [ ] 9.2 Assemble canonical Factor and AI-variant tables (3h)
+- [x] 9.2 Assemble canonical Factor and AI-variant tables (3h)
   - Load and project the completed Factor bundle's manifest-owned run-local reader, legacy, differential, attribution, crisis, and SSR records.
   - Validate those records against their declared source streams and preserve performance-only rows plus separate shortened attribution records.
   - Produce the canonical cross-variant and AI-variant publication tables without independently recalculating a second Factor row family.
@@ -430,7 +430,7 @@
   - _Boundary: Canonical Factor Reports_
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 2.1, 2.8, 3.6, 3.7, 3.9, 4.5, 7.1, 7.2, 7.3, 7.4, 7.6_
 
-- [ ] 9.3 Assemble canonical SJM report tables (2h)
+- [x] 9.3 Assemble canonical SJM report tables (2h)
   - Build SJM performance, holdout, tail, SSR, crisis, and raw market-model rows from the completed SJM v3 run.
   - Carry the selected-configuration hash, protocol identity, cash benchmark, input manifests, dates, counts, and annualization.
   - Produce the canonical SJM tear-sheet report consumed by notebook 17.
@@ -438,7 +438,7 @@
   - _Boundary: Canonical SJM Reports_
   - _Requirements: 3.6, 3.7, 3.9, 4.1, 4.2, 4.3, 4.5, 7.1, 7.2, 7.3, 7.4, 7.6, 8.2, 8.8_
 
-- [ ] 9.4 Assemble trio, static-window, and dashboard tables (3h)
+- [x] 9.4 Assemble trio, static-window, and dashboard tables (3h)
   - Produce canonical trio, static buy-and-hold window, and window-dashboard tables with exact portfolio and window identity.
   - Own `tear_sheet_trio_ext2026.csv`, the static-window tables, the dashboard tables, and their canonical schema definitions outside notebooks.
   - Require repeated portfolio/window rows to agree on dates, count, cash benchmark, currency, annualization, and values.
@@ -446,7 +446,7 @@
   - _Boundary: Canonical Trio and Window Reports_
   - _Requirements: 1.1, 1.2, 1.3, 1.6, 2.1, 2.8, 3.6, 3.7, 4.5, 7.1, 7.2, 7.3, 7.4, 7.6, 8.6_
 
-- [ ] 9.5 Persist canonical ten-year and maximum-window Markowitz tables (2h)
+- [x] 9.5 Persist canonical ten-year and maximum-window Markowitz tables (2h)
   - Produce canonical ten-year and maximum-supported USD weekly moment and frontier tables outside notebooks.
   - Include snapshot identity, base currency, requested and actual windows, weekly count, annualization, source-date hashes, asset moments, weights, and solver diagnostics.
   - Produce `tear_sheet_trio_10y.csv`, `tear_sheet_trio_max.csv`, and their German-locale source schemas without including mixed-local strategy points on USD frontiers.
@@ -455,7 +455,7 @@
   - _Depends: 8.4_
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 7.1, 7.2, 7.3, 7.4, 7.6, 8.5_
 
-- [ ] 9.6 Assemble canonical risk, attribution, crisis, and monthly-return tables (2h)
+- [x] 9.6 Assemble canonical risk, attribution, crisis, and monthly-return tables (2h)
   - Build shared risk, attribution, crisis, differential, and monthly-return tables from the same validated streams used by portfolio rows.
   - Keep shortened attribution windows separate and preserve boundary-inclusive crisis values.
   - Require source schema and portfolio/window identity on every record.
@@ -463,7 +463,7 @@
   - _Boundary: Canonical Auxiliary Reports_
   - _Requirements: 1.3, 1.4, 1.5, 2.8, 3.6, 3.7, 3.9, 4.5, 7.1, 7.2, 7.4, 7.6, 8.6_
 
-- [ ] 9.7 Generate deterministic US and German locale mirrors (3h)
+- [x] 9.7 Generate deterministic US and German locale mirrors (3h)
   - Generate locale projections only from canonical in-memory tables, never through independent financial calculations.
   - Use deterministic ordering, dates, null handling, and eight-decimal formatting.
   - Produce comma/dot US files and semicolon/comma German files with required matching basenames.
@@ -472,7 +472,7 @@
   - _Boundary: Locale Mirror Producer_
   - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 7.1, 7.2, 7.3, 7.6, 8.2, 8.6_
 
-- [ ] 9.8 Add canonical report and mirror integration tests (3h)
+- [x] 9.8 Add canonical report and mirror integration tests (3h)
   - Verify schema isolation, exact windows, row provenance, monthly-return parity, shortened attribution, crisis equality, and locale round trips.
   - Reject stale values, mixed definitions, mixed annualization, missing lineage, and incompatible completed manifests.
   - Confirm report producers and locale exporters are the sole owners of canonical tables and mirrors; notebook no-write behavior is verified after notebook migration.
@@ -480,7 +480,7 @@
   - _Boundary: Canonical Report Tests_
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 2.8, 3.6, 3.7, 3.9, 4.5, 7.2, 7.4, 7.5, 8.2, 8.6, 8.8_
 
-- [ ] 10. Implement publication contracts and workbook integration tooling
+- [x] 10. Implement publication contracts and workbook integration tooling
   - _Boundary: Publication Contract and Workbook_
 
 - [x] 10.1 Freeze the local `data-v4` asset catalog (2h)
@@ -493,7 +493,7 @@
   - _Boundary: Publication Asset Catalog_
   - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6, 8.2, 8.6, 8.8_
 
-- [ ] 10.2 (P) Add manifest-aware explicit-tag release integrity checks (3h)
+- [x] 10.2 (P) Add manifest-aware explicit-tag release integrity checks (3h)
   - Keep release resolution exclusively on explicit immutable tags with no repository-local fallback.
   - For `data-v4`, reject unlisted asset names and verify downloaded bytes against manifest hashes before caching or loading.
   - Invalidate cache entries after integrity failure and record tag, URL, checksum, cache status, and verification state without exposing credentials.
@@ -503,7 +503,7 @@
   - _Depends: 10.1_
   - _Requirements: 7.3, 7.4, 7.5, 8.2, 8.6, 8.8_
 
-- [ ] 10.3 (P) Register tag-aware `data-v4` workbook schemas (3h)
+- [x] 10.3 (P) Register tag-aware `data-v4` workbook schemas (3h)
   - Register canonical reader, legacy, differential, attribution, crisis, Factor, SJM, Markowitz, manifest, and compatibility schemas.
   - Bind schemas to explicit tags so historical contracts remain unchanged.
   - Validate required windows, counts, annualization, cash benchmark, currency basis, schema identity, and SSR settings.
@@ -522,7 +522,7 @@
   - _Depends: 3.1, 3.2_
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 4.4, 4.5, 7.2, 7.3, 8.2, 8.4, 8.6_
 
-- [ ] 10.5 Migrate workbook step assembly to corrected `data-v4` semantics (3h)
+- [x] 10.5 Migrate workbook step assembly to corrected `data-v4` semantics (3h)
   - Construct `data-v4` SSR from portfolio returns minus aligned BIL total returns and surface all deterministic inference metadata.
   - Consume canonical reader, legacy, differential, attribution, crisis, Factor, SJM, and Markowitz tables without local alternative calculations.
   - Preserve explicit historical-tag behavior and immutable S0–S5 audit semantics.
@@ -532,7 +532,7 @@
   - _Depends: 10.2, 10.3, 10.4_
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 2.1, 2.8, 3.6, 3.7, 3.8, 3.9, 4.4, 4.5, 5.4, 5.5, 5.6, 7.2, 7.3, 7.4, 7.5, 8.2, 8.4, 8.5, 8.6, 8.8_
 
-- [ ] 10.6 Add fixture-driven S0–S5 and historical-isolation tests (3h)
+- [x] 10.6 Add fixture-driven S0–S5 and historical-isolation tests (3h)
   - Exercise canonical `data-v4` table loading, cash-excess SSR, crisis values, attribution coverage, Factor, SJM, and Markowitz views.
   - Verify historical tags remain isolated from corrected schemas and calculations.
   - Reject missing, stale, corrupt, cross-tag, or unmanifested assets.
@@ -540,7 +540,7 @@
   - _Boundary: Workbook Integration Tests_
   - _Requirements: 2.1, 2.8, 4.4, 4.5, 5.4, 5.5, 5.6, 7.2, 7.4, 7.5, 8.2, 8.4, 8.5, 8.6, 8.8_
 
-- [ ] 10.7 Preserve the `data-v2` default and enable explicit `data-v4` selection (2h)
+- [x] 10.7 Preserve the `data-v2` default and enable explicit `data-v4` selection (2h)
   - Keep generated thesis workbooks pinned to `data-v2`.
   - Require explicit user selection of `data-v4` and expose active tag, publication identity, manifest status, source URLs, and per-asset provenance.
   - Create a fresh release client when tags change and prohibit cross-tag cache substitution.
@@ -548,7 +548,7 @@
   - _Boundary: Workbook Tag Selection_
   - _Requirements: 7.3, 7.4, 7.5, 8.2, 8.6, 8.8_
 
-- [ ] 10.8 Implement incomplete candidate staging and direct validation (3h)
+- [x] 10.8 Implement incomplete candidate staging and direct validation (3h)
   - Stage only cataloged assets into a new empty destination and verify every source against its completed producer manifest.
   - Write a provisional publication manifest with `completed=false`; prohibit `SHA256SUMS` and final completion claims.
   - Provide direct staging validators for schema, values, windows, inventory, lineage, duplicate basenames, extra files, and source hashes.
@@ -558,7 +558,7 @@
   - _Depends: 10.1_
   - _Requirements: 7.1, 7.2, 7.4, 7.5, 7.6, 8.2, 8.6, 8.8_
 
-- [ ] 10.9 Implement manifest finalization, checksums, read-only verification, and atomic promotion (3h)
+- [x] 10.9 Implement manifest finalization, checksums, read-only verification, and atomic promotion (3h)
   - Replace a validated provisional manifest exactly once with canonical `completed=true` metadata.
   - Generate `SHA256SUMS` last, covering payloads plus the final manifest and excluding itself.
   - Verify finalized bytes through manifest and checksum readers without mutation, then atomically promote to an absent final local destination.
@@ -568,7 +568,7 @@
   - _Depends: 10.8_
   - _Requirements: 7.1, 7.2, 7.4, 7.5, 8.2, 8.6, 8.8_
 
-- [ ] 10.10 Add offline clean-room upload-set smoke tooling (2h)
+- [x] 10.10 Add offline clean-room upload-set smoke tooling (2h)
   - Serve a finalized local candidate through a temporary HTTP endpoint that behaves like the public release asset endpoint.
   - Run the real explicit-tag release client, checksum verification, schema loaders, and representative S0–S5 builds from a clean temporary directory.
   - Ensure no repository data path or mutable current-release pointer is available.
@@ -577,7 +577,7 @@
   - _Depends: 10.9_
   - _Requirements: 7.2, 7.4, 7.5, 8.2, 8.6, 8.8_
 
-- [ ] 10.11 Implement read-only public-release smoke-test hooks (3h)
+- [x] 10.11 Implement read-only public-release smoke-test hooks (3h)
   - Accept only an explicit tag and public base URL and provide no release-creation or upload capability.
   - Enumerate public assets, compare them with the publication manifest, verify checksums and schemas, and use a clean cache.
   - Verify immutable historical-tag metadata or frozen hashes.
@@ -999,3 +999,8 @@
 - **Task 5.2 gate (2026-07-28):** APPROVED after one remediation round. The reviewer probed the LIVE FRED service and proved `fredgraph.csv` ignores `vintage_date`; the fetcher now uses `alfredgraph.csv` with cosd/coed/vintage_date and requires the vintage-suffixed response column as capture-time proof the vintage was honored. Also remediated: date-granular index guard (intraday labels rejected), complex-dtype rejection on both paths, parser drops ONLY the '.' unpublished sentinel (any other token raises), clean MultiIndex/duplicate-column errors, and an injected-disclosure consistency invariant (now also netting outside_requested_window_dropped per the re-gate suggestion). Mocked-transport probes confirmed every path; 544-test root suite green.
 - **Tasks 5.3/5.4 gate (2026-07-28):** APPROVED first pass (combined gate). Live probes confirmed COMPLETED can never precede validation (an injected invalid frame left a dirty staging dir without the marker), NaN-pair overlap cells are not counted as revisions, and every refusal (overwrite, immutable identity, byte mutation, re-inventoried non-finite, absent overlap disclosure) fires independently. Suggestions applied post-approval with tests: build_time validated as tz-aware ISO-8601 and normalized to UTC, predecessor selection compares parsed timestamps, cash/benchmark role labels added to the manifest, COMPLETED carries the manifest sha256, delete-to-retry recovery documented. At-rest manifest tamper evidence is owned by the tasks 13-15 release-checksum layer per the reviewer's scope ruling. Section 5 complete.
 - **Wave 6.1-6.5 (2026-07-28):** Executed as a fan-out (5 parallel spec briefs, 5 chained implementers, 5 parallel reviewer gates). ALL FIVE GATES APPROVED FIRST PASS with only informational findings. Delivered: the frozen `DatedFactorEvidence` contract with deterministic evidence identities and `validate_evidence_records` (6.1); per-date persistence preserving independent records for identical prompt text, exact response bytes under UTF-8 hashing, explicit reconstructed/failure origins, and refuse-non-empty staging (6.2); exact (variant, rebalance_date) replay resolution with the later-date-wins and warn-and-continue paths removed and zero live model calls (6.3); source-to-consumption audit fingerprints failing before any publishable output on cross-date/cross-variant swaps (6.4); and the duplicate-prompt/immutability regression matrix incl. all frozen nodes (test_ac_6_1..6_4, test_ac_8_7, defect-1 shared+downstream) (6.5). Every implementer captured genuine RED evidence (tests failing before the production change). Producer sha256 for scripts/extend_stream_2026.py re-captured per task with old->new notes. Post-gate cleanup: one unused test import removed. Fresh final evidence: 7/7 frozen wave nodes, 58 focused, 593 full root suite, foundation validator exit 0. Known pre-existing caveat (all gates): the frozen final_validation_command names tests/test_sjm_crowding.py and tests/test_markowitz.py, owned by later tasks 7.x/8.x.
+- **Consolidated wave 6.7–6.10 / 8.2–8.4 / 10.2 (2026-07-29):** Per explicit user directive to consolidate and speed up, executed as one three-track parallel workflow with a single blocker-focused review per track (max 4 targeted adversarial probes, no mutation matrices) instead of per-task gates. ALL THREE REVIEWS APPROVED FIRST PASS with zero blockers. Factor track: 6.7 audit-closed with no code change required (strict shared contracts only, no local OLS/crisis math, performance_only shortened-SPY handling, publication assembly excluded, one explicit window per record); 6.8 parity harness with fully independent test-local recomputation (incl. hand-rolled Newey–West/Bartlett HAC, no statsmodels) plus four deliberate-mismatch tests; 6.9 immutable `factor_run.v1` bundle (FACTOR_RUN_ARTIFACTS 15-role catalog, build/validate/load, COMPLETED-last carrying manifest sha256, refuses overwrite/dirty staging, validates from the run directory alone) with `main()` stage S11; 6.10 nine bundle tests (valid end-to-end + eight rejections incl. coherently re-signed manifests and forged snapshot lineage). Markowitz track: 8.2 audit-closed (frozen-node collectability gap fixed test-first); 8.3 deterministic long-only SLSQP frontier with full per-target diagnostics and visible (never dropped) failures plus `validate_frontier_point`; 8.4 fifteen offline numerical tests incl. an FX-inversion counterexample; annualization hard-pinned to 365.2425/7. Workbook track: 10.2 close-out confirmed — explicit-immutable-tag-only resolution, allowlist-before-download, verify-before-cache (`_verify_bytes` recomputes SHA-256 from observed bytes, breaking the caller-controlled self-authentication loop), per-entry and whole-tag cache invalidation on integrity failure, credential-free provenance, data-v1..v3 path unchanged; reviewer independently reproduced the RED-bite probe. Fresh close evidence: root suite 1039 passed / 3 skipped; locked workbook command 253 passed / 22 skipped. Non-blocking reviewer suggestions recorded for later: `make_data_v4_manifest` completed=/release_tag= kwargs untested (invariants enforced in `_parse_manifest`, covered ad hoc by probes) and the data-v4 tag comparison is case-sensitive.
+- **Consolidated wave 7.1+7.3–7.9 / 10.8–10.11 (2026-07-29):** Same consolidated pattern (chained implementers per track, one blocker-focused review per track, max 4 adversarial probes). BOTH REVIEWS APPROVED FIRST PASS with zero blockers. SJM track (scripts/build_sjm_crowding.py + tests/test_sjm_crowding.py, serialized boundary): 7.1 `load_sjm_inputs`/`SJMInputs` manifest gate (exact pinned Factor run_id/snapshot_id + manifest sha256s, Factor→snapshot lineage binding, loose-legacy rejection); 7.3 `cash_returns_on_factor_calendar` (strict anchored BIL selection, fill disabled, exact Factor index incl. first return); 7.4 exact overlay/control equations sharing one cash vector, `derisk_cash_pin`-only control alias, lagged drawdown arming, frozen signal cadence from the single hashed `_SIGNAL_STEPS` source; 7.5 `select_sjm_config` deterministic frozen-order mutation replay with canonical ledger + `ledger_sha256` (never restores the previous winner — proven with a spectacular-holdout-old-winner test); 7.6 development-only metrics/gates (holdout physically excluded before compounding; CAGR-budget and same-cash control max-DD gates; holdout-rewrite invariance test); 7.7 `build_sjm_run`/`validate_sjm_run` — one validator proving hash/protocol/configuration/equation/reconstruction equality at <1e-9, persisted cash leg per defect 5; 7.8 staging per repo convention (refuse completed overwrite and dirty staging, manifest first, COMPLETED-last carrying manifest sha256, injected-late-failure unconsumable); 7.9 the serialized test matrix (41 tests in file). Reviewer probes additionally confirmed: mid-staging write failure leaves no manifest and refuses retry; orphan COMPLETED-only destination stays immutable; iteration-0 seed KEEP mirrors the shipped factor_loop.run_loop baseline convention. Publisher track (scripts/publish_finance_remediation.py + tests/test_publication_artifacts.py): 10.8 `stage_publication_candidate` + direct staging validators (provisional manifest completed=false last, SHA256SUMS prohibited, per-source completed-producer-manifest verification, casefold duplicate-basename rejection); 10.9 exactly-once finalization, SHA256SUMS generated last covering payloads + final manifest and never itself, read-only verification proven under chmod 0444/0555 with byte+mtime snapshot equality, os.rename promotion to an absent-only destination; 10.10 `serve_publication_candidate` clean-room localhost endpoint (GET-only, 405 writes, 404 mutable tags) driving the REAL workbook ReleaseClient with clean cache plus representative S0–S5 builds; 10.11 `run_public_release_smoke` read-only hooks (explicit tag + http(s) base URL only, zero upload/creation capability grep-verified, historical frozen-hash pins, `TagNotPublishedError` not-yet-published state). Fresh close evidence: root suite 1072 passed / 3 skipped; locked workbook command 253 passed / 22 skipped; all coverage-matrix check_ids in both owned test files pass under their exact commands.
+- **Consolidated wave 9.1–9.8 / 10.7 (2026-07-29):** Same consolidated pattern; BOTH REVIEWS APPROVED with zero blockers. Reports track (scripts/build_tear_sheet.py, scripts/export_csv_mirrors.py, tests/test_publication_artifacts.py): 9.1 four manifest-gated family loaders (Factor via load_completed_factor_run, SJM via validate_sjm_run, market/Markowitz via validate_market_snapshot; pinned identities + 64-hex manifest sha256s; test_ac_7_6 proves artifact-only edits — even with re-signed manifest and COMPLETED marker — can never stand in for the owning producer); 9.2 canonical Factor/AI-variant tables as pure projections of run-local records through report_table (six data-v4-pinned tables; exact-catalog gate against a second recalculated row family); 9.3 tear_sheet_sjm_crowding_ext2026 (tear_sheet.sjm.v3) from one completed SJM v3 run with dev/holdout window roles never fabricated, cash-excess SSR on the run's persisted BIL stream, post-load byte-mutation detection; 9.4 trio/static-window/dashboard tables where the trio's Factor row IS the run-local reader record and the SJM row IS the SJM full-window row, plus triple lineage binding and repeated-row agreement gates; 9.5 Markowitz 10y/max moment+frontier tables exclusively through macro_framework.markowitz with sealed source-date sha256 and no mixed-local strategy points on USD frontiers; 9.6 auxiliary monthly-return/risk tables recompounding to canonical reader rows at 1e-9 with raw-market-model-only vocabulary; 9.7 export_csv_mirrors.py rewritten as the zero-finance-formula locale-mirror producer (X.csv/X_de.csv, 8-decimal, 5e-9 round-trip); 9.8 the integration matrix. Workbook track: 10.7 tag-selection plumbing in workbook/build_workbook.py + workbook/tests/test_tag_selection.py — data-v2 default preserved (environment never consulted), explicit-only data-v4 selection through manifest-verified loading, fresh ReleaseClient per tag change, cross-tag cache substitution prohibited.
+- **Consolidated wave 10.3/10.5/10.6 + provisional 12.1 (2026-07-29):** Workbook chain APPROVED (consolidated review): 10.3 tag-bound data-v4 registry (24 keys) in contract.py mirroring the canonical producer schemas with load_v4_frame/load_v4_json, per-row semantic validation (windows, counts, pinned annualization 252/365/12, cash benchmark, currency basis, deterministic SSR settings), bidirectional cross-tag refusal, historical v1–v3 specs byte-unchanged, root-env mirror-parity tests pinning the workbook vocabulary to macro_framework.reporting, build_tear_sheet.py, and the frozen data-v4 catalog; 10.5 build_v4 StepView in steps.py consuming all 22 canonical tables verbatim, cash-excess SSR rebuilt through the vendored root ssr_inference with bit-for-bit bootstrap agreement against published rows, missing-cash/shortened-attribution/incomplete-window/schema/manifest failures surfaced as named visible checks, S0–S5 and the data-v2 default untouched; 10.6 fixture-driven suite (test_steps_v4.py, 13 tests incl. real-ReleaseClient mocked-transport stale/unmanifested/manifest-failure scenarios). Provisional production 12.1 COMPLETE: one-time live acquisition (yfinance + ALFRED, vintage 2026-07-29, coverage 2009-09-01..2026-06-30) under the frozen committed AcquisitionContract; immutable raw response bytes persisted with SHA-256 and the snapshot REBUILT FULLY OFFLINE from them; completed self-validating candidate at data/provisional_remediation/market_snapshots/provisional_market_total_return_fx_2026-06-30_v1 (final identity market_total_return_fx_2026-06-30_v1 remains reserved). TWO ADVISORIES RECORDED FOR TASK 14.1: (1) live ALFRED full-history payloads contain 183 BLANK cells (unpublished H.10 bank-holiday dates) that the committed parse_fredgraph_csv rejects — production used the committed injectable-frames path with a deterministic blank→'.' canonicalization disclosed with exact counts in both manifests; the 14.1 rebuild MUST consume the persisted raw bytes (as 14.1 already mandates) or the parser needs a spec-approved fix; (2) the stlouisfed /graph/ CSV backends reject plain requests/curl TLS fingerprints — only browser impersonation (curl_cffi via the locked yfinance dependency) is served; transport disclosed in frozen_acquisition_config.json and raw_sources_manifest.json.
+- **BLOCKER at task 12.2 — Factor simulation price input is undeclared and unreproducible (2026-07-29):** The provisional Factor bundle `data/provisional_remediation/factor_runs/factor_ext2026_2019-01-01_2026-06-30_v1` is internally complete and self-validating (COMPLETED pins manifest sha256 `1aaaf6de…`, build_time identical, `replay_audit.result=pass` over 180/180 keys, all 15 artifacts hash-inventoried, source_commit `e9aed6d`), and it was produced with ZERO live provider calls: all 36 loadings generations, 36 scorings, and 18 naive generations were replayed byte-for-byte from the persisted dated evidence, with 180 evidence_ids verified byte-identical to the original live run. HOWEVER: the 5-symbol yfinance price frame consumed by the walk-forward simulation is neither persisted, hashed, nor listed in `manifest.input_manifests` (which correctly pins the six v1 artifacts and the market snapshot); `config` records only `price_fetch_end`. A plain run of the committed `main()` using a LIVE price fetch HARD-FAILED at `build_factor_metric_records` with `ValueError: PIT and non-PIT performance returns must have identical indexes` (scratchpad log prov_12_4_factor_run.log); the completed bundle exists only because the remediation relaunch monkeypatched `ext.fetch_prices` to return a capture stored in the EPHEMERAL session scratchpad (`prov_repro_prices.parquet`). Consequences: task 13.7 cannot freeze this input's retained location and SHA-256, and task 14.2 cannot rebuild the bundle deterministically once that scratchpad is cleaned. The root cause of the live-fetch index divergence is unexplained. Downstream 12.3/12.4 and the notebook wave are HELD pending a decision: (A) persist the capture into `data/provisional_remediation/raw_sources/` as a hashed, manifest-disclosed raw source (provenance addition only), or (B) change the producer so simulation prices come from the immutable market snapshot (re-opens section 6 producer work and the design's Factor-input boundary). Nothing downstream was built on this foundation.

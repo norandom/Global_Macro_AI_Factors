@@ -340,13 +340,26 @@ class TestEquityMetrics:
         assert m.max_drawdown == pytest.approx(max_dd, rel=1e-12)
         assert m.calmar == pytest.approx(ann_ret / abs(max_dd), rel=1e-12)
 
-        # Crisis window is the fixed 2022 slice: [99.0, 105.93, 103.0].
-        window = value.loc["2022-01-01":"2022-12-31"]
-        assert m.crisis_return == pytest.approx(103.0 / 99.0 - 1.0, rel=1e-12)
-        crisis_dd = (window / window.cummax() - 1.0).min()
+        # Crisis metrics include the return entering the first 2022 session,
+        # anchored at the last value strictly before the requested start.
+        episode = value.loc["2021-12-31":"2022-12-31"]
+        crisis_returns = episode.pct_change(fill_method=None).iloc[1:]
+        assert m.crisis_return == pytest.approx(103.0 / 110.0 - 1.0, rel=1e-12)
+        crisis_dd = (episode / episode.cummax() - 1.0).min()
         assert m.crisis_max_drawdown == pytest.approx(float(crisis_dd), rel=1e-12)
-        crisis_vol = float(window.pct_change().std(ddof=1)) * math.sqrt(252)
+        crisis_vol = float(crisis_returns.std(ddof=1)) * math.sqrt(252)
         assert m.crisis_vol_ann == pytest.approx(crisis_vol, rel=1e-12)
+
+    def test_crisis_uses_last_anchor_strictly_before_requested_start(self):
+        value = pd.Series(
+            [90.0, 100.0, 80.0, 88.0],
+            index=pd.to_datetime(
+                ["2021-12-29", "2021-12-31", "2022-01-03", "2022-01-04"]
+            ),
+        )
+        m = equity_metrics(value, crisis=("2022-01-01", "2022-01-04"))
+        assert m.crisis_return == pytest.approx(88.0 / 100.0 - 1.0)
+        assert m.crisis_max_drawdown == pytest.approx(80.0 / 100.0 - 1.0)
 
     def test_constant_series_degrades_to_zero_ratios(self):
         idx = pd.to_datetime(["2022-01-03", "2022-01-04", "2022-01-05"])

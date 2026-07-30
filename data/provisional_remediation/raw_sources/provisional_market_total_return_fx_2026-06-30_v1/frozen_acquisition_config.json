@@ -1,0 +1,101 @@
+{
+  "contract": {
+    "benchmark_symbol": "SPY",
+    "cash_symbol": "BIL",
+    "etf_raw_response_sha256": null,
+    "etf_source_id": "yfinance",
+    "fx_conversion": "multiply",
+    "fx_field": "USD_per_GBP",
+    "fx_raw_response_sha256": null,
+    "fx_series_id": "DEXUSUK",
+    "fx_source_id": "fred_alfred_h10",
+    "quotes": {
+      "BIL": {
+        "quote_currency": "USD",
+        "quote_unit": "USD",
+        "scale_to_major": 1.0
+      },
+      "IAU": {
+        "quote_currency": "USD",
+        "quote_unit": "USD",
+        "scale_to_major": 1.0
+      },
+      "SPY": {
+        "quote_currency": "USD",
+        "quote_unit": "USD",
+        "scale_to_major": 1.0
+      },
+      "SWDA.L": {
+        "quote_currency": "GBP",
+        "quote_unit": "GBp",
+        "scale_to_major": 0.01
+      },
+      "XLK": {
+        "quote_currency": "USD",
+        "quote_unit": "USD",
+        "scale_to_major": 1.0
+      }
+    },
+    "realtime_end": "2026-07-29",
+    "realtime_start": "2026-07-29",
+    "requested_end": "2026-06-30",
+    "requested_start": "2009-09-01",
+    "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1",
+    "symbols": [
+      "SWDA.L",
+      "XLK",
+      "IAU",
+      "BIL",
+      "SPY"
+    ],
+    "total_return_field": "yfinance auto_adjust=True Close (adjusted total-return level, dividends reinvested)",
+    "vintage_date": "2026-07-29"
+  },
+  "contract_fingerprint_prehash": "3e732a9613ec18b5eb21157692ce8694077c5a198adc6bc3574514eaa534cd1c",
+  "credentials": "none required for yfinance or ALFRED alfredgraph.csv; no secrets logged",
+  "derived_etf_request_params": {
+    "auto_adjust": true,
+    "end": "2026-07-01",
+    "progress": false,
+    "start": "2009-09-01",
+    "threads": false,
+    "tickers": [
+      "SWDA.L",
+      "XLK",
+      "IAU",
+      "BIL",
+      "SPY"
+    ]
+  },
+  "derived_fx_request_params": {
+    "observation_end": "2026-06-30",
+    "observation_start": "2009-09-01",
+    "realtime_end": "2026-07-29",
+    "realtime_start": "2026-07-29",
+    "series_id": "DEXUSUK"
+  },
+  "endpoint_reachability": {
+    "etf": {
+      "attempts": 1,
+      "checked_at": "2026-07-29T17:53:07.769008+00:00",
+      "credentials_required": false,
+      "probe": "SPY 2026-06-20..2026-06-26 auto_adjust=True",
+      "rows": 5,
+      "source": "yfinance"
+    },
+    "fx": {
+      "attempts": 1,
+      "checked_at": "2026-07-29T17:53:08.327202+00:00",
+      "credentials_required": false,
+      "probe": "https://alfred.stlouisfed.org/graph/alfredgraph.csv?id=DEXUSUK&cosd=2026-06-01&coed=2026-06-30&vintage_date=2026-07-29",
+      "source": "fred_alfred_h10",
+      "transport": "curl_cffi impersonate=chrome (plain requests TLS fingerprint blocked)",
+      "vintage_column_confirmed": "DEXUSUK_20260729"
+    }
+  },
+  "final_snapshot_id_reserved": "market_total_return_fx_2026-06-30_v1",
+  "frozen_at": "2026-07-29T17:53:08.327403+00:00",
+  "provisional": true,
+  "schema": "provisional_frozen_acquisition_config.v1",
+  "task": "12.1"
+}

@@ -114,8 +114,6 @@ def test_legacy_annualization_basis_is_explicit_and_never_the_reader_convention(
         validate_report_row(_legacy_row() | {"sharpe": 1.2})
 
 
-def test_ac_1_2():
-    test_legacy_annualization_basis_is_explicit_and_never_the_reader_convention()
 
 
 def test_annualization_alternatives_stay_separately_named():
@@ -131,8 +129,6 @@ def test_annualization_alternatives_stay_separately_named():
     assert {"cagr_rows", "ann_vol_cal", "sharpe_cal", "sortino_cal", "calmar_rows"} <= legacy_only
 
 
-def test_ac_1_6():
-    test_annualization_alternatives_stay_separately_named()
 
 
 @pytest.mark.parametrize("label", ["capm_alpha_ann", "jensen_alpha", "r2_capm"])
@@ -266,8 +262,6 @@ def test_reader_row_uses_elapsed_cagr_and_252_conventions():
     assert "returns" not in row and "dd" not in row
 
 
-def test_ac_1_1():
-    test_reader_row_uses_elapsed_cagr_and_252_conventions()
 
 
 def test_full_rows_use_one_window_stream_and_observation_set():
@@ -311,8 +305,6 @@ def test_full_rows_use_one_window_stream_and_observation_set():
         )
 
 
-def test_ac_1_3():
-    test_full_rows_use_one_window_stream_and_observation_set()
 
 
 def test_reader_row_rejects_ssr_from_the_raw_return_stream():
@@ -431,8 +423,6 @@ def test_differential_statistics_share_one_daily_spread():
         build_differential_metric_row(meta, comparison, broken_ref, ssr, source="t")
 
 
-def test_ac_1_4():
-    test_differential_statistics_share_one_daily_spread()
 
 
 def test_endpoint_wealth_difference_is_a_separately_named_descriptive_field():
@@ -452,8 +442,6 @@ def test_endpoint_wealth_difference_is_a_separately_named_descriptive_field():
         validate_report_row(_legacy_row() | {"endpoint_total_return_difference": expected_gap})
 
 
-def test_ac_1_5():
-    test_endpoint_wealth_difference_is_a_separately_named_descriptive_field()
 
 
 # --- Task 4.4: separate window records --------------------------------------------

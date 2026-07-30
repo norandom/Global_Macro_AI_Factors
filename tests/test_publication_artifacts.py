@@ -48,8 +48,6 @@ def test_legacy_convention_is_identified_on_the_emitted_row():
             validate_report_row(broken)
 
 
-def test_ac_7_3():
-    test_legacy_convention_is_identified_on_the_emitted_row()
 
 
 def test_reports_reject_capm_labels_for_raw_regression():
@@ -119,8 +117,6 @@ def test_crisis_exports_reproduce_the_shared_boundary_inclusive_result():
     assert all(record[f.name] == getattr(crisis, f.name) for f in dc.fields(crisis))
 
 
-def test_ac_4_5():
-    test_crisis_exports_reproduce_the_shared_boundary_inclusive_result()
 
 
 def test_factor_source_to_consumption_equality_blocks_publish(tmp_path):
@@ -1304,19 +1300,6 @@ def test_promotion_refuses_overwrite_and_faults_leave_final_destination_absent(
     assert not any(final.iterdir())  # nothing partially promoted
 
 
-def test_ac_7_5(tmp_path):
-    # R7.5: every staging, finalization, or promotion fault is reported and the
-    # publication stays incomplete — no completed manifest, no SHA256SUMS, and
-    # no final destination.
-    test_every_source_fault_blocks_staging_and_leaves_no_manifest(
-        tmp_path / "staging"
-    )
-    test_finalization_failure_reports_and_leaves_candidate_incomplete(
-        tmp_path / "finalize"
-    )
-    test_promotion_refuses_overwrite_and_faults_leave_final_destination_absent(
-        tmp_path / "promote"
-    )
 
 
 
@@ -1958,10 +1941,6 @@ def test_artifact_edit_cannot_stand_in_for_the_owning_producer(
     _load_factor(bts, case)
 
 
-def test_ac_7_6(canonical_case, tmp_path):
-    test_artifact_edit_cannot_stand_in_for_the_owning_producer(
-        canonical_case, tmp_path
-    )
 
 
 def _published_row_equals_record(row, record) -> None:
@@ -3380,6 +3359,209 @@ def test_ac_7_1(canonical_case, tmp_path):
             assert asset.producer == bts.REPORT_TABLE_OWNER
         if asset.projection in ("csv_us", "csv_de"):
             assert asset.producer == mirrors.MIRROR_PRODUCER
+
+
+def test_canonical_trio_bundle_materializes_completed_inventory_and_reanchors_sjm(
+    canonical_case, tmp_path
+):
+    import pandas as pd
+
+    bts = _reports_producer()
+    case = canonical_case
+    factor = _load_factor(bts, case)
+    market = _load_market(bts, case)
+    sjm = bts.load_sjm_report_input(
+        case["sjm_run_dir"],
+        run_id=case["sjm_run_id"],
+        manifest_sha256=case["sjm_sha"],
+    )
+    factor_reader = next(
+        row
+        for row in factor.metric_records["records"]
+        if (row["portfolio_id"], row["schema"])
+        == ("factor_pit_ext2026", "portfolio_metrics.reader.v2")
+    )
+    destination = tmp_path / "canonical_reports"
+    sjm_manifest_before = (case["sjm_run_dir"] / "manifest.json").read_bytes()
+
+    result = bts.materialize_canonical_trio_report_bundle(
+        factor, sjm, market, destination=destination, ssr_settings=_SJM_TEST_SSR
+    )
+
+    assert result.root == destination
+    assert (destination / "COMPLETED").is_file()
+    manifest = json.loads((destination / "manifest.json").read_text())
+    assert manifest["schema"] == "canonical_reports.v1"
+    assert manifest["completed"] is True
+    assert manifest["input_manifests"]["sjm_run"] == {
+        "run_id": case["sjm_run_id"], "manifest_sha256": case["sjm_sha"]
+    }
+    inventory = manifest["tables"]["tear_sheet_trio_ext2026"]
+    artifact = destination / inventory["file"]
+    assert artifact.is_file()
+    assert inventory["rows"] == 3
+    assert inventory["sha256"] == hashlib.sha256(artifact.read_bytes()).hexdigest()
+    assert f"manifest_sha256={hashlib.sha256((destination / 'manifest.json').read_bytes()).hexdigest()}" in (
+        destination / "COMPLETED"
+    ).read_text().splitlines()
+
+    trio = result.table
+    assert set(trio["start"]) == {pd.Timestamp(factor_reader["start"])}
+    assert len({(row.end, row.n_obs, row.periods_per_year) for row in trio.itertuples()}) == 1
+    assert (case["sjm_run_dir"] / "manifest.json").read_bytes() == sjm_manifest_before
+    with pytest.raises(ValueError, match="non-empty"):
+        bts.materialize_canonical_trio_report_bundle(
+            factor, sjm, market, destination=destination, ssr_settings=_SJM_TEST_SSR
+        )
+
+
+def _stub_markowitz_report_builder(monkeypatch, bts):
+    """Keep the full-report fixture focused on bundle ownership/inventory.
+
+    The canonical-case snapshot predates the explicit quote-metadata contract
+    intentionally exercised by the dedicated Markowitz fixtures above.  Those
+    tests own the numerical frontier boundary; this small stub keeps the report
+    bundle test offline while still forcing all six Markowitz paths through the
+    materializer, inventory, and locale-mirror contracts.
+    """
+    import pandas as pd
+
+    def max_start(_input, *, requested_end, **_kwargs):
+        return requested_end - pd.Timedelta(days=400)
+
+    def build(_input, *, requested_windows, trio_rows, **_kwargs):
+        tables = {}
+        rows = {}
+        for name in requested_windows:
+            tables[f"markowitz_{name}_moments"] = pd.DataFrame(
+                {"window": [name], "asset": ["fixture"], "value": [1.0]}
+            )
+            tables[f"markowitz_{name}_frontier"] = pd.DataFrame(
+                {"window": [name], "feasible": [True], "value": [1.0]}
+            )
+            panel = tuple(trio_rows[name])
+            tables[f"tear_sheet_trio_{name}"] = bts._ordered_report_table(panel)
+            rows[f"tear_sheet_trio_{name}"] = panel
+        return bts.MarkowitzReportTables(
+            owner=bts.REPORT_TABLE_OWNER,
+            lineage={},
+            base_currency="USD",
+            valuation_rule="fixture",
+            windows={},
+            rows=rows,
+            tables=tables,
+        )
+
+    monkeypatch.setattr(bts, "markowitz_max_supported_start", max_start)
+    monkeypatch.setattr(bts, "build_markowitz_report_tables", build)
+
+
+def test_complete_canonical_report_bundle_materializes_every_table_and_locale_mirror(
+    canonical_case, tmp_path, monkeypatch
+):
+    """A notebook-ready report root contains the whole owned table family.
+
+    This is intentionally smaller than the release-catalog suite: the boundary
+    under test is the direct canonical-report producer.  It proves a fresh
+    factor/SJM/snapshot triplet cannot stop at a trio-only root and that all
+    mirrors are projections recorded in the same immutable inventory.
+    """
+    import pandas as pd
+
+    bts = _reports_producer()
+    _stub_markowitz_report_builder(monkeypatch, bts)
+    mirrors = _mirror_exporter()
+    case = canonical_case
+    factor = _load_factor(bts, case)
+    market = _load_market(bts, case)
+    sjm = bts.load_sjm_report_input(
+        case["sjm_run_dir"],
+        run_id=case["sjm_run_id"],
+        manifest_sha256=case["sjm_sha"],
+    )
+    rung_full, rung_late = _static_specs(bts, case)
+    coverage = market.manifest["requested_coverage"]
+    coverage_start = pd.Timestamp(coverage["start"])
+    coverage_end = pd.Timestamp(coverage["end"])
+    markowitz_end = coverage_end - pd.Timedelta(days=(coverage_end.dayofweek - 4) % 7)
+    markowitz_start = coverage_start + pd.Timedelta(days=90)
+    destination = tmp_path / "canonical_reports_complete"
+    destination.mkdir()  # an empty, fresh staging location is allowed
+
+    result = bts.materialize_canonical_report_bundle(
+        factor,
+        sjm,
+        market,
+        destination=destination,
+        static_windows=(rung_full, rung_late),
+        markowitz_10y_start=markowitz_start,
+        markowitz_end=markowitz_end,
+        markowitz_n_points=5,
+        ssr_settings=_SJM_TEST_SSR,
+    )
+
+    assert result.root == destination
+    assert set(result.tables) == set(bts.CANONICAL_REPORT_TABLE_SCHEMAS)
+    manifest = bts.validate_canonical_report_bundle(
+        destination, factor_input=factor, sjm_input=sjm, market_input=market
+    )
+    assert manifest["completed"] is True
+    assert set(manifest["tables"]) == set(bts.CANONICAL_REPORT_TABLE_SCHEMAS)
+    assert len(manifest["mirrors"]) == 2 * len(manifest["tables"])
+    assert (destination / "COMPLETED").read_text().splitlines() == [
+        f"manifest_sha256={hashlib.sha256((destination / 'manifest.json').read_bytes()).hexdigest()}"
+    ]
+    for stem, table in result.tables.items():
+        entry = manifest["tables"][stem]
+        path = destination / entry["file"]
+        assert entry["rows"] == len(table)
+        assert entry["schema"] == bts.CANONICAL_REPORT_TABLE_SCHEMAS[stem]
+        assert entry["sha256"] == hashlib.sha256(path.read_bytes()).hexdigest()
+        for locale, suffix in (("en-US", ".csv"), ("de-DE", "_de.csv")):
+            mirror = destination / "mirrors" / f"{stem}{suffix}"
+            mirrors.verify_mirror_round_trip(table, mirror, locale=locale)
+
+
+def test_complete_canonical_report_bundle_rejects_tampering_and_reuse(
+    canonical_case, tmp_path, monkeypatch
+):
+    """The completed marker is not a bypass for mirror integrity or immutability."""
+    import pandas as pd
+
+    bts = _reports_producer()
+    _stub_markowitz_report_builder(monkeypatch, bts)
+    case = canonical_case
+    factor = _load_factor(bts, case)
+    market = _load_market(bts, case)
+    sjm = bts.load_sjm_report_input(
+        case["sjm_run_dir"],
+        run_id=case["sjm_run_id"],
+        manifest_sha256=case["sjm_sha"],
+    )
+    rung_full, _ = _static_specs(bts, case)
+    coverage = market.manifest["requested_coverage"]
+    coverage_start = pd.Timestamp(coverage["start"])
+    coverage_end = pd.Timestamp(coverage["end"])
+    markowitz_end = coverage_end - pd.Timedelta(days=(coverage_end.dayofweek - 4) % 7)
+    markowitz_start = coverage_start + pd.Timedelta(days=90)
+    destination = tmp_path / "canonical_reports_complete"
+    kwargs = dict(
+        destination=destination,
+        static_windows=(rung_full,),
+        markowitz_10y_start=markowitz_start,
+        markowitz_end=markowitz_end,
+        markowitz_n_points=5,
+        ssr_settings=_SJM_TEST_SSR,
+    )
+    bts.materialize_canonical_report_bundle(factor, sjm, market, **kwargs)
+
+    with pytest.raises(ValueError, match="non-empty"):
+        bts.materialize_canonical_report_bundle(factor, sjm, market, **kwargs)
+
+    mirror = destination / "mirrors" / "tear_sheet_trio_ext2026_de.csv"
+    mirror.write_bytes(mirror.read_bytes() + b"# tampered\n")
+    with pytest.raises(ValueError, match="mirror is missing or mutated"):
+        bts.validate_canonical_report_bundle(destination)
 
 
 def test_ac_8_6(canonical_case):

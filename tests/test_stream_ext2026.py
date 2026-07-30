@@ -399,8 +399,6 @@ def test_duplicate_prompt_dates_persist_independent_records() -> None:
         assert r1.rebalance_date == d1 and r2.rebalance_date == d2
 
 
-def test_ac_6_1() -> None:
-    test_duplicate_prompt_dates_persist_independent_records()
 
 
 def test_build_dated_evidence_normalizes_timestamp_dates() -> None:
@@ -612,9 +610,6 @@ def test_dated_replay_weight_fn_two_dates_zero_live_calls() -> None:
         assert abs(t2[a] / t1[a] - 2.25) < 1e-9
 
 
-def test_ac_6_2() -> None:
-    test_dated_replay_identical_prompts_consume_their_own_dated_evidence()
-    test_dated_replay_weight_fn_two_dates_zero_live_calls()
 
 
 def test_dated_replay_prompt_mismatch_raises_never_degrades() -> None:
@@ -894,16 +889,8 @@ def test_replay_audit_decision_identity_mismatch_blocks() -> None:
         ext.record_decision_identity(consumed, ("pit", d1), r1, wrong_loadings)
 
 
-def test_ac_6_3(tmp_path) -> None:
-    test_replay_audit_missing_and_stray_consumed_keys_block()
-    test_replay_audit_inconsistently_duplicated_consumption_blocks()
-    test_replay_audit_cross_date_swap_blocks_every_publishable_output(tmp_path / "swap")
-    test_replay_audit_altered_value_blocks()
-    test_replay_audit_decision_identity_mismatch_blocks()
 
 
-def test_ac_6_4(tmp_path) -> None:
-    test_replay_audit_clean_run_passes_and_persists_summary(tmp_path / "clean")
 
 
 # --------------------------------------------------------------------------- #
@@ -1082,8 +1069,6 @@ def test_duplicate_prompt_dates_keep_distinct_evidence() -> None:
         ext.validate_evidence_records([mangled], [("pit", d1)])
 
 
-def test_ac_8_7() -> None:
-    test_duplicate_prompt_dates_keep_distinct_evidence()
 
 
 # --------------------------------------------------------------------------- #
@@ -2978,6 +2963,20 @@ def _staged_factor_run_case(tmp_path):
                 "path": "data/factor_loadings_v1.parquet", "sha256": "a" * 64,
             },
         },
+        price_input={
+            "snapshot_id": bundle["market_snapshot"]["snapshot_id"],
+            "manifest_sha256": bundle["market_snapshot"]["manifest_sha256"],
+            "path": str(snapshot),
+            "rows": len(pd.read_parquet(snapshot / "basket_adjusted_close_local.parquet")),
+            "start": pd.read_parquet(snapshot / "basket_adjusted_close_local.parquet").index.min().date().isoformat(),
+            "end": pd.read_parquet(snapshot / "basket_adjusted_close_local.parquet").index.max().date().isoformat(),
+            "columns": ["SWDA.L", "XLK", "IAU", "BIL", "SPY"],
+            "content_sha256": ext.price_frame_content_sha256(
+                pd.read_parquet(snapshot / "basket_adjusted_close_local.parquet").join(
+                    pd.read_parquet(snapshot / "cash_market_total_return.parquet"), how="outer"
+                )[["SWDA.L", "XLK", "IAU", "BIL", "SPY"]]
+            ),
+        },
         expected_evidence={
             "variants": ["pit", "nonpit_diagnostic"],
             "dates": [d1.isoformat(), d2.isoformat()],
@@ -3087,6 +3086,66 @@ def test_factor_run_validator_verifies_inventory_hashes_and_counts(tmp_path) -> 
     _resign_run_manifest(ext, run_dir, manifest)
     with pytest.raises(ValueError, match="replay audit"):
         ext.validate_factor_run_bundle(run_dir)
+
+
+def test_factor_run_bundle_projects_populated_target_rows_onto_executed_factor_calendar(
+    tmp_path,
+) -> None:
+    ext, staging, run_kwargs = _staged_factor_run_case(tmp_path)
+    targets_path = staging / "factor_targets_ext2026.parquet"
+    targets = pd.read_parquet(targets_path)
+    rogue = pd.DataFrame(
+        [{column: 0.5 for column in targets.columns}],
+        index=pd.DatetimeIndex([pd.Timestamp("2021-06-05")], name=targets.index.name),
+    )
+    pd.concat([targets, rogue]).sort_index().to_parquet(targets_path)
+    pd.concat(
+        [pd.read_parquet(staging / "factor_nonpit_diagnostic_targets_ext2026.parquet"), rogue]
+    ).sort_index().to_parquet(staging / "factor_nonpit_diagnostic_targets_ext2026.parquet")
+
+    run_dir = ext.build_factor_run_bundle(**run_kwargs)
+    for target_name, equity_name in (
+        ("factor_targets_ext2026.parquet", "factor_equity_ext2026.parquet"),
+        (
+            "factor_nonpit_diagnostic_targets_ext2026.parquet",
+            "factor_nonpit_diagnostic_equity_ext2026.parquet",
+        ),
+    ):
+        targets = pd.read_parquet(run_dir / target_name)
+        equity = pd.read_parquet(run_dir / equity_name)
+        assert targets.index.equals(equity.index)
+        assert pd.Timestamp("2021-06-05") not in targets.index
+
+
+
+def test_factor_run_bundle_projects_empty_target_gaps_onto_executed_factor_calendar(
+    tmp_path,
+) -> None:
+    ext, staging, run_kwargs = _staged_factor_run_case(tmp_path)
+    gap = pd.DataFrame(
+        [{column: float("nan") for column in pd.read_parquet(staging / "factor_targets_ext2026.parquet").columns}],
+        index=pd.DatetimeIndex([pd.Timestamp("2021-06-05")], name="Date"),
+    )
+    for name in (
+        "factor_targets_ext2026.parquet",
+        "factor_nonpit_diagnostic_targets_ext2026.parquet",
+    ):
+        path = staging / name
+        widened = pd.concat([pd.read_parquet(path), gap]).sort_index()
+        widened.to_parquet(path)
+
+    run_dir = ext.build_factor_run_bundle(**run_kwargs)
+    for target_name, equity_name in (
+        ("factor_targets_ext2026.parquet", "factor_equity_ext2026.parquet"),
+        (
+            "factor_nonpit_diagnostic_targets_ext2026.parquet",
+            "factor_nonpit_diagnostic_equity_ext2026.parquet",
+        ),
+    ):
+        targets = pd.read_parquet(run_dir / target_name)
+        equity = pd.read_parquet(run_dir / equity_name)
+        assert targets.index.equals(equity.index)
+        assert pd.Timestamp("2021-06-05") not in targets.index
 
 
 def test_factor_run_refuses_completed_overwrite_and_dirty_staging(tmp_path) -> None:
@@ -3247,3 +3306,128 @@ def test_factor_run_rejects_forged_input_manifest_lineage(tmp_path) -> None:
     _resign_run_manifest(ext, run_dir, manifest)
     with pytest.raises(ValueError, match="market snapshot lineage"):
         ext.load_completed_factor_run(run_dir)
+
+
+
+def test_factor_run_rejects_declared_price_frame_drift(tmp_path) -> None:
+    import json
+
+    import pytest
+
+    ext, staging, run_dir, _ = _completed_factor_run(tmp_path)
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    manifest["price_input"]["content_sha256"] = "f" * 64
+    _resign_run_manifest(ext, run_dir, manifest)
+    with pytest.raises(ValueError, match="declared price frame lineage"):
+        ext.load_completed_factor_run(run_dir)
+
+
+# --------------------------------------------------------------------------- #
+# Task 14.2 / Option B — snapshot-sourced prices and first-class replay       #
+# --------------------------------------------------------------------------- #
+
+
+def test_snapshot_price_loader_reproduces_preserved_provisional_capture() -> None:
+    import inspect
+
+    ext = _mod()
+    snapshot_dir = (
+        REPO
+        / "data"
+        / "provisional_remediation"
+        / "market_snapshots"
+        / "provisional_market_total_return_fx_2026-06-30_v1"
+    )
+    capture_path = (
+        REPO
+        / "data"
+        / "provisional_remediation"
+        / "raw_sources"
+        / "factor_sim_prices"
+        / "prov_repro_prices.parquet"
+    )
+    symbols = ["SWDA.L", "XLK", "IAU", "BIL"]
+
+    prices, lineage = ext.load_completed_snapshot_price_frame(snapshot_dir, symbols)
+    capture = pd.read_parquet(capture_path)[symbols + ["SPY"]]
+
+    assert prices.index.equals(capture.index)
+    assert len(prices.index) == 3212
+    assert prices.columns.tolist() == capture.columns.tolist()
+    assert prices.isna().equals(capture.isna())
+    rel = ((prices - capture).abs() / capture.abs().where(capture.ne(0.0))).to_numpy()
+    rel = rel[~pd.isna(rel)]
+    assert (float(rel.max()) if rel.size else 0.0) <= ext.SNAPSHOT_PRICE_EQUIVALENCE_REL_TOL
+    assert lineage["snapshot_id"] == snapshot_dir.name
+    assert lineage["price_frame"]["rows"] == 3212
+    assert lineage["price_frame"]["columns"] == symbols + ["SPY"]
+    assert lineage["price_frame"]["content_sha256"]
+    source = inspect.getsource(ext.main)
+    assert "load_completed_snapshot_price_frame" in source
+    assert "fetch_prices(symbols)" not in source
+
+
+
+def test_replay_mode_replays_all_factor_provider_outputs_without_live_calls(monkeypatch, tmp_path) -> None:
+    import pytest
+
+    ext = _mod()
+    macro_state, snapshot, amap, prompt, d1, d2, evidence = _replay_fixture(ext)
+    evidence_path = ext.write_evidence_table(
+        list(evidence.values()),
+        [("pit", d1), ("pit", d2)],
+        tmp_path / "evidence_replay",
+    )
+    naive = pd.DataFrame(
+        [
+            {
+                "date": pd.Timestamp(d1),
+                "prompt": "PROMPT 1",
+                "reply": "Direction: 1\nConfidence: 0.75",
+                "predicted_direction": 1,
+                "confidence": 0.75,
+                "realized_direction": 1,
+                "correct": True,
+            },
+            {
+                "date": pd.Timestamp(d2),
+                "prompt": "PROMPT 2",
+                "reply": "Direction: -1\nConfidence: 0.55",
+                "predicted_direction": -1,
+                "confidence": 0.55,
+                "realized_direction": -1,
+                "correct": True,
+            },
+        ]
+    )
+    naive_path = tmp_path / "naive_directional_eval_ext2026.parquet"
+    naive.to_parquet(naive_path)
+
+    replay = ext.load_factor_replay_sources(evidence_path, naive_path=naive_path)
+
+    def _boom(*_args, **_kwargs):
+        raise AssertionError("live provider call during replay mode")
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(ext, "_generate_big", _boom)
+        mp.setattr(ext, "_generate_and_parse", _boom)
+        mp.setattr(ext, "_score_with_retry", _boom)
+        loadings, scores = ext.replay_factor_outputs(
+            replay,
+            factor_meta=[
+                (pd.Timestamp(d1), macro_state, None, prompt, prompt),
+                (pd.Timestamp(d2), macro_state, None, prompt, prompt),
+            ],
+            variant="pit",
+        )
+        rows = ext.replay_naive_directional_rows(
+            replay,
+            [
+                (pd.Timestamp(d1), "PROMPT 1", 1),
+                (pd.Timestamp(d2), "PROMPT 2", -1),
+            ],
+        )
+
+    assert list(loadings.index) == [pd.Timestamp(d1), pd.Timestamp(d2)]
+    assert list(scores.index) == [pd.Timestamp(d1), pd.Timestamp(d2)]
+    assert [row["reply"] for row in rows] == naive["reply"].tolist()

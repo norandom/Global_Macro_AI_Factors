@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Excel-native audit workbook for the factor-scoring assessment (reads the data-v1 GitHub Release)"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "numpy",
     "pandas",
     "pyarrow",
     "requests",

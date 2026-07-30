@@ -13,8 +13,8 @@ direction+confidence parse is required.
 
 from __future__ import annotations
 
-import importlib
-import sys
+import ast
+from pathlib import Path
 
 
 def test_public_mia_primitives_importable() -> None:
@@ -70,26 +70,28 @@ def test_macro_framework_host_package_imports() -> None:
 
 
 def test_feature_path_does_not_use_directional_facade() -> None:
-    """The number-native scoring path bypasses the MemoryGuardedScorer facade (6.5).
+    """The module never imports or references the directional facade directly.
 
-    The public primitives above are sufficient to score a factor prompt, so the
-    feature's code path must not import the directional facade
-    (`recall_guard.harness.scorer`). The feature module does not exist yet
-    (task 2.1 creates `macro_framework/factor_scoring.py`); this test asserts the
-    foundation: the primitives are present and callable, while no new feature
-    module has pulled the facade into `sys.modules` via the feature path.
+    ``recall_guard`` itself eagerly imports its harness package, so whether
+    ``recall_guard.harness.scorer`` appears in ``sys.modules`` is determined by
+    the installed dependency, not this feature path. Parse the feature module in
+    isolation instead of asserting process-global import order.
     """
-    from recall_guard import compute_mia_features
-
-    # The number-native primitive is callable on its own: no facade needed to
-    # turn a response + logprobs into MIA features.
-    assert callable(compute_mia_features)
-
-    # The directional facade lives in `recall_guard.harness.scorer`. The new
-    # feature module is not created until task 2.1, so it cannot be imported here.
-    assert "macro_framework.factor_scoring" not in sys.modules
-    facade_spec = importlib.util.find_spec("recall_guard.harness.scorer")
-    assert facade_spec is not None, "facade module exists in the library (we just do not depend on it)"
+    source = Path(__file__).resolve().parents[1] / "macro_framework" / "factor_scoring.py"
+    tree = ast.parse(source.read_text())
+    forbidden = "recall_guard.harness.scorer"
+    imports = [
+        node.module
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module is not None
+    ]
+    imported_names = [
+        alias.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    ]
+    assert forbidden not in imports + imported_names
 
 
 # --------------------------------------------------------------------------- #

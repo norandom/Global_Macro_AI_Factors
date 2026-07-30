@@ -1700,6 +1700,209 @@ def build_trio_report_tables(
     )
 
 
+# --- Task 9.4a: completed canonical trio report bundle ----------------------------- #
+
+
+CANONICAL_REPORTS_SCHEMA = "canonical_reports.v1"
+TRIO_REPORT_STEM = "tear_sheet_trio_ext2026"
+
+
+@dataclass(frozen=True)
+class CanonicalTrioReportBundle:
+    """One immutable, completed canonical report directory for the trio table.
+
+    The bundle is deliberately narrow: the report producer builds and inventories
+    the canonical trio Parquet table; presentation notebooks only read it after
+    checking the manifest, completion marker, table bytes, row count, and row
+    contract.  This does not replay SJM selection or manufacture a new strategy
+    run.
+    """
+
+    root: Path
+    manifest: Mapping[str, object]
+    table: pd.DataFrame
+
+
+def _factor_pit_reader_row(factor_input: VerifiedFactorRun) -> Mapping[str, object]:
+    """Return the one validated PIT reader record that defines trio timing."""
+    factor_reports = build_factor_report_tables(factor_input)
+    reader = factor_reports.tables["portfolio_metrics_reader_ext2026"]
+    rows = reader[
+        (reader["portfolio_id"] == FACTOR_PIT_PORTFOLIO)
+        & (reader["schema"] == READER_SCHEMA)
+    ]
+    if len(rows) != 1:
+        raise ValueError("completed Factor bundle must contain exactly one PIT reader row")
+    return validate_report_row(rows.iloc[0].to_dict())
+
+
+def _factor_window_static_spec(
+    market_input: VerifiedReportInput,
+    factor_row: Mapping[str, object],
+) -> StaticWindowSpec:
+    """Choose the prior common static level as the anchor for Factor timing.
+
+    This selects an existing snapshot observation only; it leaves all portfolio
+    construction and financial metrics to ``build_static_bh_rows``.
+    """
+    start = pd.Timestamp(factor_row["start"])
+    end = pd.Timestamp(factor_row["end"])
+    manifest = market_input.manifest
+    basket = _read_snapshot_frame(
+        market_input.run_dir, manifest, "basket_adjusted_close_local.parquet"
+    )
+    cash_market = _read_snapshot_frame(
+        market_input.run_dir, manifest, "cash_market_total_return.parquet"
+    )
+    common = pd.concat(
+        [basket[list(_STATIC_BH_LOCAL)], cash_market[[STATIC_BH_CASH_SYMBOL]]],
+        axis=1,
+    ).dropna()
+    anchors = common.index[common.index < start]
+    if start not in common.index or not len(anchors):
+        raise ValueError(
+            "Factor performance start cannot be represented by a static-basket "
+            "common-calendar anchor in the verified market snapshot"
+        )
+    if end not in common.index:
+        raise ValueError(
+            "Factor performance end is absent from the static-basket common "
+            "calendar in the verified market snapshot"
+        )
+    return StaticWindowSpec(
+        label=f"Factor performance window (buy {anchors[-1].date()})",
+        start=anchors[-1],
+        end=end,
+    )
+
+
+def _canonical_trio_manifest(
+    *,
+    factor_input: VerifiedFactorRun,
+    sjm_input: VerifiedReportInput,
+    market_input: VerifiedReportInput,
+    table_path: Path,
+    table_relative_path: Path,
+    table: pd.DataFrame,
+    static_window: StaticWindowSpec,
+) -> dict[str, object]:
+    """Build the compact immutable inventory consumed by presentation notebooks."""
+    return {
+        "schema": CANONICAL_REPORTS_SCHEMA,
+        "completed": True,
+        "producer": REPORT_TABLE_OWNER,
+        "input_manifests": {
+            "factor_run": {
+                "run_id": factor_input.run_id,
+                "manifest_sha256": factor_input.manifest_sha256,
+            },
+            "sjm_run": {
+                "run_id": sjm_input.identity,
+                "manifest_sha256": sjm_input.manifest_sha256,
+            },
+            "market_snapshot": {
+                "snapshot_id": market_input.identity,
+                "manifest_sha256": market_input.manifest_sha256,
+            },
+        },
+        "trio_static_window": {
+            "label": static_window.label,
+            "start": static_window.start.date().isoformat(),
+            "end": static_window.end.date().isoformat(),
+        },
+        "tables": {
+            TRIO_REPORT_STEM: {
+                "file": str(table_relative_path.as_posix()),
+                "schema": TRIO_REPORT_TABLE_SCHEMAS[TRIO_REPORT_STEM],
+                "rows": int(len(table)),
+                "sha256": _sha256_file(table_path),
+            }
+        },
+    }
+
+
+def materialize_canonical_trio_report_bundle(
+    factor_input: VerifiedFactorRun,
+    sjm_input: VerifiedReportInput,
+    market_input: VerifiedReportInput,
+    *,
+    destination: Path | str,
+    trio_static_window: StaticWindowSpec | None = None,
+    ssr_settings: Mapping[str, object] | None = None,
+) -> CanonicalTrioReportBundle:
+    """Materialize a fresh, manifest-inventoried completed trio report bundle.
+
+    All inputs must have passed their completed-manifest gates.  The Factor PIT
+    reader record controls the common performance start; SJM is explicitly
+    reanchored to that start before trio assembly.  The function writes only a
+    new/empty report destination, inventories the persisted Parquet bytes, and
+    writes ``COMPLETED`` last.  It never calls the SJM selection/build command.
+    """
+    if not isinstance(factor_input, VerifiedFactorRun):
+        raise TypeError("factor_input must come from load_factor_report_input")
+    _require_family(sjm_input, "sjm_run")
+    _require_family(market_input, "market_snapshot")
+    destination = Path(destination)
+    if destination.exists() and any(destination.iterdir()):
+        raise ValueError(f"refusing to overwrite non-empty canonical report root: {destination}")
+    if destination.exists() and not destination.is_dir():
+        raise ValueError(f"canonical report destination is not a directory: {destination}")
+
+    factor_row = _factor_pit_reader_row(factor_input)
+    performance_start = pd.Timestamp(factor_row["start"])
+    static_window = trio_static_window or _factor_window_static_spec(
+        market_input, factor_row
+    )
+    sjm_reports = build_sjm_report_tables(
+        sjm_input,
+        market_input,
+        performance_start=performance_start,
+        ssr_settings=ssr_settings,
+    )
+    trio_reports = build_trio_report_tables(
+        factor_input,
+        sjm_reports,
+        market_input,
+        static_windows=(static_window,),
+        trio_static_window=static_window,
+        ssr_settings=ssr_settings,
+    )
+    table = parquet_safe_report_table(
+        trio_reports.tables[TRIO_REPORT_STEM].copy()
+    )
+    rows = [validate_report_row(row) for row in table.to_dict(orient="records")]
+    signatures = {
+        (row["start"], row["end"], row["n_obs"], row["periods_per_year"])
+        for row in rows
+    }
+    if len(rows) != 3 or len(signatures) != 1:
+        raise ValueError("canonical trio output must contain three rows on one performance signature")
+    if signatures.pop()[0] != performance_start:
+        raise ValueError("canonical trio did not retain the Factor performance start")
+
+    destination.mkdir(parents=True, exist_ok=True)
+    table_path = destination / "tables" / f"{TRIO_REPORT_STEM}.parquet"
+    table_path.parent.mkdir()
+    table.to_parquet(table_path, index=False)
+    manifest = _canonical_trio_manifest(
+        factor_input=factor_input,
+        sjm_input=sjm_input,
+        market_input=market_input,
+        table_path=table_path,
+        table_relative_path=table_path.relative_to(destination),
+        table=table,
+        static_window=static_window,
+    )
+    manifest_path = destination / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    (destination / "COMPLETED").write_text(
+        f"manifest_sha256={_sha256_file(manifest_path)}\n"
+    )
+    return CanonicalTrioReportBundle(destination, manifest, table)
+
+
 # --- Task 9.5: canonical ten-year and maximum-window Markowitz tables ------------ #
 
 
@@ -2029,6 +2232,804 @@ def build_markowitz_report_tables(
         rows=rows_map,
         tables=tables,
     )
+
+
+# --- Complete immutable canonical report bundles ---------------------------------- #
+#
+# ``materialize_canonical_trio_report_bundle`` above was deliberately introduced as
+# a narrow migration bridge.  The presentation notebooks need a *family* of tables,
+# however: publishing only its trio leaves the Factor, SJM, static-window, dashboard,
+# and Markowitz consumers to fall back to stale local files.  This boundary owns the
+# complete family as one immutable report root.  It is intentionally not the
+# data-v4 publisher: that later stage flattens a validated report bundle into the
+# frozen release catalog.
+
+
+CANONICAL_REPORT_TABLE_SCHEMAS: Mapping[str, str] = MappingProxyType(
+    {
+        **FACTOR_REPORT_TABLE_SCHEMAS,
+        **AUXILIARY_REPORT_TABLE_SCHEMAS,
+        **SJM_REPORT_TABLE_SCHEMAS,
+        **TRIO_REPORT_TABLE_SCHEMAS,
+        **MARKOWITZ_REPORT_TABLE_SCHEMAS,
+    }
+)
+
+# These are the explicit static-window rungs consumed by notebooks 15.2, 15.3, and
+# 18.2.  The common trio static comparison is deliberately selected separately from
+# this ladder so it exactly shares the Factor performance window.
+DEFAULT_STATIC_WINDOW_SPECS: tuple[StaticWindowSpec, ...] = (
+    StaticWindowSpec(
+        "Full 16.7y (buy 2009)", pd.Timestamp("2009-09-25"), pd.Timestamp("2026-05-29")
+    ),
+    StaticWindowSpec(
+        "16.4y (buy 2009)", pd.Timestamp("2009-09-25"), pd.Timestamp("2026-01-30")
+    ),
+    StaticWindowSpec(
+        "10.0y (buy 2016)", pd.Timestamp("2016-02-01"), pd.Timestamp("2026-01-30")
+    ),
+    StaticWindowSpec(
+        "7.1y (buy 2019)", pd.Timestamp("2019-01-02"), pd.Timestamp("2026-01-30")
+    ),
+)
+MARKOWITZ_10Y_START = pd.Timestamp("2016-02-01")
+MARKOWITZ_REPORT_END = pd.Timestamp("2026-01-30")
+
+
+@dataclass(frozen=True)
+class CanonicalReportBundle:
+    """One complete, immutable, manifest-verified canonical report family."""
+
+    root: Path
+    manifest: Mapping[str, object]
+    tables: Mapping[str, pd.DataFrame]
+
+
+def _canonical_report_input_manifests(
+    factor_input: VerifiedFactorRun,
+    sjm_input: VerifiedReportInput,
+    market_input: VerifiedReportInput,
+) -> dict[str, dict[str, str]]:
+    """The three exact completed producer identities a report bundle binds."""
+    return {
+        "factor_run": {
+            "run_id": factor_input.run_id,
+            "manifest_sha256": factor_input.manifest_sha256,
+        },
+        "sjm_run": {
+            "run_id": sjm_input.identity,
+            "manifest_sha256": sjm_input.manifest_sha256,
+        },
+        "market_snapshot": {
+            "snapshot_id": market_input.identity,
+            "manifest_sha256": market_input.manifest_sha256,
+        },
+    }
+
+
+def _safe_report_relative_path(value: object, *, directory: str) -> Path:
+    """Validate one manifest-owned path below a fixed report subdirectory."""
+    if not isinstance(value, str) or not value:
+        raise ValueError("canonical report inventory file must be a non-empty relative path")
+    path = Path(value)
+    if (
+        path.is_absolute()
+        or ".." in path.parts
+        or "\\" in value
+        or len(path.parts) != 2
+        or path.parts[0] != directory
+        or path.name in {"", ".", ".."}
+    ):
+        raise ValueError(
+            f"canonical report inventory file must be a safe {directory}/ relative path: {value!r}"
+        )
+    return path
+
+
+def _require_new_report_destination(destination: Path) -> None:
+    """Allow an absent/empty directory only; incomplete and completed roots stay immutable."""
+    if not destination.exists():
+        return
+    if not destination.is_dir():
+        raise ValueError(f"canonical report destination is not a directory: {destination}")
+    if any(destination.iterdir()):
+        raise ValueError(
+            f"refusing to overwrite non-empty canonical report root: {destination}"
+        )
+
+
+def _report_window_value_slice(
+    value: pd.Series,
+    *,
+    requested_start: pd.Timestamp,
+    requested_end: pd.Timestamp,
+    earliest_start: pd.Timestamp | None = None,
+    label: str,
+) -> pd.Series:
+    """Select a strictly anchored, honest strategy slice for a panel table.
+
+    A strategy which began after a requested Markowitz window is represented by
+    its actual shorter coverage; it is never back-filled.  Conversely, a stale
+    endpoint is not silently extended.  The selected value series retains one
+    actual preceding anchor for ``metric_block`` and strict cash alignment.
+    """
+    if not isinstance(value, pd.Series) or value.empty:
+        raise ValueError(f"{label}: value stream must be non-empty")
+    value = value.copy()
+    value.index = pd.DatetimeIndex(value.index)
+    if (
+        value.index.has_duplicates
+        or not value.index.is_monotonic_increasing
+        or value.index.tz is not None
+        or not np.isfinite(value.to_numpy(dtype=float)).all()
+    ):
+        raise ValueError(f"{label}: persisted value stream is not finite, unique, ordered, and timezone-naive")
+    if requested_start > requested_end:
+        raise ValueError(f"{label}: requested start is after requested end")
+    effective_start = max(
+        pd.Timestamp(requested_start),
+        pd.Timestamp(earliest_start) if earliest_start is not None else value.index[1],
+    )
+    return_dates = value.index[(value.index >= effective_start) & (value.index <= requested_end)]
+    if len(return_dates) < 2:
+        raise ValueError(
+            f"{label}: fewer than two persisted return observations are available "
+            f"for {effective_start.date()}..{pd.Timestamp(requested_end).date()}"
+        )
+    first_return, last_return = return_dates[0], return_dates[-1]
+    anchors = value.index[value.index < first_return]
+    if not len(anchors):
+        raise ValueError(f"{label}: no persisted value anchor precedes {first_return.date()}")
+    return value.loc[anchors[-1] : last_return]
+
+
+def _windowed_reader_row(
+    *,
+    value: pd.Series,
+    market_input: VerifiedReportInput,
+    portfolio_id: str,
+    label: str,
+    requested_start: pd.Timestamp,
+    requested_end: pd.Timestamp,
+    earliest_start: pd.Timestamp | None,
+    total_return_basis: str,
+    source: str,
+    ssr_settings: Mapping[str, object] | None,
+) -> dict[str, object]:
+    """Reader row for a disclosed shorter strategy panel, from verified bytes.
+
+    This is solely for the 10-year and maximum-window *panel* rows.  The primary
+    Factor and SJM tables remain projections of their run-local records.  Each
+    panel row is reconstructed through the shared metric, BIL-excess, and raw
+    market-model contracts from a manifest-inventoried curve and snapshot.
+    """
+    panel_value = _report_window_value_slice(
+        value,
+        requested_start=requested_start,
+        requested_end=requested_end,
+        earliest_start=earliest_start,
+        label=portfolio_id,
+    )
+    metrics = metric_block(panel_value)
+    returns = metrics["returns"]
+    ext = _factor_run_module()
+    cash, cash_lineage = ext.load_completed_snapshot_bil_returns(
+        market_input.run_dir, returns.index, anchor=panel_value.index[0]
+    )
+    market, market_lineage = ext.load_completed_snapshot_market_returns(
+        market_input.run_dir, returns.index, value_index=panel_value.index
+    )
+    attribution = raw_market_model_attribution(returns.loc[market.index], market)
+    ssr = ssr_inference(
+        portfolio_excess_returns(returns, cash), **_merged_ssr_settings(ssr_settings)
+    )
+    window_label = (
+        f"Markowitz panel requested {pd.Timestamp(requested_start).date()}.."
+        f"{pd.Timestamp(requested_end).date()}; strategy "
+        f"{returns.index[0].date()}..{returns.index[-1].date()}"
+    )
+    meta = LineMetadata(
+        portfolio_id=portfolio_id,
+        label=label,
+        window_label=window_label,
+        currency_basis="legacy_mixed_local_quotes",
+        total_return_basis=total_return_basis,
+        cash_benchmark_id=f"BIL@{market_input.identity}",
+    )
+    lineage = (
+        f"{source}|market_snapshot:{market_input.identity}/{cash_lineage['cash_file']}"
+        f"#BIL@{cash_lineage['cash_file_sha256']}"
+        f"|market_snapshot:{market_input.identity}/{market_lineage['benchmark_file']}"
+        f"#SPY@{market_lineage['benchmark_file_sha256']}"
+    )
+    return build_reader_metric_row(
+        meta, metrics, cash, ssr, source=lineage, attribution=attribution
+    )
+
+
+def _factor_panel_reader_row(
+    factor_input: VerifiedFactorRun,
+    market_input: VerifiedReportInput,
+    *,
+    requested_start: pd.Timestamp,
+    requested_end: pd.Timestamp,
+    ssr_settings: Mapping[str, object] | None,
+) -> dict[str, object]:
+    """One shorter disclosed Factor PIT panel row from its inventoried equity."""
+    stream = factor_input.metric_records["source_streams"][FACTOR_PIT_PORTFOLIO]
+    artifact = str(stream["artifact"])
+    entry = _factor_inventory_entry(factor_input.manifest, artifact)
+    value = pd.read_parquet(
+        io.BytesIO(_read_inventoried_bytes(factor_input.run_dir / artifact, entry))
+    )["value"]
+    return _windowed_reader_row(
+        value=value,
+        market_input=market_input,
+        portfolio_id=FACTOR_PIT_PORTFOLIO,
+        label="AI macro-factor (PIT) Markowitz panel",
+        requested_start=requested_start,
+        requested_end=requested_end,
+        earliest_start=pd.Timestamp(stream["start"]),
+        total_return_basis="factor_pit_anchored_equity",
+        source=(
+            f"factor_run:{factor_input.run_id}/{artifact}#{entry['sha256']}"
+        ),
+        ssr_settings=ssr_settings,
+    )
+
+
+def _sjm_panel_reader_row(
+    sjm_input: VerifiedReportInput,
+    market_input: VerifiedReportInput,
+    *,
+    requested_start: pd.Timestamp,
+    requested_end: pd.Timestamp,
+    ssr_settings: Mapping[str, object] | None,
+) -> dict[str, object]:
+    """One shorter disclosed SJM overlay panel row from its inventoried equity."""
+    manifest = sjm_input.manifest
+    equity_entry = manifest["files"]["equity"]
+    value = _read_sjm_frame(sjm_input.run_dir, manifest, "equity")["value"]
+    return _windowed_reader_row(
+        value=value,
+        market_input=market_input,
+        portfolio_id=sjm_input.identity,
+        label=f"SJM v3 crowding de-risk overlay ({sjm_input.identity}) Markowitz panel",
+        requested_start=requested_start,
+        requested_end=requested_end,
+        earliest_start=pd.Timestamp(manifest["coverage"]["start"]),
+        total_return_basis="sjm_v3_overlay_anchored_equity",
+        source=(
+            f"sjm_run:{sjm_input.identity}/{equity_entry['file']}#{equity_entry['sha256']}"
+        ),
+        ssr_settings=ssr_settings,
+    )
+
+
+def _panel_rows_for_markowitz_window(
+    factor_input: VerifiedFactorRun,
+    sjm_input: VerifiedReportInput,
+    market_input: VerifiedReportInput,
+    *,
+    name: str,
+    start: pd.Timestamp,
+    end: pd.Timestamp,
+    ssr_settings: Mapping[str, object] | None,
+) -> tuple[dict[str, object], ...]:
+    """Static, Factor, and SJM rows for one asset-only Markowitz companion panel."""
+    static, _ = build_static_bh_rows(
+        market_input,
+        StaticWindowSpec(f"{name} Markowitz static panel", start, end),
+        ssr_settings=ssr_settings,
+        attribution=False,
+    )
+    factor = _factor_panel_reader_row(
+        factor_input,
+        market_input,
+        requested_start=start,
+        requested_end=end,
+        ssr_settings=ssr_settings,
+    )
+    sjm = _sjm_panel_reader_row(
+        sjm_input,
+        market_input,
+        requested_start=start,
+        requested_end=end,
+        ssr_settings=ssr_settings,
+    )
+    return (static, factor, sjm)
+
+
+def _report_manifest_entry(
+    *, path: Path, relative: Path, schema: str, rows: int
+) -> dict[str, object]:
+    return {
+        "file": relative.as_posix(),
+        "schema": schema,
+        "rows": int(rows),
+        "sha256": _sha256_file(path),
+    }
+
+
+def _canonical_report_manifest(
+    *,
+    report_id: str,
+    inputs: Mapping[str, Mapping[str, str]],
+    tables: Mapping[str, pd.DataFrame],
+    root: Path,
+    configuration: Mapping[str, object],
+) -> dict[str, object]:
+    """Build the final finite JSON inventory after all bytes are on disk."""
+    table_inventory: dict[str, dict[str, object]] = {}
+    mirror_inventory: dict[str, dict[str, object]] = {}
+    for stem in sorted(CANONICAL_REPORT_TABLE_SCHEMAS):
+        table = tables[stem]
+        table_rel = Path("tables") / f"{stem}.parquet"
+        table_inventory[stem] = _report_manifest_entry(
+            path=root / table_rel,
+            relative=table_rel,
+            schema=CANONICAL_REPORT_TABLE_SCHEMAS[stem],
+            rows=len(table),
+        )
+        for locale, suffix in (("en-US", ".csv"), ("de-DE", "_de.csv")):
+            mirror_rel = Path("mirrors") / f"{stem}{suffix}"
+            mirror_inventory[mirror_rel.name] = {
+                **_report_manifest_entry(
+                    path=root / mirror_rel,
+                    relative=mirror_rel,
+                    schema=CANONICAL_REPORT_TABLE_SCHEMAS[stem],
+                    rows=len(table),
+                ),
+                "locale": locale,
+                "source_table": stem,
+            }
+    return {
+        "schema": CANONICAL_REPORTS_SCHEMA,
+        "completed": True,
+        "producer": REPORT_TABLE_OWNER,
+        "report_id": report_id,
+        "input_manifests": {key: dict(value) for key, value in sorted(inputs.items())},
+        "configuration": dict(configuration),
+        "tables": table_inventory,
+        "mirrors": mirror_inventory,
+    }
+
+
+def _validate_report_manifest_inputs(
+    manifest: Mapping[str, object],
+    *,
+    factor_input: VerifiedFactorRun | None,
+    sjm_input: VerifiedReportInput | None,
+    market_input: VerifiedReportInput | None,
+) -> None:
+    inputs = manifest.get("input_manifests")
+    if not isinstance(inputs, Mapping) or set(inputs) != {
+        "factor_run",
+        "sjm_run",
+        "market_snapshot",
+    }:
+        raise ValueError("canonical report manifest must pin Factor, SJM, and market inputs")
+    expected = None
+    provided = (factor_input, sjm_input, market_input)
+    if any(item is not None for item in provided):
+        if not all(item is not None for item in provided):
+            raise ValueError("canonical report input validation requires Factor, SJM, and market inputs together")
+        assert factor_input is not None and sjm_input is not None and market_input is not None
+        expected = _canonical_report_input_manifests(
+            factor_input, sjm_input, market_input
+        )
+    for role, identity_key in (
+        ("factor_run", "run_id"),
+        ("sjm_run", "run_id"),
+        ("market_snapshot", "snapshot_id"),
+    ):
+        entry = inputs[role]
+        if not isinstance(entry, Mapping):
+            raise ValueError(f"canonical report input {role!r} must be an object")
+        _pinned_identity(f"input_manifests.{role}.{identity_key}", entry.get(identity_key))
+        _pinned_sha256(
+            f"input_manifests.{role}.manifest_sha256", entry.get("manifest_sha256")
+        )
+        if expected is not None and dict(entry) != expected[role]:
+            raise ValueError(
+                f"canonical report input {role!r} diverges from the validated producer manifest"
+            )
+
+
+def _validate_report_table_rows(table: pd.DataFrame, *, stem: str) -> None:
+    """Run the row gate for every report-schema row persisted in a table."""
+    if table.empty or not isinstance(table.index, pd.RangeIndex):
+        raise ValueError(f"{stem}: canonical table must be non-empty and flat")
+    if "schema" not in table.columns:
+        return  # Markowitz moments/frontiers carry their own fixed tabular schemas.
+    known_report_schemas = {
+        READER_SCHEMA,
+        LEGACY_SCHEMA,
+        DIFFERENTIAL_SCHEMA,
+        ATTRIBUTION_SCHEMA,
+        CRISIS_SCHEMA,
+        MONTHLY_SCHEMA,
+    }
+    for row in table.to_dict(orient="records"):
+        if row.get("schema") in known_report_schemas:
+            # Mixed report-schema DataFrames use NaN padding for fields that do
+            # not belong to a given row schema.  The row contract is expressed
+            # over the row's present fields, not over DataFrame storage padding.
+            # Keep zero/False/empty text intact — only scalar missing values are
+            # projections to omit before re-running the emission gate.
+            unpadded = {
+                key: value
+                for key, value in row.items()
+                if value is not None
+                and not (
+                    not isinstance(value, (str, bytes))
+                    and bool(pd.isna(value))
+                )
+            }
+            validate_report_row(unpadded)
+
+
+def validate_canonical_report_bundle(
+    root: Path | str,
+    *,
+    factor_input: VerifiedFactorRun | None = None,
+    sjm_input: VerifiedReportInput | None = None,
+    market_input: VerifiedReportInput | None = None,
+) -> Mapping[str, object]:
+    """Read-only integrity verification for a complete report family.
+
+    The verifier rejects incomplete roots, stale/mutated tables or mirrors,
+    traversal-shaped inventory paths, a marker that does not bind the final
+    manifest, and any extra output file.  Passing the three validated producer
+    inputs additionally proves the report's exact Factor/SJM/market lineage.
+    """
+    root = Path(root)
+    if not root.is_dir():
+        raise ValueError(f"canonical report root is absent or not a directory: {root}")
+    manifest_path = root / "manifest.json"
+    marker_path = root / "COMPLETED"
+    if not manifest_path.is_file() or not marker_path.is_file():
+        raise ValueError("canonical report root is incomplete: manifest.json and COMPLETED are required")
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{manifest_path}: canonical report manifest is invalid JSON") from exc
+    if not isinstance(manifest, dict):
+        raise ValueError("canonical report manifest must be a JSON object")
+    if manifest.get("schema") != CANONICAL_REPORTS_SCHEMA:
+        raise ValueError(
+            f"canonical report manifest schema must be {CANONICAL_REPORTS_SCHEMA!r}"
+        )
+    if manifest.get("completed") is not True:
+        raise ValueError("canonical report manifest must declare completed=true")
+    if manifest.get("producer") != REPORT_TABLE_OWNER:
+        raise ValueError("canonical report manifest producer is not the report-table owner")
+    _pinned_identity("report_id", manifest.get("report_id"))
+    _validate_report_manifest_inputs(
+        manifest,
+        factor_input=factor_input,
+        sjm_input=sjm_input,
+        market_input=market_input,
+    )
+
+    expected_stems = set(CANONICAL_REPORT_TABLE_SCHEMAS)
+    tables = manifest.get("tables")
+    if not isinstance(tables, Mapping) or set(tables) != expected_stems:
+        raise ValueError(
+            "canonical report manifest table inventory must contain the complete required report family"
+        )
+    mirrors = manifest.get("mirrors")
+    expected_mirror_names = {
+        f"{stem}{suffix}"
+        for stem in expected_stems
+        for suffix in (".csv", "_de.csv")
+    }
+    if not isinstance(mirrors, Mapping) or set(mirrors) != expected_mirror_names:
+        raise ValueError(
+            "canonical report manifest mirror inventory must contain both locale files for every table"
+        )
+
+    mirror_exporter = None
+    loaded_tables: dict[str, pd.DataFrame] = {}
+    expected_table_files: set[Path] = set()
+    expected_mirror_files: set[Path] = set()
+    for stem in sorted(expected_stems):
+        entry = tables[stem]
+        if not isinstance(entry, Mapping):
+            raise ValueError(f"{stem}: table inventory entry must be an object")
+        relative = _safe_report_relative_path(entry.get("file"), directory="tables")
+        expected_relative = Path("tables") / f"{stem}.parquet"
+        if relative != expected_relative:
+            raise ValueError(f"{stem}: table inventory path must be {expected_relative.as_posix()!r}")
+        if entry.get("schema") != CANONICAL_REPORT_TABLE_SCHEMAS[stem]:
+            raise ValueError(f"{stem}: table inventory schema diverges from the canonical contract")
+        rows = entry.get("rows")
+        if isinstance(rows, bool) or not isinstance(rows, int) or rows < 1:
+            raise ValueError(f"{stem}: table inventory rows must be a positive integer")
+        digest = entry.get("sha256")
+        _pinned_sha256(f"tables.{stem}.sha256", digest)
+        path = root / relative
+        if not path.is_file() or _sha256_file(path) != digest:
+            raise ValueError(f"{stem}: canonical table is missing or mutated after inventory")
+        table = pd.read_parquet(path)
+        if len(table) != rows:
+            raise ValueError(f"{stem}: table row count diverges from its inventory")
+        _validate_report_table_rows(table, stem=stem)
+        loaded_tables[stem] = table
+        expected_table_files.add(relative)
+
+        for locale, suffix in (("en-US", ".csv"), ("de-DE", "_de.csv")):
+            name = f"{stem}{suffix}"
+            mirror = mirrors[name]
+            if not isinstance(mirror, Mapping):
+                raise ValueError(f"{name}: mirror inventory entry must be an object")
+            relative = _safe_report_relative_path(mirror.get("file"), directory="mirrors")
+            expected_relative = Path("mirrors") / name
+            if relative != expected_relative:
+                raise ValueError(f"{name}: mirror inventory path is not canonical")
+            if (
+                mirror.get("schema") != CANONICAL_REPORT_TABLE_SCHEMAS[stem]
+                or mirror.get("source_table") != stem
+                or mirror.get("locale") != locale
+                or mirror.get("rows") != rows
+            ):
+                raise ValueError(f"{name}: mirror inventory metadata diverges from its canonical table")
+            digest = mirror.get("sha256")
+            _pinned_sha256(f"mirrors.{name}.sha256", digest)
+            path = root / relative
+            if not path.is_file() or _sha256_file(path) != digest:
+                raise ValueError(f"{name}: locale mirror is missing or mutated after inventory")
+            if mirror_exporter is None:
+                try:
+                    from scripts import export_csv_mirrors as mirror_exporter
+                except ImportError:
+                    import export_csv_mirrors as mirror_exporter
+            mirror_exporter.verify_mirror_round_trip(
+                table, path, locale=locale
+            )
+            expected_mirror_files.add(relative)
+
+    table_files = {
+        Path("tables") / path.name
+        for path in (root / "tables").iterdir()
+        if path.is_file()
+    } if (root / "tables").is_dir() else set()
+    mirror_files = {
+        Path("mirrors") / path.name
+        for path in (root / "mirrors").iterdir()
+        if path.is_file()
+    } if (root / "mirrors").is_dir() else set()
+    if table_files != expected_table_files or mirror_files != expected_mirror_files:
+        raise ValueError("canonical report root contains missing or unmanifested table/mirror output")
+    expected_root_names = {"manifest.json", "COMPLETED", "tables", "mirrors"}
+    actual_root_names = {path.name for path in root.iterdir()}
+    if actual_root_names != expected_root_names:
+        raise ValueError("canonical report root contains an unmanifested or missing top-level output")
+    marker_lines = marker_path.read_text().splitlines()
+    expected_marker = f"manifest_sha256={_sha256_file(manifest_path)}"
+    if marker_lines != [expected_marker]:
+        raise ValueError("canonical report COMPLETED marker does not bind the final manifest")
+    return manifest
+
+
+def load_completed_canonical_report_bundle(
+    root: Path | str,
+    *,
+    factor_input: VerifiedFactorRun | None = None,
+    sjm_input: VerifiedReportInput | None = None,
+    market_input: VerifiedReportInput | None = None,
+) -> CanonicalReportBundle:
+    """Validate and load every table in a completed canonical report root."""
+    root = Path(root)
+    manifest = validate_canonical_report_bundle(
+        root,
+        factor_input=factor_input,
+        sjm_input=sjm_input,
+        market_input=market_input,
+    )
+    tables = {
+        stem: pd.read_parquet(root / str(entry["file"]))
+        for stem, entry in sorted(manifest["tables"].items())
+    }
+    return CanonicalReportBundle(root=root, manifest=manifest, tables=tables)
+
+
+def materialize_canonical_report_bundle(
+    factor_input: VerifiedFactorRun,
+    sjm_input: VerifiedReportInput,
+    market_input: VerifiedReportInput,
+    *,
+    destination: Path | str,
+    static_windows: Sequence[StaticWindowSpec] = DEFAULT_STATIC_WINDOW_SPECS,
+    trio_static_window: StaticWindowSpec | None = None,
+    markowitz_10y_start: str | pd.Timestamp = MARKOWITZ_10Y_START,
+    markowitz_end: str | pd.Timestamp = MARKOWITZ_REPORT_END,
+    markowitz_n_points: int = 60,
+    ssr_settings: Mapping[str, object] | None = None,
+) -> CanonicalReportBundle:
+    """Materialize the complete current report family from validated inputs only.
+
+    No old report table is read or copied and no network acquisition occurs.
+    The destination must be absent or empty.  All canonical Parquet tables and
+    locale mirrors are fully written and verified before the final manifest is
+    emitted; ``COMPLETED`` is the final filesystem mutation.  Failure therefore
+    leaves a diagnosable but non-consumable root, and any retry needs a new
+    destination rather than overwriting it.
+    """
+    if not isinstance(factor_input, VerifiedFactorRun):
+        raise TypeError("factor_input must come from load_factor_report_input")
+    _require_family(sjm_input, "sjm_run")
+    _require_family(market_input, "market_snapshot")
+    destination = Path(destination)
+    _require_new_report_destination(destination)
+    if not static_windows:
+        raise ValueError("static_windows must contain at least one explicit window")
+    static_windows = tuple(static_windows)
+    if not all(isinstance(window, StaticWindowSpec) for window in static_windows):
+        raise TypeError("static_windows must contain StaticWindowSpec values")
+    if len({(window.label, window.start, window.end) for window in static_windows}) != len(static_windows):
+        raise ValueError("static_windows must not contain duplicate window identities")
+    markowitz_start = pd.Timestamp(markowitz_10y_start)
+    markowitz_end = pd.Timestamp(markowitz_end)
+    if markowitz_start > markowitz_end:
+        raise ValueError("markowitz_10y_start must be on or before markowitz_end")
+    if isinstance(markowitz_n_points, bool) or not isinstance(markowitz_n_points, int) or markowitz_n_points < 2:
+        raise ValueError("markowitz_n_points must be an integer of at least two")
+
+    # Re-run the completed-manifest gates before there is any output directory.
+    # They verify the current bytes, marker, source inventory, and lineage; typed
+    # instances alone are deliberately insufficient after a caller has loaded them.
+    factor_input = load_factor_report_input(
+        factor_input.run_dir,
+        run_id=factor_input.run_id,
+        manifest_sha256=factor_input.manifest_sha256,
+    )
+    sjm_input = load_sjm_report_input(
+        sjm_input.run_dir,
+        run_id=sjm_input.identity,
+        manifest_sha256=sjm_input.manifest_sha256,
+    )
+    market_input = load_market_report_input(
+        market_input.run_dir,
+        snapshot_id=market_input.identity,
+        manifest_sha256=market_input.manifest_sha256,
+    )
+    markowitz_input = load_markowitz_report_input(
+        market_input.run_dir,
+        snapshot_id=market_input.identity,
+        manifest_sha256=market_input.manifest_sha256,
+    )
+
+    inputs = _canonical_report_input_manifests(factor_input, sjm_input, market_input)
+    factor_reports = build_factor_report_tables(factor_input)
+    auxiliary_reports = build_auxiliary_report_tables(factor_input)
+    factor_row = _factor_pit_reader_row(factor_input)
+    common_start = pd.Timestamp(factor_row["start"])
+    common_static = trio_static_window or _factor_window_static_spec(
+        market_input, factor_row
+    )
+    sjm_reports = build_sjm_report_tables(
+        sjm_input,
+        market_input,
+        performance_start=common_start,
+        ssr_settings=ssr_settings,
+    )
+    trio_reports = build_trio_report_tables(
+        factor_input,
+        sjm_reports,
+        market_input,
+        static_windows=static_windows,
+        trio_static_window=common_static,
+        ssr_settings=ssr_settings,
+    )
+    max_start = markowitz_max_supported_start(
+        markowitz_input, requested_end=markowitz_end
+    )
+    markowitz_reports = build_markowitz_report_tables(
+        markowitz_input,
+        requested_windows={
+            "10y": (markowitz_start, markowitz_end),
+            "max": (max_start, markowitz_end),
+        },
+        trio_rows={
+            "10y": _panel_rows_for_markowitz_window(
+                factor_input,
+                sjm_input,
+                market_input,
+                name="10y",
+                start=markowitz_start,
+                end=markowitz_end,
+                ssr_settings=ssr_settings,
+            ),
+            "max": _panel_rows_for_markowitz_window(
+                factor_input,
+                sjm_input,
+                market_input,
+                name="max",
+                start=max_start,
+                end=markowitz_end,
+                ssr_settings=ssr_settings,
+            ),
+        },
+        n_points=markowitz_n_points,
+    )
+    tables = (
+        dict(factor_reports.tables)
+        | dict(auxiliary_reports.tables)
+        | dict(sjm_reports.tables)
+        | dict(trio_reports.tables)
+        | dict(markowitz_reports.tables)
+    )
+    if set(tables) != set(CANONICAL_REPORT_TABLE_SCHEMAS):
+        raise ValueError(
+            "complete canonical report assembly did not produce the required report-table catalog"
+        )
+    canonical_tables = {
+        stem: parquet_safe_report_table(tables[stem].reset_index(drop=True))
+        for stem in sorted(tables)
+    }
+    for stem, table in canonical_tables.items():
+        _validate_report_table_rows(table, stem=stem)
+
+    # Write every data table first, then pure locale projections, then the final
+    # manifest, and finally the completion marker.  No operation follows marker
+    # creation except the caller receiving the fully validated result.
+    destination.mkdir(parents=True, exist_ok=True)
+    tables_dir = destination / "tables"
+    tables_dir.mkdir()
+    for stem, table in canonical_tables.items():
+        table.to_parquet(tables_dir / f"{stem}.parquet", index=False)
+    try:
+        from scripts import export_csv_mirrors as mirror_exporter
+    except ImportError:
+        import export_csv_mirrors as mirror_exporter
+    mirror_exporter.write_locale_mirrors(canonical_tables, destination / "mirrors")
+    configuration = {
+        "static_windows": [
+            {
+                "label": window.label,
+                "start": window.start.date().isoformat(),
+                "end": window.end.date().isoformat(),
+            }
+            for window in static_windows
+        ],
+        "trio_static_window": {
+            "label": common_static.label,
+            "start": common_static.start.date().isoformat(),
+            "end": common_static.end.date().isoformat(),
+        },
+        "markowitz": {
+            "10y_requested_start": markowitz_start.date().isoformat(),
+            "requested_end": markowitz_end.date().isoformat(),
+            "max_requested_start": max_start.date().isoformat(),
+            "frontier_points": markowitz_n_points,
+        },
+        "ssr_settings": {
+            **_merged_ssr_settings(ssr_settings),
+            "periods_per_year": 252,
+        },
+    }
+    manifest = _canonical_report_manifest(
+        report_id=destination.name,
+        inputs=inputs,
+        tables=canonical_tables,
+        root=destination,
+        configuration=configuration,
+    )
+    manifest_path = destination / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
+    )
+    (destination / "COMPLETED").write_text(
+        f"manifest_sha256={_sha256_file(manifest_path)}\n"
+    )
+    verified = validate_canonical_report_bundle(
+        destination,
+        factor_input=factor_input,
+        sjm_input=sjm_input,
+        market_input=market_input,
+    )
+    return CanonicalReportBundle(destination, verified, canonical_tables)
 
 
 if __name__ == "__main__":

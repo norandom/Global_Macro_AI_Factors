@@ -717,14 +717,16 @@ def test_drawdown_arming_is_lagged_and_signal_cadence_frozen() -> None:
 # --------------------------------------------------------------------------- #
 
 
-_SEL_INDEX = pd.bdate_range("2024-05-01", "2024-07-31")
-_SEL_ANCHOR = pd.Timestamp("2024-04-30")
+_SEL_INDEX = pd.bdate_range("2019-01-02", "2024-07-31")
+_SEL_ANCHOR = pd.Timestamp("2019-01-01")
 
 
 def _sel_path(dev_daily: float, dip: float, holdout_daily: float = 0.001) -> pd.Series:
-    """Constant dev-window daily returns with ONE controlled dip on 2024-05-15
-    (dev position 10); constant holdout returns strictly after 2024-06-30."""
-    dev_mask = _SEL_INDEX <= pd.Timestamp("2024-06-30")
+    """Constant returns with one development dip and a holdout-only tail."""
+    protocol = sjm.make_sjm_selection_protocol()
+    dev_mask = (
+        (_SEL_INDEX >= protocol.dev_start) & (_SEL_INDEX <= protocol.dev_end)
+    )
     values = np.where(dev_mask, dev_daily, holdout_daily).astype(float)
     values[np.flatnonzero(dev_mask)[10]] = dip
     return pd.Series(values, index=_SEL_INDEX)
@@ -760,7 +762,7 @@ def test_replay_visits_frozen_registry_order_and_repeats_identically() -> None:
     paths = {_cfg_key(protocol.seed_config): _sel_path(0.004, -0.02)}
     evaluator = _sel_evaluator(paths, default=_sel_path(0.004, -0.03))
 
-    kwargs = dict(factor_returns=factor, control_returns=control, anchor=_SEL_ANCHOR)
+    kwargs = dict(factor_returns=factor, control_returns=control)
     first = sjm.select_sjm_config(protocol, evaluator, **kwargs)
     second = sjm.select_sjm_config(protocol, evaluator, **kwargs)
 
@@ -817,7 +819,6 @@ def test_dev_gates_enforce_cagr_budget_and_control_maxdd_before_adoption() -> No
         _sel_evaluator(paths, default=_sel_path(0.004, -0.03)),
         factor_returns=factor,
         control_returns=control,
-        anchor=_SEL_ANCHOR,
     )
 
     seed_row, budget_row, maxdd_row, keep_row = result.ledger[:4]
@@ -852,14 +853,19 @@ def test_dev_gates_enforce_cagr_budget_and_control_maxdd_before_adoption() -> No
         assert entry.decision == "REVERT"
     assert len(result.ledger) == 16  # dry stop after dry_rounds=12 consecutive reverts
 
-    # gate baselines: uncapped Factor dev CAGR and the derisk_cash_pin dev maxDD
-    dev = factor.loc[factor.index <= protocol.dev_end]
+    # gate baselines use only the selected dev window and its local session anchor.
+    dev = factor.loc[
+        (factor.index >= protocol.dev_start) & (factor.index <= protocol.dev_end)
+    ]
     growth = float(np.prod(1.0 + dev.to_numpy()))
-    years = (dev.index[-1] - _SEL_ANCHOR).days / 365.25
+    local_anchor = factor.index[factor.index.get_loc(dev.index[0]) - 1]
+    years = (dev.index[-1] - local_anchor).days / 365.25
     assert result.baselines["factor_dev_cagr"] == pytest.approx(
         growth ** (1 / years) - 1, rel=1e-12
     )
     assert result.baselines["control_dev_maxdd"] == pytest.approx(-0.04, rel=1e-9)
+    assert result.dev_start == protocol.dev_start
+    assert result.dev_end == protocol.dev_end
     assert result.protocol_sha256 == protocol.protocol_sha256
 
 
@@ -880,7 +886,6 @@ def test_selection_never_restores_the_previous_winner_and_ignores_holdout_glory(
         _sel_evaluator(paths, default=_sel_path(0.004, -0.03, holdout_daily=0.0)),
         factor_returns=_sel_path(0.004, -0.019),
         control_returns=_sel_path(0.003, -0.04),
-        anchor=_SEL_ANCHOR,
     )
 
     v2_row = next(e for e in result.ledger if e.mutation == w126)
@@ -914,20 +919,82 @@ def test_changing_holdout_only_values_cannot_change_selection() -> None:
         _sel_evaluator(paths, default),
         factor_returns=factor,
         control_returns=control,
-        anchor=_SEL_ANCHOR,
     )
     poisoned = sjm.select_sjm_config(
         protocol,
         _sel_evaluator({key: poison(path) for key, path in paths.items()}, poison(default)),
         factor_returns=poison(factor),
         control_returns=poison(control),
-        anchor=_SEL_ANCHOR,
     )
 
     assert poisoned.ledger_sha256 == baseline.ledger_sha256
     assert poisoned.selected_config == baseline.selected_config
     assert dict(poisoned.baselines) == dict(baseline.baselines)
     assert [e.decision for e in poisoned.ledger] == [e.decision for e in baseline.ledger]
+
+
+def test_selection_is_invariant_to_predev_and_holdout_perturbations() -> None:
+    """Only protocol.dev_start through protocol.dev_end may affect selection."""
+    protocol = sjm.make_sjm_selection_protocol()
+    seed = protocol.seed_config
+    winner = sjm.apply_sjm_mutation(seed, _registry_mutation(protocol, "window", 126))
+    paths = {
+        _cfg_key(seed): _sel_path(0.004, -0.02),
+        _cfg_key(winner): _sel_path(0.004, -0.01),
+    }
+    default = _sel_path(0.004, -0.03)
+    factor = _sel_path(0.004, -0.019)
+    control = _sel_path(0.003, -0.04)
+
+    def perturb_outside_development(series: pd.Series) -> pd.Series:
+        out = series.copy()
+        outside = (out.index < protocol.dev_start) | (out.index > protocol.dev_end)
+        out.loc[outside] = -0.35
+        return out
+
+    baseline = sjm.select_sjm_config(
+        protocol,
+        _sel_evaluator(paths, default),
+        factor_returns=factor,
+        control_returns=control,
+    )
+    perturbed = sjm.select_sjm_config(
+        protocol,
+        _sel_evaluator(
+            {key: perturb_outside_development(value) for key, value in paths.items()},
+            perturb_outside_development(default),
+        ),
+        factor_returns=perturb_outside_development(factor),
+        control_returns=perturb_outside_development(control),
+    )
+
+    assert perturbed.ledger_sha256 == baseline.ledger_sha256
+    assert perturbed.selected_config == baseline.selected_config
+    assert dict(perturbed.baselines) == dict(baseline.baselines)
+
+
+def test_development_metrics_use_the_immediately_preceding_return_session() -> None:
+    """The local session before dev_start anchors CAGR; no such session is fatal."""
+    index = pd.DatetimeIndex(["2019-01-02", "2019-01-03", "2019-01-07"])
+    returns = pd.Series([0.75, 0.10, 0.10], index=index)
+
+    metrics = sjm.development_metrics(
+        returns,
+        dev_start=pd.Timestamp("2019-01-03"),
+        dev_end=pd.Timestamp("2019-01-07"),
+        name="candidate",
+    )
+    expected_cagr = (1.10 * 1.10) ** (365.25 / 5) - 1.0
+    assert metrics["dev_n_obs"] == 2
+    assert metrics["dev_cagr"] == pytest.approx(expected_cagr, rel=1e-12)
+
+    with pytest.raises(ValueError, match="no preceding return session"):
+        sjm.development_metrics(
+            returns.iloc[1:],
+            dev_start=pd.Timestamp("2019-01-03"),
+            dev_end=pd.Timestamp("2019-01-07"),
+            name="candidate",
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -960,20 +1027,19 @@ def _sjm_build_context(sjm_completed_case, output_root: Path):
     inputs = sjm.load_sjm_inputs(factor_dir, snapshot_dir, **expected)
     protocol = inputs.protocol
     ridx = inputs.factor_returns.index
-    anchor = inputs.factor_value.index[0]
+    selection_index = ridx.insert(0, protocol.dev_start - pd.Timedelta(days=1))
     winner = sjm.apply_sjm_mutation(
         protocol.seed_config, _registry_mutation(protocol, "arm", -0.02)
     )
     paths = {
-        _cfg_key(protocol.seed_config): _run_series(ridx, -0.02),
-        _cfg_key(winner): _run_series(ridx, -0.01),
+        _cfg_key(protocol.seed_config): _run_series(selection_index, -0.02),
+        _cfg_key(winner): _run_series(selection_index, -0.01),
     }
     selection = sjm.select_sjm_config(
         protocol,
-        _sel_evaluator(paths, default=_run_series(ridx, -0.03)),
-        factor_returns=_run_series(ridx, -0.019),
-        control_returns=_run_series(ridx, -0.04),
-        anchor=anchor,
+        _sel_evaluator(paths, default=_run_series(selection_index, -0.03)),
+        factor_returns=_run_series(selection_index, -0.019),
+        control_returns=_run_series(selection_index, -0.04),
     )
     assert selection.selected_config == winner  # the drawdown-armed corrected winner
     n = len(ridx)
@@ -1032,6 +1098,8 @@ def test_sjm_run_assembly_persists_the_complete_immutable_run(
     assert manifest["completed"] is True
     assert manifest["selected_config"]["arm"] == -0.02
     assert manifest["protocol"]["protocol_sha256"] == inputs.protocol.protocol_sha256
+    assert manifest["protocol"]["dev_start"] == inputs.protocol.dev_start.date().isoformat()
+    assert manifest["protocol"]["dev_end"] == inputs.protocol.dev_end.date().isoformat()
     assert manifest["protocol"]["limit_table_sha256"] == inputs.protocol.limit_table_sha256
     assert (
         manifest["protocol"]["mutation_registry_sha256"]
@@ -1141,6 +1209,15 @@ def test_one_validator_proves_hash_protocol_config_equation_and_reconstruction(
     with pytest.raises(ValueError, match="frozen SJM selection protocol"):
         sjm.validate_sjm_run(case)
 
+    # protocol: a re-signed manifest must retain the declared development start.
+    case = tampered("protocol_dev_start")
+    _resign_sjm_run(
+        case,
+        lambda m: m["protocol"].__setitem__("dev_start", "2019-01-04"),
+    )
+    with pytest.raises(ValueError, match="protocol dev_start"):
+        sjm.validate_sjm_run(case)
+
     # configuration: manifest selected_config must equal the ledger's last KEEP
     case = tampered("config")
     _resign_sjm_run(case, lambda m: m["selected_config"].__setitem__("window", 126))
@@ -1198,6 +1275,38 @@ def test_sjm_staging_refuses_completed_overwrite_and_incomplete_reuse(
 
     fresh = build("sjm_crowding_v3_case_fresh")
     assert sjm.validate_sjm_run(fresh)["completed"] is True
+
+
+def test_wide_signal_source_manifest_blocks_panel_drift(tmp_path) -> None:
+    index = pd.bdate_range("2013-01-02", periods=630)
+    panel = pd.DataFrame(
+        {
+            "SWDA.L": 100.0 * np.cumprod(np.full(len(index), 1.0002)),
+            **{
+                f"ETF_{column:03d}": 50.0 * np.cumprod(
+                    np.full(len(index), 1.0 + (column + 1) * 1e-6)
+                )
+                for column in range(99)
+            },
+        },
+        index=index,
+    )
+    panel_path = tmp_path / "etf_prices_wide_2013_2026.parquet"
+    panel.to_parquet(panel_path)
+    source_dir = tmp_path / "signal_source"
+
+    manifest_path = sjm.write_sjm_signal_source_manifest(
+        panel_path, output_dir=source_dir, build_time="2026-07-30T12:30:00+00:00"
+    )
+    loaded = sjm.load_sjm_signal_source(panel_path, manifest_path=manifest_path)
+    assert loaded.panel_path == panel_path
+    assert loaded.manifest["schema"] == "sjm_signal_source.v1"
+    assert loaded.panel.shape == (630, 100)
+
+    panel.iloc[-1, 0] *= 1.01
+    panel.to_parquet(panel_path)
+    with pytest.raises(ValueError, match="does not match the panel bytes"):
+        sjm.load_sjm_signal_source(panel_path, manifest_path=manifest_path)
 
 
 def test_injected_late_failure_cannot_be_consumed_as_a_valid_run(

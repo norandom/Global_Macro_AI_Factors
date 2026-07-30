@@ -28,6 +28,7 @@ implements exactly that and is the single verdict authority for the repo
 from __future__ import annotations
 
 from dataclasses import dataclass
+from numbers import Integral, Real
 
 import numpy as np
 import pandas as pd
@@ -83,10 +84,25 @@ class SSRResult:
 
 
 def compute_ssr(returns: pd.Series, window: int = TRADING_DAYS, sr_star: float = 0.0) -> SSRResult:
+    """Point estimate ONLY — the SSR effect size and its inputs, no verdict.
+
+    SSR measures, inference decides: sigma_HAC is the long-run volatility of the
+    rolling-Sharpe PATH, not a standard error (no sqrt(n) anywhere), so this
+    number has no critical value and must never be thresholded or ranked on.
+    Any stable/luck-compatible claim comes from ``ssr_inference``'s MBB p-value.
+    """
     r = returns.dropna()
     rolling = rolling_sharpe(r, window=window)
     if len(rolling) < 10:
-        return SSRResult(len(r), len(rolling), np.nan, np.nan, np.nan, 0, np.nan)
+        return SSRResult(
+            n_obs=int(len(r)),
+            n_rolling=int(len(rolling)),
+            sr_full=np.nan,
+            mean_rolling_sr=np.nan,
+            sigma_hac=np.nan,
+            L_hac=0,
+            ssr=np.nan,
+        )
     z = rolling.to_numpy()
     z_bar = float(z.mean())
     sigma2, L = newey_west_var(z)
@@ -164,10 +180,16 @@ def _rolling_sharpe_np(r: np.ndarray, window: int) -> np.ndarray:
 class SSRInference:
     """SSR point estimates plus the paper's one-sided MBB p-value (Test 1).
 
+    SSR measures, inference decides. The bare SSR is an effect size — "how far
+    above the benchmark sits the mean rolling Sharpe, in units of the path's own
+    long-run volatility" — with no sampling distribution attached, so a verdict
+    needs a null: the MBB resamples the observed RETURNS in dependence-preserving
+    blocks and rebuilds the whole rolling-Sharpe -> SSR pipeline per replicate.
     ``stable`` is the verdict bit: p < alpha AND mean rolling Sharpe above the
     benchmark. ``verdict(differential=...)`` renders the repo's single canonical
     verdict string — every tear sheet / luck-vs-skill table / gate must use it
-    rather than re-encoding a rule."""
+    rather than re-encoding a rule. The bundled settings (window, n_boot, seed,
+    alpha, block_len) make every verdict reproducible (R2.8)."""
 
     result: SSRResult
     sr_star: float
@@ -180,6 +202,8 @@ class SSRInference:
     #: UPWARD, so without this a decisively negative sample is indistinguishable
     #: from a genuinely inconclusive one and both render as "luck-compatible".
     p_value_lower: float = float("nan")
+    window: int = TRADING_DAYS
+    periods_per_year: int = TRADING_DAYS
 
     @property
     def stable(self) -> bool:
@@ -228,6 +252,54 @@ class SSRInference:
                 + (", not skill" if differential else ""))
 
 
+def _finite_real(name: str, value: Real) -> float:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a finite real number")
+    normalized = float(value)
+    if not np.isfinite(normalized):
+        raise ValueError(f"{name} must be a finite real number")
+    return normalized
+
+
+def _positive_int(name: str, value: Integral, *, minimum: int) -> int:
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral):
+        raise ValueError(f"{name} must be an integer >= {minimum}")
+    normalized = int(value)
+    if normalized < minimum:
+        raise ValueError(f"{name} must be an integer >= {minimum}")
+    return normalized
+
+
+def _validate_returns(returns: pd.Series) -> None:
+    if not isinstance(returns, pd.Series):
+        raise ValueError("returns must be a pandas Series")
+    if returns.empty:
+        raise ValueError("returns index must be non-empty")
+    index = returns.index
+    if isinstance(index, pd.MultiIndex):
+        raise ValueError("returns index must be one-dimensional")
+    if index.hasnans:
+        raise ValueError("returns index must not contain missing labels")
+    if index.has_duplicates:
+        raise ValueError("returns index must be unique")
+    if not index.is_monotonic_increasing:
+        raise ValueError("returns index must be strictly increasing")
+    if isinstance(index, pd.DatetimeIndex) and index.tz is not None:
+        raise ValueError("returns index must be timezone-naive")
+    if (
+        not pd.api.types.is_numeric_dtype(returns.dtype)
+        or pd.api.types.is_bool_dtype(returns.dtype)
+        or pd.api.types.is_complex_dtype(returns.dtype)
+    ):
+        raise ValueError("returns values must be finite real numeric values")
+    try:
+        values = returns.to_numpy(dtype=np.float64)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("returns values must be finite real numeric values") from exc
+    if not np.isfinite(values).all():
+        raise ValueError("returns values must be finite")
+
+
 def ssr_inference(
     returns: pd.Series,
     *,
@@ -247,10 +319,32 @@ def ssr_inference(
     stability (conservative). Measured size: 5.2 % (n=1500) / 5.6 % (n=3900) under an
     iid null and 3.6 % under a GARCH null, at nominal 5 % (B=300, 250 reps); power 75 %
     against a true annual Sharpe of 1.0 on 6y — evidence in docs/ssr_verdict_review.md."""
+    _validate_returns(returns)
+    window = _positive_int("window", window, minimum=2)
+    if window > len(returns):
+        raise ValueError(f"window={window} must not exceed returns length {len(returns)}")
+    n_boot = _positive_int("n_boot", n_boot, minimum=1)
+    seed = _positive_int("seed", seed, minimum=0)
+    sr_star = _finite_real("sr_star", sr_star)
+    alpha = _finite_real("alpha", alpha)
+    if not 0.0 < alpha < 1.0:
+        raise ValueError("alpha must be strictly between 0 and 1")
+
     res = compute_ssr(returns, window=window, sr_star=sr_star)
-    r = returns.dropna().to_numpy(dtype=np.float64)
-    if not np.isfinite(res.ssr) or len(r) < window + 10:
-        return SSRInference(res, sr_star, np.nan, 0, n_boot, seed, alpha)
+    r = returns.to_numpy(dtype=np.float64)
+    if not np.isfinite(res.ssr):
+        return SSRInference(
+            result=res,
+            sr_star=sr_star,
+            p_value=np.nan,
+            block_len=0,
+            n_boot=n_boot,
+            seed=seed,
+            alpha=alpha,
+            p_value_lower=np.nan,
+            window=window,
+            periods_per_year=TRADING_DAYS,
+        )
 
     block_len = politis_white_block_length(r)
     t = len(r)
@@ -281,4 +375,15 @@ def ssr_inference(
     # mirror tail (H0: mu_Z >= sr_star); undefined replicates again count against
     # rejection, so both tails stay conservative rather than summing to 1.
     p_lower = float((np.sum(draws[ok] >= 0.0) + n_bad + 1) / (n_boot + 1))
-    return SSRInference(res, sr_star, p, block_len, n_boot, seed, alpha, p_lower)
+    return SSRInference(
+        result=res,
+        sr_star=sr_star,
+        p_value=p,
+        block_len=block_len,
+        n_boot=n_boot,
+        seed=seed,
+        alpha=alpha,
+        p_value_lower=p_lower,
+        window=window,
+        periods_per_year=TRADING_DAYS,
+    )

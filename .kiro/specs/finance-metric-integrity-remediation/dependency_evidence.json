@@ -1,0 +1,127 @@
+{
+  "captured_at": "2026-07-28T10:34:39.164795+00:00",
+  "later_validation_commands": {
+    "root_focused": "uv run --frozen pytest -q tests/test_evaluation.py tests/test_skill_metric.py tests/test_ssr_inference.py tests/test_factor_loop.py tests/test_stream_ext2026.py tests/test_reporting.py tests/test_sjm_crowding.py tests/test_build_basket_long.py tests/test_markowitz.py tests/test_publication_artifacts.py",
+    "root_full": "uv run --frozen pytest -q",
+    "workbook": "uv run --project workbook --frozen --with pytest==9.1.1 python -m pytest -q workbook/tests"
+  },
+  "policy": {
+    "new_runtime_packages_added": [],
+    "resolution": "Declared packages already present in the respective pre-foundation lock; no new runtime package was introduced. 2026-07-28: recall-guard bumped v0.1.0 -> v0.2.0 in the root manifest/lock by explicit user direction (upstream release, no API change); root hashes re-captured. No other dependency changed; no new runtime package."
+  },
+  "python": {
+    "required": ">=3.12,<3.13",
+    "uv": "0.11.26",
+    "verified": "3.12.3"
+  },
+  "root": {
+    "direct_import_drift_reconciled": [
+      {
+        "evidence": [
+          "macro_framework/factor_scoring.py"
+        ],
+        "package": "joblib"
+      },
+      {
+        "evidence": [
+          "notebooks/15_2_tear_sheet_gallery.ipynb",
+          "notebooks/18_final_trio_dashboard.ipynb"
+        ],
+        "package": "matplotlib"
+      },
+      {
+        "evidence": [
+          "macro_framework/evaluation.py",
+          "macro_framework/skill_metric.py",
+          "macro_framework/ssr.py"
+        ],
+        "package": "numpy"
+      },
+      {
+        "evidence": [
+          "scripts/extend_stream_2026.py"
+        ],
+        "package": "requests"
+      },
+      {
+        "evidence": [
+          "macro_framework/factor_scoring.py"
+        ],
+        "package": "scikit-learn"
+      },
+      {
+        "evidence": [
+          "macro_framework/mc_regime.py",
+          "notebooks/18_3_trio_10y.ipynb"
+        ],
+        "package": "scipy"
+      },
+      {
+        "evidence": [
+          "scripts/build_basket_long.py",
+          "notebooks/18_4_trio_max_timeframe.ipynb"
+        ],
+        "package": "yfinance"
+      }
+    ],
+    "isolated_import_check": "uv run --isolated --frozen --project /home/mc/projects/Global_Macro_AI_Factors python -c '<root remediation imports>'",
+    "lock": "uv.lock",
+    "lock_check": "uv lock --check --project /home/mc/projects/Global_Macro_AI_Factors",
+    "lock_sha256": "545aae1c06de1236a354577c5e83e2d156a2b750b22f3b45a7de3e4af2f8d7e0",
+    "locked_versions": {
+      "joblib": "1.5.3",
+      "llvmlite": "0.43.0",
+      "matplotlib": "3.10.8",
+      "numba": "0.60.0",
+      "numpy": "2.0.2",
+      "pandas": "3.0.2",
+      "pyarrow": "23.0.1",
+      "requests": "2.33.1",
+      "scikit-learn": "1.8.0",
+      "scipy": "1.17.1",
+      "statsmodels": "0.14.6",
+      "vectorbt": "0.28.2",
+      "yfinance": "1.3.0",
+      "pytest-xdist": "3.8.0",
+      "execnet": "2.1.2"
+    },
+    "project": "pyproject.toml",
+    "project_sha256": "a340b64c706a834ecf158ceeafafdc764350b9e3a45d3f8080d7f11deb79c66a",
+    "result": "pass",
+    "dev_runtime_policy": {
+      "strict_markers": true,
+      "xdist": "pytest-xdist is available by explicit -n invocation; global addopts intentionally omits -n."
+    }
+  },
+  "schema": "finance_remediation.dependency_evidence.v1",
+  "workbook": {
+    "direct_import_drift_reconciled": [
+      {
+        "evidence": [
+          "workbook/factor_workbook/rederive.py",
+          "workbook/factor_workbook/vendored_ssr.py",
+          "workbook/factor_workbook/certification.py"
+        ],
+        "package": "numpy"
+      }
+    ],
+    "isolated_import_check": "uv run --isolated --frozen --project /home/mc/projects/Global_Macro_AI_Factors/workbook python -c '<workbook modules and pyxll stub>'",
+    "lock": "workbook/uv.lock",
+    "lock_check": "uv lock --check --project /home/mc/projects/Global_Macro_AI_Factors/workbook",
+    "lock_sha256": "9e03887559bb34c1ed63d9f4f9f28b92c097b5cdb272dab82030ded7136e99ce",
+    "lock_tracked": false,
+    "locked_versions": {
+      "numpy": "2.5.1",
+      "openpyxl": "3.1.5",
+      "pandas": "3.0.3",
+      "pyarrow": "24.0.0",
+      "pyxll": "5.12.3",
+      "requests": "2.34.2",
+      "scikit-learn": "1.9.0"
+    },
+    "project": "workbook/pyproject.toml",
+    "project_sha256": "7158010360ebc3f5dd91d8f66c37e8be32f69d53de32ebe50ab876ed7b5dc6dd",
+    "pyxll_stub_path": "isolated site-packages/pyxll/__init__.py",
+    "result": "pass"
+  }
+}

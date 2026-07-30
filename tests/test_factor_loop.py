@@ -171,13 +171,15 @@ def test_check_lookahead_passes_normal_cache_reusing_mutation():
     assert fl.check_lookahead(fl.Mutation("tau", "tau", 0.10, False)) is None
 
 
-def test_verify_passes_on_clean_oos_window():
+def test_ac_2_7():
     strat, fac = _synth_oos()
     res = fl.verify(
         fl.FactorConfig(), strat, fac,
+        cash_returns=pd.Series(0.0, index=strat.index),
         recall_premium=0.0,
         baseline_calmar=1.0, baseline_maxdd=-0.10,
         oos_calmar=2.0, oos_maxdd=-0.10,
+        gate_config=fl.GateConfig(ssr_alpha=0.10),
     )
     assert res.verdict.passed is True
     assert res.verdict.first_failure is None
@@ -185,10 +187,124 @@ def test_verify_passes_on_clean_oos_window():
     assert res.recall_premium == 0.0
 
 
+def test_verify_requires_cash_returns():
+    import inspect
+
+    assert inspect.signature(fl.verify).parameters["cash_returns"].default is inspect.Parameter.empty
+    strat, fac = _synth_oos()
+    with pytest.raises(TypeError, match="cash_returns"):
+        fl.verify(
+            fl.FactorConfig(), strat, fac,
+            recall_premium=0.0,
+            baseline_calmar=1.0, baseline_maxdd=-0.10,
+            oos_calmar=2.0, oos_maxdd=-0.10,
+        )
+
+
+def test_verify_rejects_misaligned_cash_before_ssr(monkeypatch):
+    strat, fac = _synth_oos()
+    cash = pd.Series(0.0, index=strat.index.shift(1, freq="B"))
+    monkeypatch.setattr(fl, "ssr_inference", lambda *args, **kwargs: pytest.fail("SSR called"))
+
+    with pytest.raises(ValueError, match="identical indexes"):
+        fl.verify(
+            fl.FactorConfig(), strat, fac,
+            cash_returns=cash,
+            recall_premium=0.0,
+            baseline_calmar=1.0, baseline_maxdd=-0.10,
+            oos_calmar=2.0, oos_maxdd=-0.10,
+        )
+
+
+def test_verify_passes_exact_cash_excess_returns_to_ssr(monkeypatch):
+    strat, fac = _synth_oos(n=20)
+    cash = pd.Series(np.linspace(0.00001, 0.00020, len(strat)), index=strat.index)
+    expected = strat - cash
+    captured = {"excess_calls": 0}
+    real_excess = fl.portfolio_excess_returns
+    fake_ssr = object()
+
+    def excess_spy(portfolio_returns, cash_returns):
+        captured["excess_calls"] += 1
+        return real_excess(portfolio_returns, cash_returns)
+
+    def residual_spy(portfolio_returns, factors):
+        pd.testing.assert_series_equal(portfolio_returns, strat)
+        pd.testing.assert_frame_equal(factors, fac)
+        return type("Residual", (), {"appraisal": 0.5})()
+
+    def ssr_spy(returns, **kwargs):
+        captured["ssr_returns"] = returns
+        captured["ssr_kwargs"] = kwargs
+        return fake_ssr
+
+    def gates_spy(residual, ssr, *args, config):
+        assert ssr is fake_ssr
+        return _pass_verdict()
+
+    monkeypatch.setattr(fl, "portfolio_excess_returns", excess_spy)
+    monkeypatch.setattr(fl, "basket_residual", residual_spy)
+    monkeypatch.setattr(fl, "ssr_inference", ssr_spy)
+    monkeypatch.setattr(fl, "evaluate_gates", gates_spy)
+
+    fl.verify(
+        fl.FactorConfig(), strat, fac,
+        cash_returns=cash,
+        recall_premium=0.0,
+        baseline_calmar=1.0, baseline_maxdd=-0.10,
+        oos_calmar=2.0, oos_maxdd=-0.10,
+    )
+
+    assert captured["excess_calls"] == 1
+    pd.testing.assert_series_equal(captured["ssr_returns"], expected)
+    assert captured["ssr_kwargs"] == {"alpha": 0.05}
+    assert not captured["ssr_returns"].equals(strat - 2 * cash)
+
+
+
+
+def test_verify_propagates_nondefault_ssr_alpha(monkeypatch):
+    strat, fac = _synth_oos(n=20)
+    cash = pd.Series(0.0, index=strat.index)
+    captured = {}
+
+    monkeypatch.setattr(
+        fl,
+        "basket_residual",
+        lambda *_: type("Residual", (), {"appraisal": 0.5})(),
+    )
+
+    def ssr_spy(returns, *, alpha):
+        captured["inference_alpha"] = alpha
+        return type("Inference", (), {"alpha": alpha})()
+
+    def gates_spy(residual, ssr, *args, config):
+        captured["gate_alpha"] = config.ssr_alpha
+        assert ssr.alpha == config.ssr_alpha
+        return _pass_verdict()
+
+    monkeypatch.setattr(fl, "ssr_inference", ssr_spy)
+    monkeypatch.setattr(fl, "evaluate_gates", gates_spy)
+    res = fl.verify(
+        fl.FactorConfig(), strat, fac,
+        cash_returns=cash,
+        recall_premium=0.0,
+        baseline_calmar=1.0, baseline_maxdd=-0.10,
+        oos_calmar=2.0, oos_maxdd=-0.10,
+        gate_config=fl.GateConfig(ssr_alpha=0.10),
+    )
+
+    assert res.verdict.passed is True
+    assert captured == {"inference_alpha": 0.10, "gate_alpha": 0.10}
+
+
+
+
 def test_verify_recall_gate_fails_on_large_premium():
     strat, fac = _synth_oos()
     res = fl.verify(
         fl.FactorConfig(), strat, fac,
+        cash_returns=pd.Series(0.0, index=strat.index),
         recall_premium=0.9,  # memorization premium far from zero
         baseline_calmar=1.0, baseline_maxdd=-0.10,
         oos_calmar=2.0, oos_maxdd=-0.10,
@@ -201,6 +317,7 @@ def test_verify_lookahead_returns_fail_never_silent_pass():
     strat, fac = _synth_oos()
     res = fl.verify(
         fl.FactorConfig(), strat, fac,
+        cash_returns=pd.Series(0.0, index=strat.index),
         recall_premium=0.0,
         baseline_calmar=1.0, baseline_maxdd=-0.10,
         oos_calmar=2.0, oos_maxdd=-0.10,

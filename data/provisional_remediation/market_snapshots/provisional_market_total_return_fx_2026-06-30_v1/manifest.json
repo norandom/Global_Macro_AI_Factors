@@ -1,0 +1,118 @@
+{
+  "actual_coverage": {
+    "BIL": {
+      "first": "2009-09-01",
+      "last": "2026-06-30",
+      "rows": 4232
+    },
+    "IAU": {
+      "first": "2009-09-01",
+      "last": "2026-06-30",
+      "rows": 4232
+    },
+    "SPY": {
+      "first": "2009-09-01",
+      "last": "2026-06-30",
+      "rows": 4232
+    },
+    "SWDA.L": {
+      "first": "2009-09-25",
+      "last": "2026-06-30",
+      "rows": 4232
+    },
+    "USD_per_GBP": {
+      "blank_unpublished_canonicalized_to_dot": 183,
+      "first": "2009-09-01",
+      "last": "2026-06-30",
+      "non_numeric_dropped": 183,
+      "outside_requested_window_dropped": 0,
+      "raw_rows": 4391,
+      "rows": 4208
+    },
+    "XLK": {
+      "first": "2009-09-01",
+      "last": "2026-06-30",
+      "rows": 4232
+    }
+  },
+  "benchmark_symbol": "SPY",
+  "build_time": "2026-07-29T18:00:36.047819+00:00",
+  "cash_symbol": "BIL",
+  "completed": true,
+  "contract_fingerprint": "5f92e5b902cea43078d25df3b0eeb561d5a4d89f9846d733ccc3be58b9758cdc",
+  "files": {
+    "basket_adjusted_close_local.parquet": {
+      "end": "2026-06-30",
+      "rows": 4327,
+      "schema_id": "market_snapshot.v1/basket_adjusted_close_local",
+      "sha256": "90993b1a5f1f05c1126d4ba52a5849baa6cd610047f2e3f90119d054dffe76cf",
+      "size": 102923,
+      "start": "2009-09-01"
+    },
+    "cash_market_total_return.parquet": {
+      "end": "2026-06-30",
+      "rows": 4327,
+      "schema_id": "market_snapshot.v1/cash_market_total_return",
+      "sha256": "87a8f564aefb4534b692bf5cba693264639bfb88f44e4a32a18655bb7689f0b3",
+      "size": 78690,
+      "start": "2009-09-01"
+    },
+    "fx_usd_per_gbp.parquet": {
+      "end": "2026-06-30",
+      "rows": 4208,
+      "schema_id": "market_snapshot.v1/fx_usd_per_gbp",
+      "sha256": "4cdc94f5df26ae99c875552dc406edc2e363798f2b27a0181c3316a249c2cfef",
+      "size": 59624,
+      "start": "2009-09-01"
+    }
+  },
+  "fx_conversion": "multiply",
+  "fx_field": "USD_per_GBP",
+  "fx_vintage_date": "2026-07-29",
+  "overlap_revisions": {
+    "preceding_snapshot": null
+  },
+  "quotes": {
+    "BIL": {
+      "quote_currency": "USD",
+      "quote_unit": "USD",
+      "scale_to_major": 1.0
+    },
+    "IAU": {
+      "quote_currency": "USD",
+      "quote_unit": "USD",
+      "scale_to_major": 1.0
+    },
+    "SPY": {
+      "quote_currency": "USD",
+      "quote_unit": "USD",
+      "scale_to_major": 1.0
+    },
+    "SWDA.L": {
+      "quote_currency": "GBP",
+      "quote_unit": "GBp",
+      "scale_to_major": 0.01
+    },
+    "XLK": {
+      "quote_currency": "USD",
+      "quote_unit": "USD",
+      "scale_to_major": 1.0
+    }
+  },
+  "raw_response_sha256": {
+    "etf": "8b0243f09a5dd96dd5759d5d4e3ab34f83370b3ff08234e8d0dad08db8196530",
+    "fx": "ff772a6413da4ea9e1c1724a158e0f4986334853b9122e32611c87132eee3320"
+  },
+  "requested_coverage": {
+    "end": "2026-06-30",
+    "start": "2009-09-01"
+  },
+  "schema": "market_snapshot.v1",
+  "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1",
+  "source_identifiers": {
+    "etf": "yfinance",
+    "fx": "fred_alfred_h10",
+    "fx_series": "DEXUSUK"
+  },
+  "total_return_field": "yfinance auto_adjust=True Close (adjusted total-return level, dividends reinvested)"
+}

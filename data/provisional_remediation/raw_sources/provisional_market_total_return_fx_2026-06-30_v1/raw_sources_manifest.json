@@ -1,0 +1,76 @@
+{
+  "artifacts": {
+    "etf": {
+      "attempts": 1,
+      "columns": [
+        "BIL",
+        "IAU",
+        "SPY",
+        "SWDA.L",
+        "XLK"
+      ],
+      "description": "yfinance auto_adjust=True Close panel exactly as fetch_etf_close returned it",
+      "index_tz_stripped": false,
+      "kind": "canonical_source_frame",
+      "path": "/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/raw_sources/provisional_market_total_return_fx_2026-06-30_v1/etf_close_raw.parquet",
+      "request_params": {
+        "auto_adjust": true,
+        "end": "2026-07-01",
+        "progress": false,
+        "start": "2009-09-01",
+        "threads": false,
+        "tickers": [
+          "SWDA.L",
+          "XLK",
+          "IAU",
+          "BIL",
+          "SPY"
+        ]
+      },
+      "requested_at": "2026-07-29T18:00:25.244298+00:00",
+      "retrieved_at": "2026-07-29T18:00:27.042122+00:00",
+      "rows": 4327,
+      "sha256": "8b0243f09a5dd96dd5759d5d4e3ab34f83370b3ff08234e8d0dad08db8196530",
+      "source_id": "yfinance"
+    },
+    "fx": {
+      "attempts": 1,
+      "description": "exact alfredgraph.csv HTTP response bytes",
+      "http_status": 200,
+      "kind": "raw_response_bytes",
+      "parse_deviation": "live payload emits BLANK cells for unpublished H.10 dates; canonicalized blank->'.' before the committed parse_fredgraph_csv (count disclosed); committed fetch_fx_observations rejects the live payload as-is",
+      "parse_disclosure": {
+        "blank_unpublished_canonicalized_to_dot": 183,
+        "non_numeric_dropped": 183,
+        "outside_requested_window_dropped": 0,
+        "raw_rows": 4391
+      },
+      "parsed_observations": 4208,
+      "path": "/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/raw_sources/provisional_market_total_return_fx_2026-06-30_v1/fx_DEXUSUK_alfredgraph_2026-07-29.csv",
+      "request_params": {
+        "observation_end": "2026-06-30",
+        "observation_start": "2009-09-01",
+        "realtime_end": "2026-07-29",
+        "realtime_start": "2026-07-29",
+        "series_id": "DEXUSUK"
+      },
+      "request_url": "https://alfred.stlouisfed.org/graph/alfredgraph.csv?id=DEXUSUK&cosd=2009-09-01&coed=2026-06-30&vintage_date=2026-07-29",
+      "requested_at": "2026-07-29T18:00:27.054314+00:00",
+      "retrieved_at": "2026-07-29T18:00:27.473045+00:00",
+      "sha256": "ff772a6413da4ea9e1c1724a158e0f4986334853b9122e32611c87132eee3320",
+      "source_id": "fred_alfred_h10",
+      "transport": "curl_cffi impersonate=chrome; the /graph/ backend resets the plain requests TLS fingerprint used by the committed fetch_fx_observations"
+    }
+  },
+  "credentials": "none required; no secrets logged",
+  "frozen_config": {
+    "contract_fingerprint_prehash": "3e732a9613ec18b5eb21157692ce8694077c5a198adc6bc3574514eaa534cd1c",
+    "path": "/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/raw_sources/provisional_market_total_return_fx_2026-06-30_v1/frozen_acquisition_config.json",
+    "sha256": "6d450be0388111b62647ab20ab81f36ff322c8b792d4b60498d3f993de45ecb8"
+  },
+  "provisional": true,
+  "schema": "provisional_raw_sources.v1",
+  "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1",
+  "task": "12.1",
+  "written_at": "2026-07-29T18:00:27.473768+00:00"
+}

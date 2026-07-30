@@ -1,0 +1,21 @@
+,Factor PIT,SJM×crowding v2 (dd-armed),SJM×crowding v1 (always-on),Corr-overlay control
+Total Return,1.655392,1.480681,1.103858,1.452646
+CAGR,0.139253,0.128949,0.104389,0.127237
+Ann. Volatility,0.096657,0.085661,0.072849,0.091174
+Sharpe (rf=0),1.428781,1.491933,1.431275,1.390008
+Max Drawdown,-0.120805,-0.112423,-0.094745,-0.117550
+Calmar,1.152713,1.147001,1.101789,1.082411
+VaR 95 (daily),-0.008327,-0.007292,-0.006223,-0.007898
+CVaR 95 (daily),-0.013665,-0.011957,-0.010156,-0.012885
+Excess Kurtosis,19.714161,27.252279,23.795837,23.994413
+Hit Rate,0.570732,0.570732,0.569648,0.570732
+SSR (Sharpe Stability),0.133965,0.137899,0.131180,0.131507
+SSR verdict,"SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.14: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim"
+"HAC t (mean, NW)",3.808852,4.019026,3.853234,3.708078
+Beta (SPY),0.235832,0.178691,0.157343,0.221592
+SPY regression intercept (ann.),0.098908,0.100279,0.079377,0.089056
+SPY regression R2,0.240777,0.176599,0.198464,0.232087
+Basket R2 (4-ETF),0.898701,0.863896,0.860150,0.889799
+Basket intercept (ann.),0.013889,0.012238,0.009538,0.003870
+Basket appraisal ratio,0.463308,0.398071,0.368463,0.129334
+Basket intercept t-stat (HAC),1.067221,1.020759,0.878411,0.293729

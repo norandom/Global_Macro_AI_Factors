@@ -1,0 +1,137 @@
+{
+  "baselines": {
+    "control_dev_maxdd": -0.1140525696937803,
+    "factor_dev_cagr": 0.10394380686122928
+  },
+  "build_time": "2026-07-30T15:48:55+00:00",
+  "cash_benchmark": {
+    "cash_benchmark_id": "BIL",
+    "cash_semantics": "adjusted_total_return",
+    "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+  },
+  "completed": true,
+  "coverage": {
+    "anchor": "2014-01-02",
+    "end": "2026-06-30",
+    "n_obs": 3083,
+    "start": "2014-01-03"
+  },
+  "files": {
+    "control_returns": {
+      "end": "2026-06-30",
+      "file": "sjm_control_returns.parquet",
+      "rows": 3083,
+      "sha256": "1932ad4369dcd0c118273866a53f011f9e493bbd88b879e967ecab2212e55ac1",
+      "size": 46818,
+      "start": "2014-01-03"
+    },
+    "daily_returns": {
+      "end": "2026-06-30",
+      "file": "sjm_daily_returns.parquet",
+      "rows": 3083,
+      "sha256": "74720982bbb763686ab9ab6d68c065379560ef1129f16b9e7dff4760e290e49e",
+      "size": 79603,
+      "start": "2014-01-03"
+    },
+    "equity": {
+      "end": "2026-06-30",
+      "file": "sjm_equity.parquet",
+      "rows": 3084,
+      "sha256": "68141ac49a552c489feda04689df8324666000d1a6a45d9d57e2baa979fe38f4",
+      "size": 46752,
+      "start": "2014-01-02"
+    },
+    "exposures": {
+      "end": "2026-06-30",
+      "file": "sjm_exposures.parquet",
+      "rows": 3083,
+      "sha256": "8aa555641a7ec2ddff7375a43f45a19ed3cab3aa6b13a6559171a77fd9ad4037",
+      "size": 30651,
+      "start": "2014-01-03"
+    },
+    "ledger": {
+      "file": "sjm_ledger.json",
+      "rows": 31,
+      "sha256": "6ecf03fae26441a771236751a8b9da2bb4d2a7629dc1019a50432f596a933489",
+      "size": 26439
+    },
+    "protocol": {
+      "file": "sjm_protocol.json",
+      "sha256": "250fc86ad644da1ea608d067b5715deb9f3239102b750c8f1a8cac21bcdc5e05",
+      "size": 2728
+    },
+    "targets": {
+      "end": "2026-06-30",
+      "file": "sjm_targets.parquet",
+      "rows": 3083,
+      "sha256": "68d07c2bd5ced687c659e797cfb505773b013d39fa609fa9188b11cf5879e55c",
+      "size": 29638,
+      "start": "2014-01-03"
+    }
+  },
+  "gate_results": {
+    "cagr_budget_pass": true,
+    "maxdd_vs_control_pass": true,
+    "passed": true
+  },
+  "input_manifests": {
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    }
+  },
+  "ledger_sha256": "9a211d3597e150ab920313982ab5ceaf52a82aeffaa6c10296c2a7ecf9cb5c39",
+  "protocol": {
+    "control_rule": "derisk_cash_pin",
+    "dev_end": "2024-06-30",
+    "dev_start": "2019-01-03",
+    "limit_table_sha256": "c201da04d8209fdadefa516f64d8f538b67187be8763bd674326fe6a4af4722c",
+    "mutation_registry_sha256": "b9f69e1a22522846853d941ab232e9bec11d53f992437e94ab5d4e4cf550f13d",
+    "objective": "dev_calmar",
+    "protocol_id": "sjm_selection_v2_calmar_frozen",
+    "protocol_sha256": "33f9307ef941dca0b0bff7105ae0523fdaceb1b8e66fea39643a3f480538b983",
+    "seed": 42
+  },
+  "run_id": "sjm_crowding_v3_total_return_bil_provisional_devstartfix_20260730T154855Z",
+  "schema": "sjm_run.v3",
+  "selected_config": {
+    "arm": -0.02,
+    "floor": 0.4,
+    "lam": 20.0,
+    "limits": {
+      "bear": {
+        "0": 1.0,
+        "1": 0.8,
+        "2": 0.5
+      },
+      "bull": {
+        "0": 1.0,
+        "1": 0.9,
+        "2": 0.8
+      },
+      "neutral": {
+        "0": 1.0,
+        "1": 0.9,
+        "2": 0.8
+      }
+    },
+    "scale": 0.9,
+    "signal": "absorption",
+    "window": 126
+  },
+  "signal_source": {
+    "columns_sha256": "9ce74e3973c15ee5f7855e0ae9ff2643c145745d440c839772b5e128a67c34a7",
+    "content_sha256": "afa87e8d66a99966202e580cdc7da07604c5cc2fe41d500ce13361380690bc01",
+    "end": "2026-05-29",
+    "manifest_path": "/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/signal_sources/etf_prices_wide_2013_2026_devstartfix_20260730T154855Z/sjm_signal_source_manifest.json",
+    "manifest_sha256": "60fe13d92dc5c892face5268eb3c2bb30cb3467d1f9d30f6f09de83f2156ba5b",
+    "panel_path": "/home/mc/projects/Global_Macro_AI_Factors/data/etf_prices_wide_2013_2026.parquet",
+    "rows": 3462,
+    "schema": "sjm_signal_source.v1",
+    "start": "2013-01-02"
+  }
+}

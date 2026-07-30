@@ -312,8 +312,6 @@ def test_raw_market_model_has_unambiguous_labels():
     }
 
 
-def test_ac_3_8():
-    test_raw_market_model_has_unambiguous_labels()
 
 
 def test_basket_residual_rejects_positional_construction():
@@ -339,37 +337,18 @@ def test_anchor_retains_first_strategy_return():  # defect 15 shared boundary
     test_factor_returns_on_selects_anchor_before_compounding_holiday_gap()
 
 
-def test_ac_3_1():
-    test_factor_returns_on_selects_anchor_before_compounding_holiday_gap()
 
 
-def test_ac_3_2():
-    test_holiday_gap_levels_align_before_returns()
 
 
-def test_ac_3_3():
-    test_factor_returns_on_rejects_absent_anchor_or_requested_label()
 
 
-def test_ac_3_4():
-    test_factor_returns_reject_present_nonfinite_levels()
 
 
-def test_ac_3_5():
-    test_anchor_retains_first_strategy_return()
 
 
-def test_ac_3_9():
-    test_raw_market_model_has_unambiguous_labels()
 
 
-def test_ac_8_3():
-    # calendar edge cases: holiday gap, first-return anchor, absent labels,
-    # present-but-non-finite values (R8.3)
-    test_holiday_gap_levels_align_before_returns()
-    test_anchor_retains_first_strategy_return()
-    test_factor_returns_on_rejects_absent_anchor_or_requested_label()
-    test_factor_returns_reject_present_nonfinite_levels()
 
 
 def test_full_report_rows_bind_attribution_to_the_performance_window():
@@ -391,8 +370,6 @@ def test_full_report_rows_bind_attribution_to_the_performance_window():
     assert not any(key.startswith("raw_market_model_") for key in short)
 
 
-def test_ac_3_6():
-    test_full_report_rows_bind_attribution_to_the_performance_window()
 
 
 def test_strict_finance_contracts_export_through_package():
@@ -622,7 +599,3 @@ def test_shortened_attribution_is_identified_as_a_separate_window():
     assert (record["start"], record["end"], record["n_obs"]) == (
         short_attr.start, short_attr.end, short_attr.n_obs
     )
-
-
-def test_ac_3_7():
-    test_shortened_attribution_is_identified_as_a_separate_window()

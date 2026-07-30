@@ -99,7 +99,9 @@ Adopted configuration **for v1**: **λ=20 (fast regime switching), turbulence cr
 | **SJM×crowding variant** | 7.78% / **−8.2%** / **0.95** | 18.41% / **−9.5%** / 1.94 | 10.5% / **−9.5%** / 1.11 |
 | Corr-overlay control | 10.09% / −11.0% / 0.92 | 20.79% / −11.8% / 1.77 | 12.8% / −11.8% / 1.09 |
 
-The overlay **generalized**: on the unseen holdout it still cut the max drawdown by 2.3pp and beat the control on both drawdown and Calmar. The cost concentrated in the holdout bull run (−5.3pp CAGR there), which is exactly what a de-risk overlay is expected to do; the full-span **Sharpe is identical to unhedged (1.43)** with vol 9.7%→7.3%, CVaR-95 −1.4%→−1.0%, SPY beta 0.23→0.16, and the own-basket timing-alpha t-stat rises 0.86→1.47 (still <2 — the overlay is risk-shaping, not skill).
+The overlay **generalized**: on the unseen holdout it still cut the max drawdown by 2.3pp and beat the control on both drawdown and Calmar. The cost concentrated in the holdout bull run (−5.3pp CAGR there), which is exactly what a de-risk overlay is expected to do; the full-span **Sharpe is identical to unhedged (1.43)** with vol 9.7%→7.3%, CVaR-95 −1.4%→−1.0%, SPY beta 0.24→0.16, and the own-basket timing-alpha t-stat *falls* 1.07→0.88 (both well under 2 — the overlay is risk-shaping, not skill).
+
+> **Corrected 2026-07-27 (total-return price basis).** The basket regression used to run on the price-only cache, where BIL earned 0.03%/yr instead of its true 2.62%/yr because a cash ETF pays out essentially all of its return as distributions. That understated cash sleeve was a flat regressor, so the de-risked line's parked cash showed up as residual — as "timing alpha" it never earned. On the dividend-reinvested panel (`data/basket_close_2009_2026.parquet`) the basket R² rises 0.76→0.86 and the overlay's t(α) drops from 1.47 to 0.88. **The earlier reading that the overlay *improves* own-basket timing was an artifact of the missing distributions and does not survive.** The conclusion it fed — risk-shaping, not skill — is unchanged and now rests on a firmer number.
 
 **Full-span tear sheet (2019-01 → 2026-06, adopted variant):**
 
@@ -111,8 +113,11 @@ The overlay **generalized**: on the unseen holdout it still cut the max drawdown
 | Max DD | −12.1% | **−9.5%** | −11.8% |
 | Calmar | **1.16** | 1.11 | 1.09 |
 | CVaR 95 (daily) | −1.4% | **−1.0%** | −1.3% |
-| Beta (SPY) | 0.23 | **0.16** | 0.22 |
-| Basket t(α) HAC | 0.86 | 1.47 | 0.49 |
+| Beta (SPY) | 0.24 | **0.16** | 0.22 |
+| Basket R² (4-ETF) | 0.90 | 0.86 | 0.89 |
+| Basket t(α) HAC | 1.07 | 0.88 | 0.29 |
+
+Regression rows are on the total-return panel (`data/basket_close_2009_2026.parquet`, yfinance `auto_adjust=True`); level rows (CAGR through CVaR) never touched a benchmark and are unchanged. Source: `reports/nb17_sjm_crowding_tearsheet.csv`.
 
 ## 5. What would change the answer
 

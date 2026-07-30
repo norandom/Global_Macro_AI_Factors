@@ -15,18 +15,18 @@ Hit Rate,0.570732,0.571274,0.562542
 SSR (Sharpe Stability),0.133965,0.141915,0.124863
 SSR verdict,"SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.14: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim","SSR=0.12: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim"
 "HAC t (mean, NW)",3.808852,3.856531,3.383285
-Correlation to SPY,0.492569,0.509903,0.538175
-Beta (SPY),0.235426,0.249475,0.210352
-Active Return (ann.),-0.038164,-0.033569,-0.041627
-Tracking Error (ann.),0.171349,0.169396,0.171620
-Information Ratio,-0.222725,-0.198168,-0.242554
-SPY regression R2,0.242624,0.260001,0.289632
-SPY regression intercept (ann.),0.101723,0.103748,0.087881
-SPY residual vol (ann.),0.081885,0.082855,0.066078
-SPY appraisal ratio,1.242267,1.252164,1.329966
-SPY intercept t-stat (HAC),3.716430,3.839140,3.292442
-Basket R2 (4-ETF),0.811059,0.840104,0.913874
-Basket intercept (ann.),0.013062,0.012203,0.018953
-Basket residual vol (ann.),0.040922,0.038316,0.023070
-Basket appraisal ratio,0.319197,0.318480,0.821571
-Basket intercept t-stat (HAC),0.948301,1.320416,1.946189
+Correlation to SPY,0.490690,0.508367,0.542424
+Beta (SPY),0.235832,0.249345,0.212375
+Active Return (ann.),-0.044155,-0.043411,-0.067062
+Tracking Error (ann.),0.170778,0.168805,0.170698
+Information Ratio,-0.258554,-0.257169,-0.392867
+SPY regression R2,0.240777,0.258437,0.294223
+SPY regression intercept (ann.),0.098908,0.097122,0.076345
+SPY residual vol (ann.),0.082073,0.082778,0.065781
+SPY appraisal ratio,1.205125,1.173284,1.160597
+SPY intercept t-stat (HAC),3.569964,3.622275,2.915313
+Basket R2 (4-ETF),0.898701,0.947072,0.914347
+Basket intercept (ann.),0.013883,-0.000123,0.014335
+Basket residual vol (ann.),0.029979,0.022115,0.022916
+Basket appraisal ratio,0.463094,-0.005565,0.625568
+Basket intercept t-stat (HAC),1.066723,-0.013855,1.365508

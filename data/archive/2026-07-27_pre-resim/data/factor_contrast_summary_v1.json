@@ -1,0 +1,53 @@
+{
+  "contamination_premium": {
+    "annualized_return_delta": 0.01337191167277707,
+    "annualized_vol_delta": 0.0009111496501728739,
+    "avg_turnover_delta": 0.005317739138146149,
+    "calmar_delta": 0.14386755966958542,
+    "crisis_max_drawdown_delta": 0.012063734450807662,
+    "crisis_return_delta": 0.00019240882474091947,
+    "max_drawdown_delta": 0.0034508680288443117,
+    "n_pairs": 72.0,
+    "p_memorized_mean_delta": 0.3995801783229548,
+    "p_memorized_median_delta": 0.37848252363443335,
+    "p_memorized_paired_d": 1.3691750788095336,
+    "sharpe_delta": 0.1549860498122726,
+    "sortino_delta": 0.21266615058851013,
+    "total_return_delta": 0.17413621294024328
+  },
+  "framing": "The non-PIT variant is a deliberately confounded diagnostic control (R7.4). Higher measured contamination under that framing is evidence of contamination risk; any head-to-head gap is reported as a contamination-risk premium, not a clean causal decomposition of skill.",
+  "n_pairs": 72,
+  "nim_model": "openai/gpt-oss-20b",
+  "nonpit_metrics": {
+    "annualized_return": 0.09732226144710654,
+    "annualized_vol": 0.07275745380937844,
+    "avg_turnover": 0.2849271312552568,
+    "calmar": 0.8799352774627198,
+    "crisis_max_drawdown": -0.10102249594059953,
+    "crisis_return": -0.03558174360934896,
+    "max_drawdown": -0.11060161348199815,
+    "sharpe": 1.3130193088862205,
+    "sortino": 1.922270356165233,
+    "total_return": 0.9963702021597459
+  },
+  "nonpit_p_memorized": {
+    "mean": 0.7075316347103374,
+    "median": 0.6897885958044978
+  },
+  "pit_metrics": {
+    "annualized_return": 0.08395034977432947,
+    "annualized_vol": 0.07184630415920557,
+    "avg_turnover": 0.27960939211711067,
+    "calmar": 0.7360677177931344,
+    "crisis_max_drawdown": -0.1130862303914072,
+    "crisis_return": -0.03577415243408988,
+    "max_drawdown": -0.11405248151084246,
+    "sharpe": 1.158033259073948,
+    "sortino": 1.7096042055767229,
+    "total_return": 0.8222339892195026
+  },
+  "pit_p_memorized": {
+    "mean": 0.30795145638738264,
+    "median": 0.31130607217006445
+  }
+}
