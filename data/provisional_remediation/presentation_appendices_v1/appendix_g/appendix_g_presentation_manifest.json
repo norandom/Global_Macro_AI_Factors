@@ -1,0 +1,103 @@
+{
+  "display_table_columns": [
+    "Strategy",
+    "CAGR",
+    "Annualized vol.",
+    "Raw-model intercept (ann.)",
+    "Residual vol.",
+    "Sharpe",
+    "Calmar",
+    "Appraisal",
+    "Max drawdown"
+  ],
+  "figure_order": [
+    "appendix_g_total_risk_map.png",
+    "appendix_g_regression_adjusted_map.png",
+    "appendix_g_ratio_ladder.png",
+    "appendix_g_metric_profile.png",
+    "appendix_g_final_trio_composite.png"
+  ],
+  "notebook": {
+    "file": "notebooks/appendix_g_final_trio_paper_figures.ipynb",
+    "sha256": "61f78020fd97804706e92906318dab4ef12a47ddfc37289b4ac035317f69873b"
+  },
+  "outputs": {
+    "appendix_g_final_trio_composite.png": {
+      "dpi": 300,
+      "height_in": 10.6,
+      "height_px": 3180,
+      "media_type": "image/png",
+      "sha256": "dd472cb1496c445a8a38a77a3397d119d6b032cd8ac841e1516a1c942b8e35c6",
+      "width_in": 6.9,
+      "width_px": 2070
+    },
+    "appendix_g_metric_profile.png": {
+      "dpi": 300,
+      "height_in": 3.7,
+      "height_px": 1110,
+      "media_type": "image/png",
+      "sha256": "d3f97e57a2d4ece0511e0c29c05d963a22bdc95200bf3e64f9f4e10d357db9c5",
+      "width_in": 3.35,
+      "width_px": 1005
+    },
+    "appendix_g_ratio_ladder.png": {
+      "dpi": 300,
+      "height_in": 3.15,
+      "height_px": 945,
+      "media_type": "image/png",
+      "sha256": "1e14ff0cf5aa8ea24e0e95257a9ace1c73bc785f3ac43f7d9d5e57b15177d140",
+      "width_in": 3.35,
+      "width_px": 1005
+    },
+    "appendix_g_regression_adjusted_map.png": {
+      "dpi": 300,
+      "height_in": 2.6,
+      "height_px": 780,
+      "media_type": "image/png",
+      "sha256": "f3866bf5af9e008b0d77d1346d6089c107e511f10c020a3e0b1dddfa446eef9a",
+      "width_in": 3.35,
+      "width_px": 1005
+    },
+    "appendix_g_total_risk_map.png": {
+      "dpi": 300,
+      "height_in": 2.6,
+      "height_px": 780,
+      "media_type": "image/png",
+      "sha256": "4e06125e5ce63c24759cc02c5c2940bbf2c57d270b3682e961d11145bc57763d",
+      "width_in": 3.35,
+      "width_px": 1005
+    }
+  },
+  "palette": {
+    "categorical_hex": [
+      "#0072B2",
+      "#D55E00",
+      "#009E73"
+    ],
+    "secondary_encoding": "circle/square/triangle markers",
+    "validated_with": "dataviz/scripts/validate_palette.js --mode light"
+  },
+  "presentation_only": true,
+  "producer": "notebooks/appendix_g_final_trio_paper_figures.ipynb",
+  "projection_of": {
+    "canonical_table": "tables/tear_sheet_trio_ext2026.parquet",
+    "canonical_table_schema": "tear_sheet.trio.v4",
+    "canonical_table_sha256": "1380f9aa2ed77e7b86154d95407e0b9fbd32d92a52f6b02af450310e780497cf",
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "report_bundle": "data/provisional_remediation/canonical_reports_devstartfix_full_20260730T154855Z",
+    "report_id": "canonical_reports_devstartfix_full_20260730T154855Z",
+    "report_manifest_sha256": "f156792752e6ea43c3d9161ca6b08c62a1944e6017f4ad26ff5d3c7a87b0a046",
+    "sjm_run": {
+      "manifest_sha256": "070c5f371cc3ea5083c59300f03721fc12f7a5025494668179b9b429748ea0d4",
+      "run_id": "sjm_crowding_v3_total_return_bil_provisional_devstartfix_20260730T154855Z"
+    }
+  },
+  "schema": "appendix_g.presentation_figures.v1"
+}

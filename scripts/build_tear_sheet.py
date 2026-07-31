@@ -3032,5 +3032,1080 @@ def materialize_canonical_report_bundle(
     return CanonicalReportBundle(destination, verified, canonical_tables)
 
 
+# --- Guard-ablation diagnostic canonical reports ----------------------------------- #
+#
+# This is intentionally a separate report family.  ``canonical_reports.v1`` and the
+# data-v4 catalog are frozen publication contracts; the four-cell diagnostic is an
+# Appendix-only input and therefore has its own manifest, inventory, and loader.
+
+FACTOR_GUARD_ABLATION_RUN_SCHEMA = "factor_guard_ablation_run.v1"
+FACTOR_GUARD_ABLATION_METRIC_RECORDS_SCHEMA = "factor_guard_ablation.metric_records.v1"
+FACTOR_GUARD_ABLATION_PANEL_SCHEMA = "factor_guard_ablation.panel.v1"
+CANONICAL_GUARD_ABLATION_REPORTS_SCHEMA = "canonical_guard_ablation_reports.v1"
+
+GUARD_ABLATION_CONFIG_ORDER = (
+    "factor_pit_ext2026",
+    "factor_pit_unguarded_diagnostic_ext2026",
+    "factor_nonpit_diagnostic_ext2026",
+    "factor_nonpit_unguarded_diagnostic_ext2026",
+)
+GUARD_ABLATION_WINDOW_ORDER = ("full", "pre_cutoff", "post_cutoff")
+GUARD_ABLATION_COMPARISON_ORDER = (
+    "pit_unguarded_minus_guarded",
+    "nonpit_unguarded_minus_guarded",
+    "nonpit_unguarded_minus_pit_guarded_combined_stress",
+)
+_GUARD_ABLATION_COMPARISONS: Mapping[str, tuple[str, str]] = MappingProxyType(
+    {
+        "pit_unguarded_minus_guarded": (
+            "factor_pit_unguarded_diagnostic_ext2026",
+            "factor_pit_ext2026",
+        ),
+        "nonpit_unguarded_minus_guarded": (
+            "factor_nonpit_unguarded_diagnostic_ext2026",
+            "factor_nonpit_diagnostic_ext2026",
+        ),
+        "nonpit_unguarded_minus_pit_guarded_combined_stress": (
+            "factor_nonpit_unguarded_diagnostic_ext2026",
+            "factor_pit_ext2026",
+        ),
+    }
+)
+_GUARD_ABLATION_COMPARISON_ALIASES: Mapping[str, str] = MappingProxyType(
+    {
+        "factor_pit_unguarded_minus_pit_guarded_ext2026": "pit_unguarded_minus_guarded",
+        "pit_unguarded_minus_pit_guarded": "pit_unguarded_minus_guarded",
+        "factor_nonpit_unguarded_minus_nonpit_guarded_ext2026": "nonpit_unguarded_minus_guarded",
+        "nonpit_unguarded_minus_nonpit_guarded": "nonpit_unguarded_minus_guarded",
+        "factor_nonpit_unguarded_minus_pit_guarded_ext2026": "nonpit_unguarded_minus_pit_guarded_combined_stress",
+        "nonpit_unguarded_minus_pit_guarded": "nonpit_unguarded_minus_pit_guarded_combined_stress",
+    }
+)
+
+GUARD_ABLATION_REPORT_TABLE_SCHEMAS: Mapping[str, str] = MappingProxyType(
+    {
+        "tear_sheet_factor_guard_ablation_ext2026": "tear_sheet.factor_guard_ablation.v1",
+        "factor_guard_ablation_equity_ext2026": "factor_guard_ablation.equity.v1",
+        "factor_guard_ablation_panel_ext2026": FACTOR_GUARD_ABLATION_PANEL_SCHEMA,
+    }
+)
+
+_GUARD_ABLATION_UNGUARDED_FILES = (
+    "factor_pit_unguarded_diagnostic_equity_ext2026.parquet",
+    "factor_pit_unguarded_diagnostic_targets_ext2026.parquet",
+    "factor_pit_unguarded_diagnostic_decision_log_ext2026.json",
+    "factor_nonpit_unguarded_diagnostic_equity_ext2026.parquet",
+    "factor_nonpit_unguarded_diagnostic_targets_ext2026.parquet",
+    "factor_nonpit_unguarded_diagnostic_decision_log_ext2026.json",
+)
+_GUARD_ABLATION_EQUITY_COLUMNS = (
+    "date",
+    "configuration",
+    "normalized_wealth",
+    "drawdown",
+    "relative_wealth",
+    "relative_wealth_kind",
+)
+
+
+@dataclass(frozen=True)
+class VerifiedGuardAblationRun:
+    """A completed, byte-inventoried four-cell diagnostic producer run.
+
+    The report layer validates the producer manifest itself rather than importing
+    the producer module.  That preserves a narrow, stable consumer boundary while
+    allowing the producer to retain ownership of replay and financial mechanics.
+    """
+
+    run_dir: Path
+    run_id: str
+    manifest_sha256: str
+    manifest: Mapping[str, object]
+    metric_records: Mapping[str, object]
+    panel: pd.DataFrame
+    files: Mapping[str, Mapping[str, object]]
+    metric_entry: Mapping[str, object]
+    panel_entry: Mapping[str, object]
+    curve_entry: Mapping[str, object] | None
+    curve_table: pd.DataFrame | None
+
+
+def _guard_ablation_safe_relative_path(value: object) -> Path:
+    if not isinstance(value, str) or not value:
+        raise ValueError("guard-ablation inventory file must be a non-empty relative path")
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts or "\\" in value or path.name in {"", ".", ".."}:
+        raise ValueError(f"guard-ablation inventory path is unsafe: {value!r}")
+    return path
+
+
+def _guard_ablation_manifest_files(
+    run_dir: Path, manifest: Mapping[str, object]
+) -> dict[str, Mapping[str, object]]:
+    files = manifest.get("files")
+    if not isinstance(files, Mapping) or not files:
+        raise ValueError("guard-ablation manifest must contain a non-empty files inventory")
+    resolved: dict[str, Mapping[str, object]] = {}
+    declared: set[Path] = set()
+    for role, raw_entry in files.items():
+        if not isinstance(role, str) or not role or not isinstance(raw_entry, Mapping):
+            raise ValueError("guard-ablation manifest files inventory is malformed")
+        relative = _guard_ablation_safe_relative_path(raw_entry.get("file"))
+        if relative in declared:
+            raise ValueError("guard-ablation manifest inventories one artifact more than once")
+        declared.add(relative)
+        _pinned_sha256(f"files.{role}.sha256", raw_entry.get("sha256"))
+        path = run_dir / relative
+        if not path.is_file():
+            raise ValueError(f"guard-ablation artifact is absent: {relative.as_posix()}")
+        if _sha256_file(path) != raw_entry["sha256"]:
+            raise ValueError(
+                f"guard-ablation artifact was mutated after inventory: {relative.as_posix()}"
+            )
+        size = raw_entry.get("size")
+        if size is not None and (isinstance(size, bool) or not isinstance(size, int) or size != path.stat().st_size):
+            raise ValueError(f"guard-ablation artifact size diverges from inventory: {relative.as_posix()}")
+        resolved[role] = raw_entry
+
+    actual = {
+        path.relative_to(run_dir)
+        for path in run_dir.rglob("*")
+        if path.is_file()
+    }
+    expected = declared | {Path("manifest.json"), Path("COMPLETED")}
+    if actual != expected:
+        raise ValueError("guard-ablation run contains unmanifested or missing output")
+    return resolved
+
+
+def _guard_ablation_inventory_entry(
+    files: Mapping[str, Mapping[str, object]],
+    *,
+    filenames: Sequence[str],
+    roles: Sequence[str] = (),
+    required: bool = True,
+) -> Mapping[str, object] | None:
+    candidates: list[Mapping[str, object]] = []
+    accepted_roles = set(roles)
+    accepted_names = set(filenames)
+    for role, entry in files.items():
+        if role in accepted_roles or Path(str(entry["file"])).name in accepted_names:
+            candidates.append(entry)
+    # A role and its filename can point at the same entry; several different
+    # entries are an ambiguous producer contract rather than a tie to resolve.
+    unique = {str(entry["file"]): entry for entry in candidates}
+    if not unique:
+        if required:
+            raise ValueError(
+                "guard-ablation manifest is missing required artifact: "
+                + ", ".join(filenames)
+            )
+        return None
+    if len(unique) != 1:
+        raise ValueError(
+            "guard-ablation manifest names multiple artifacts for one required role: "
+            + ", ".join(sorted(unique))
+        )
+    return next(iter(unique.values()))
+
+
+def _guard_ablation_read_bytes(
+    run: VerifiedGuardAblationRun | Path,
+    entry: Mapping[str, object],
+) -> bytes:
+    run_dir = run.run_dir if isinstance(run, VerifiedGuardAblationRun) else run
+    path = run_dir / _guard_ablation_safe_relative_path(entry["file"])
+    data = path.read_bytes()
+    if hashlib.sha256(data).hexdigest() != entry["sha256"]:
+        raise ValueError(f"{path}: guard-ablation artifact was mutated after inventory")
+    return data
+
+
+def _canonical_guard_ablation_comparison(value: object) -> str:
+    if not isinstance(value, str):
+        raise ValueError("guard-ablation differential comparison_id must be a string")
+    return _GUARD_ABLATION_COMPARISON_ALIASES.get(value, value)
+
+
+def _guard_ablation_record_wrappers(
+    metric_records: Mapping[str, object],
+) -> tuple[tuple[Mapping[str, object], ...], tuple[Mapping[str, object], ...]]:
+    """Validate and return producer-owned reader/differential wrappers.
+
+    A wrapper carries diagnostic-only cell/window identity outside the immutable
+    standard report row.  The embedded row is passed verbatim through the shared
+    report-row gate, preventing an Appendix table from becoming a second metric
+    calculator or a parallel schema family.
+    """
+    if metric_records.get("schema") != FACTOR_GUARD_ABLATION_METRIC_RECORDS_SCHEMA:
+        raise ValueError(
+            "guard-ablation metric records declare an incompatible schema "
+            f"{metric_records.get('schema')!r}"
+        )
+    records = metric_records.get("records")
+    if not isinstance(records, list):
+        raise ValueError("guard-ablation metric records must contain an ordered records list")
+
+    readers: list[Mapping[str, object]] = []
+    differentials: list[Mapping[str, object]] = []
+    expected_reader = [
+        (configuration, window)
+        for configuration in GUARD_ABLATION_CONFIG_ORDER
+        for window in GUARD_ABLATION_WINDOW_ORDER
+    ]
+    expected_differential = [
+        (comparison, window)
+        for comparison in GUARD_ABLATION_COMPARISON_ORDER
+        for window in GUARD_ABLATION_WINDOW_ORDER
+    ]
+    actual_reader: list[tuple[str, str]] = []
+    actual_differential: list[tuple[str, str]] = []
+    for position, wrapped in enumerate(records):
+        if not isinstance(wrapped, Mapping):
+            raise ValueError(f"guard-ablation metric record {position} is not an object")
+        kind = wrapped.get("record_kind")
+        window = wrapped.get("window")
+        record = wrapped.get("record")
+        if kind not in {"reader", "differential"} or window not in GUARD_ABLATION_WINDOW_ORDER:
+            raise ValueError(
+                f"guard-ablation metric record {position} must declare a supported record_kind and window"
+            )
+        if not isinstance(record, Mapping):
+            raise ValueError(f"guard-ablation metric record {position} has no embedded producer row")
+        validated = validate_report_row(dict(record))
+        if kind == "reader":
+            configuration = wrapped.get("configuration")
+            if configuration not in GUARD_ABLATION_CONFIG_ORDER:
+                raise ValueError(f"guard-ablation reader record {position} has an unknown configuration")
+            if validated["schema"] != READER_SCHEMA or validated["portfolio_id"] != configuration:
+                raise ValueError(
+                    "guard-ablation reader wrapper must bind its configuration to one "
+                    "producer-owned reader row"
+                )
+            actual_reader.append((str(configuration), str(window)))
+            readers.append(
+                {
+                    "record_kind": "reader",
+                    "configuration": configuration,
+                    "comparison_id": None,
+                    "window": window,
+                    "record": validated,
+                }
+            )
+        else:
+            comparison = _canonical_guard_ablation_comparison(wrapped.get("comparison_id"))
+            if comparison not in GUARD_ABLATION_COMPARISON_ORDER:
+                raise ValueError(f"guard-ablation differential record {position} has an unknown comparison")
+            if validated["schema"] != DIFFERENTIAL_SCHEMA:
+                raise ValueError("guard-ablation differential wrapper must contain a differential row")
+            if "endpoint_total_return_difference" not in validated:
+                raise ValueError(
+                    "guard-ablation differential rows must preserve the separately named endpoint gap"
+                )
+            actual_differential.append((comparison, str(window)))
+            differentials.append(
+                {
+                    "record_kind": "differential",
+                    "configuration": None,
+                    "comparison_id": comparison,
+                    "window": window,
+                    "record": validated,
+                }
+            )
+    if actual_reader != expected_reader or actual_differential != expected_differential:
+        raise ValueError(
+            "guard-ablation metric records must contain the exact ordered four-cell "
+            "reader and three-comparison differential matrix"
+        )
+    if len(records) != 21:
+        raise ValueError("guard-ablation metric record matrix must contain exactly 21 records")
+    return tuple(readers), tuple(differentials)
+
+
+def _guard_ablation_panel_contract(
+    entry: Mapping[str, object], manifest: Mapping[str, object]
+) -> tuple[str, ...]:
+    """Get the producer-declared, exact v1 panel columns.
+
+    The panel intentionally carries mechanism fields owned by the diagnostic
+    producer.  Its exact column list is sealed in the producer inventory so a
+    report consumer neither drops a diagnostic nor invents a local replacement.
+    """
+    schema = entry.get("schema")
+    if schema != FACTOR_GUARD_ABLATION_PANEL_SCHEMA:
+        raise ValueError("guard-ablation panel inventory declares an incompatible schema")
+    columns = entry.get("columns")
+    if columns is None:
+        panel_contract = manifest.get("panel_schema")
+        columns = panel_contract.get("columns") if isinstance(panel_contract, Mapping) else None
+    if not isinstance(columns, list) or not columns or not all(
+        isinstance(column, str) and column for column in columns
+    ) or len(set(columns)) != len(columns):
+        raise ValueError("guard-ablation panel inventory must declare unique exact columns")
+    return tuple(columns)
+
+
+def _validate_guard_ablation_panel(
+    panel: pd.DataFrame, *, columns: Sequence[str]
+) -> pd.DataFrame:
+    if not isinstance(panel, pd.DataFrame) or not panel.index.equals(pd.RangeIndex(len(panel))):
+        raise ValueError("guard-ablation panel must be a flat DataFrame")
+    if tuple(panel.columns) != tuple(columns):
+        raise ValueError("guard-ablation panel columns diverge from its strict producer contract")
+    date_column = "rebalance_date" if "rebalance_date" in panel.columns else "date"
+    required = {date_column, "configuration", "evidence_id", "prompt_mode", "guard_enabled", "p_memorized"}
+    if not required.issubset(panel.columns):
+        raise ValueError(
+            "guard-ablation panel must retain date, configuration, evidence, prompt, guard, and memorization fields"
+        )
+    if len(panel) != 360:
+        raise ValueError("guard-ablation panel must contain exactly 360 rebalance/configuration rows")
+    if panel["configuration"].isna().any() or panel["evidence_id"].isna().any() or panel["prompt_mode"].isna().any():
+        raise ValueError("guard-ablation panel contains missing mechanism identities")
+    parsed_dates = pd.to_datetime(panel[date_column], errors="raise")
+    if parsed_dates.dt.tz is not None:
+        raise ValueError("guard-ablation panel rebalance dates must be timezone-naive")
+    dates_by_configuration: list[tuple[pd.Timestamp, ...]] = []
+    expected_guard = {
+        "factor_pit_ext2026": True,
+        "factor_pit_unguarded_diagnostic_ext2026": False,
+        "factor_nonpit_diagnostic_ext2026": True,
+        "factor_nonpit_unguarded_diagnostic_ext2026": False,
+    }
+    offset = 0
+    for configuration in GUARD_ABLATION_CONFIG_ORDER:
+        block = panel.iloc[offset : offset + 90]
+        block_dates = parsed_dates.iloc[offset : offset + 90]
+        if len(block) != 90 or tuple(block["configuration"]) != (configuration,) * 90:
+            raise ValueError("guard-ablation panel configuration blocks are not in stable required order")
+        if block_dates.duplicated().any() or not block_dates.is_monotonic_increasing:
+            raise ValueError("guard-ablation panel dates must be unique and increasing within every configuration")
+        if not all(isinstance(value, (bool, np.bool_)) for value in block["guard_enabled"]):
+            raise ValueError("guard-ablation panel guard_enabled values must be booleans")
+        if set(bool(value) for value in block["guard_enabled"]) != {expected_guard[configuration]}:
+            raise ValueError("guard-ablation panel guard flags do not match the declared configuration")
+        memorized = pd.to_numeric(block["p_memorized"], errors="raise")
+        observed = memorized.dropna()
+        if not np.isfinite(observed.to_numpy(dtype=float)).all() or not ((observed >= 0.0) & (observed <= 1.0)).all():
+            raise ValueError("guard-ablation panel non-null p_memorized values must be finite probabilities")
+        if memorized.isna().any():
+            if not {"parse_ok", "steered"}.issubset(block.columns):
+                raise ValueError("guard-ablation panel score-null rows require parse/steering state")
+            invalid_null = memorized.isna() & block["steered"].astype(bool)
+            if invalid_null.any():
+                raise ValueError("guard-ablation panel cannot mark a missing memorization score as steered")
+        dates_by_configuration.append(tuple(pd.Timestamp(value) for value in block_dates))
+        offset += 90
+    if any(dates != dates_by_configuration[0] for dates in dates_by_configuration[1:]):
+        raise ValueError("guard-ablation panel configurations must share one rebalance calendar")
+    return panel.copy()
+
+
+def _validate_guard_ablation_curve_table(table: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(table, pd.DataFrame) or not table.index.equals(pd.RangeIndex(len(table))):
+        raise ValueError("guard-ablation equity table must be a flat DataFrame")
+    if tuple(table.columns) != _GUARD_ABLATION_EQUITY_COLUMNS:
+        raise ValueError("guard-ablation equity table columns diverge from the canonical contract")
+    if table.empty:
+        raise ValueError("guard-ablation equity table must not be empty")
+    dates = pd.to_datetime(table["date"], errors="raise")
+    if dates.dt.tz is not None:
+        raise ValueError("guard-ablation equity dates must be timezone-naive")
+    date_blocks: list[tuple[pd.Timestamp, ...]] = []
+    offset = 0
+    for configuration in GUARD_ABLATION_CONFIG_ORDER:
+        block = table[table["configuration"] == configuration]
+        if block.empty or tuple(table.iloc[offset : offset + len(block)]["configuration"]) != (configuration,) * len(block):
+            raise ValueError("guard-ablation equity configurations are not in stable required order")
+        block_dates = pd.to_datetime(block["date"], errors="raise")
+        if block_dates.duplicated().any() or not block_dates.is_monotonic_increasing:
+            raise ValueError("guard-ablation equity dates must be unique and increasing")
+        wealth = pd.to_numeric(block["normalized_wealth"], errors="raise").to_numpy(dtype=float)
+        drawdown = pd.to_numeric(block["drawdown"], errors="raise").to_numpy(dtype=float)
+        if not np.isfinite(wealth).all() or not np.isfinite(drawdown).all() or (wealth <= 0.0).any() or (drawdown > 1e-12).any():
+            raise ValueError("guard-ablation equity wealth/drawdown values are invalid")
+        if not np.isclose(wealth[0], 1.0, atol=1e-12, rtol=0.0):
+            raise ValueError("every guard-ablation curve must be normalized to 1.0 at the common start")
+        expected_kind = {
+            "factor_pit_ext2026": None,
+            "factor_pit_unguarded_diagnostic_ext2026": "controlled_pit_unguarded_vs_guarded",
+            "factor_nonpit_diagnostic_ext2026": None,
+            "factor_nonpit_unguarded_diagnostic_ext2026": "combined_nonpit_unguarded_vs_pit_guarded_stress",
+        }[configuration]
+        kind = block["relative_wealth_kind"]
+        relative = pd.to_numeric(block["relative_wealth"], errors="coerce")
+        if expected_kind is None:
+            if kind.notna().any() or relative.notna().any():
+                raise ValueError("guarded/reference curves must not claim a relative-wealth comparison")
+        else:
+            if set(kind.astype(str)) != {expected_kind} or relative.isna().any() or not np.isfinite(relative.to_numpy(dtype=float)).all() or (relative <= 0.0).any():
+                raise ValueError("guard-ablation relative-wealth semantics are invalid")
+        date_blocks.append(tuple(pd.Timestamp(value) for value in block_dates))
+        offset += len(block)
+    if offset != len(table) or any(dates_ != date_blocks[0] for dates_ in date_blocks[1:]):
+        raise ValueError("guard-ablation equity table must contain four common-window curves")
+    return table.copy()
+
+
+def load_completed_guard_ablation_run(
+    run_dir: Path | str, *, run_id: str, manifest_sha256: str
+) -> VerifiedGuardAblationRun:
+    """Load a completed producer-owned guard-ablation run without importing it."""
+    _pinned_identity("run_id", run_id)
+    _pinned_sha256("manifest_sha256", manifest_sha256)
+    run_dir = _require_run_directory(run_dir, "guard-ablation run input")
+    manifest_path = run_dir / "manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{manifest_path}: guard-ablation manifest is invalid JSON") from exc
+    if not isinstance(manifest, dict) or manifest.get("schema") != FACTOR_GUARD_ABLATION_RUN_SCHEMA:
+        raise ValueError(
+            f"guard-ablation manifest schema must be {FACTOR_GUARD_ABLATION_RUN_SCHEMA!r}"
+        )
+    if manifest.get("completed") is not True:
+        raise ValueError("guard-ablation manifest must declare completed=true")
+    if manifest.get("run_id") != run_id:
+        raise ValueError("guard-ablation run identity mismatch")
+    if _sha256_file(manifest_path) != manifest_sha256:
+        raise ValueError("guard-ablation manifest sha256 mismatch")
+    if not isinstance(manifest.get("source_commit"), str) or not manifest["source_commit"]:
+        raise ValueError("guard-ablation manifest must pin a source_commit")
+    inputs = manifest.get("input_manifests")
+    if not isinstance(inputs, Mapping) or set(("factor_run", "market_snapshot")) - set(inputs):
+        raise ValueError("guard-ablation manifest must pin parent Factor and market manifests")
+    for role, identity in (("factor_run", "run_id"), ("market_snapshot", "snapshot_id")):
+        entry = inputs[role]
+        if not isinstance(entry, Mapping):
+            raise ValueError(f"guard-ablation input manifest {role!r} must be an object")
+        _pinned_identity(f"input_manifests.{role}.{identity}", entry.get(identity))
+        _pinned_sha256(f"input_manifests.{role}.manifest_sha256", entry.get("manifest_sha256"))
+    marker = (run_dir / "COMPLETED").read_text().splitlines()
+    expected_marker = f"manifest_sha256={manifest_sha256}"
+    # Strategy producers conventionally retain their build time above the hash;
+    # accept that established two-line form (and the one-line canonical form),
+    # while requiring the final line to bind the current manifest exactly.
+    if len(marker) not in {1, 2} or marker[-1] != expected_marker:
+        raise ValueError("guard-ablation COMPLETED marker does not bind the final manifest")
+    if len(marker) == 2:
+        try:
+            pd.Timestamp(marker[0])
+        except (TypeError, ValueError) as exc:
+            raise ValueError("guard-ablation COMPLETED marker has an invalid build time") from exc
+
+    files = _guard_ablation_manifest_files(run_dir, manifest)
+    for filename in _GUARD_ABLATION_UNGUARDED_FILES:
+        _guard_ablation_inventory_entry(files, filenames=(filename,))
+    metric_entry = _guard_ablation_inventory_entry(
+        files,
+        filenames=("factor_guard_ablation_metric_records_ext2026.json",),
+        roles=("metric_records",),
+    )
+    panel_entry = _guard_ablation_inventory_entry(
+        files,
+        filenames=("factor_guard_ablation_panel_ext2026.parquet",),
+        roles=("panel",),
+    )
+    assert metric_entry is not None and panel_entry is not None
+    try:
+        metric_records = json.loads(_guard_ablation_read_bytes(run_dir, metric_entry).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("guard-ablation metric-record artifact is not valid UTF-8 JSON") from exc
+    if not isinstance(metric_records, Mapping):
+        raise ValueError("guard-ablation metric-record artifact must be a JSON object")
+    _guard_ablation_record_wrappers(metric_records)
+    panel_columns = _guard_ablation_panel_contract(panel_entry, manifest)
+    panel = pd.read_parquet(io.BytesIO(_guard_ablation_read_bytes(run_dir, panel_entry)))
+    panel = _validate_guard_ablation_panel(panel, columns=panel_columns)
+
+    curve_entry = _guard_ablation_inventory_entry(
+        files,
+        filenames=(
+            "factor_guard_ablation_curves_ext2026.parquet",
+            "factor_guard_ablation_curve_ext2026.parquet",
+        ),
+        roles=("curves", "curve_table"),
+        required=False,
+    )
+    curve_table = None
+    if curve_entry is not None:
+        curve_table = _validate_guard_ablation_curve_table(
+            pd.read_parquet(io.BytesIO(_guard_ablation_read_bytes(run_dir, curve_entry)))
+        )
+    return VerifiedGuardAblationRun(
+        run_dir=run_dir,
+        run_id=run_id,
+        manifest_sha256=manifest_sha256,
+        manifest=manifest,
+        metric_records=metric_records,
+        panel=panel,
+        files=MappingProxyType(dict(files)),
+        metric_entry=metric_entry,
+        panel_entry=panel_entry,
+        curve_entry=curve_entry,
+        curve_table=curve_table,
+    )
+
+
+# A descriptive alias retains the naming symmetry with ``load_factor_report_input``.
+load_guard_ablation_report_input = load_completed_guard_ablation_run
+
+
+@dataclass(frozen=True)
+class GuardAblationReportTables:
+    """Pure diagnostic table projections and their verified source lineage."""
+
+    owner: str
+    lineage: Mapping[str, object]
+    rows: Mapping[str, tuple[Mapping[str, object], ...]]
+    tables: Mapping[str, pd.DataFrame]
+
+
+def project_guard_ablation_metric_records(
+    metric_records: Mapping[str, object],
+) -> tuple[tuple[Mapping[str, object], ...], pd.DataFrame]:
+    """Project the sealed producer record matrix, without recalculating a metric."""
+    readers, differentials = _guard_ablation_record_wrappers(metric_records)
+    rows: list[dict[str, object]] = []
+    for wrapped in (*readers, *differentials):
+        record = dict(wrapped["record"])
+        row = {
+            "row_order": len(rows),
+            "record_kind": wrapped["record_kind"],
+            "configuration": wrapped["configuration"],
+            "comparison_id": wrapped["comparison_id"],
+            "window": wrapped["window"],
+            "metric_semantics": (
+                "portfolio_return_metrics"
+                if wrapped["record_kind"] == "reader"
+                else "daily_comparison_minus_reference_return_metrics; "
+                "endpoint_total_return_difference_is_descriptive_endpoint_gap"
+            ),
+            **record,
+        }
+        rows.append(row)
+    columns = [
+        "row_order", "record_kind", "configuration", "comparison_id", "window", "metric_semantics"
+    ]
+    for row in rows:
+        columns.extend(key for key in row if key not in columns)
+    return tuple(rows), pd.DataFrame(rows, columns=columns)
+
+
+def _guard_ablation_equity_filename(configuration: str) -> str:
+    return {
+        "factor_pit_ext2026": "factor_equity_ext2026.parquet",
+        "factor_pit_unguarded_diagnostic_ext2026": "factor_pit_unguarded_diagnostic_equity_ext2026.parquet",
+        "factor_nonpit_diagnostic_ext2026": "factor_nonpit_diagnostic_equity_ext2026.parquet",
+        "factor_nonpit_unguarded_diagnostic_ext2026": "factor_nonpit_unguarded_diagnostic_equity_ext2026.parquet",
+    }[configuration]
+
+
+def _guard_ablation_value_series(data: bytes, *, label: str) -> pd.Series:
+    frame = pd.read_parquet(io.BytesIO(data))
+    if "value" not in frame.columns:
+        raise ValueError(f"{label}: equity artifact must have a value column")
+    value = frame["value"].copy()
+    value.index = pd.DatetimeIndex(value.index)
+    values = value.to_numpy(dtype=float)
+    if (
+        len(value) < 3
+        or value.index.has_duplicates
+        or not value.index.is_monotonic_increasing
+        or value.index.tz is not None
+        or not np.isfinite(values).all()
+        or (values <= 0.0).any()
+    ):
+        raise ValueError(f"{label}: equity curve must be finite, positive, unique, ordered, and timezone-naive")
+    return value
+
+
+def _guard_ablation_parent_equity(
+    factor_input: VerifiedFactorRun, configuration: str
+) -> pd.Series:
+    stream = factor_input.metric_records.get("source_streams", {}).get(configuration)
+    if not isinstance(stream, Mapping) or not isinstance(stream.get("artifact"), str):
+        raise ValueError(f"parent Factor run lacks the declared {configuration!r} equity stream")
+    artifact = str(stream["artifact"])
+    entry = _factor_inventory_entry(factor_input.manifest, artifact)
+    return _guard_ablation_value_series(
+        _read_inventoried_bytes(factor_input.run_dir / artifact, entry),
+        label=f"parent Factor {configuration}",
+    )
+
+
+def _guard_ablation_equity_from_inputs(
+    guard_input: VerifiedGuardAblationRun,
+    *,
+    factor_input: VerifiedFactorRun | None,
+) -> pd.DataFrame:
+    if factor_input is not None:
+        factor_input = load_factor_report_input(
+            factor_input.run_dir,
+            run_id=factor_input.run_id,
+            manifest_sha256=factor_input.manifest_sha256,
+        )
+        lineage = guard_input.manifest["input_manifests"]["factor_run"]
+        if (
+            lineage.get("run_id"), lineage.get("manifest_sha256")
+        ) != (factor_input.run_id, factor_input.manifest_sha256):
+            raise ValueError("guard-ablation parent Factor lineage diverges from the supplied completed Factor run")
+    values: dict[str, pd.Series] = {}
+    for configuration in GUARD_ABLATION_CONFIG_ORDER:
+        entry = _guard_ablation_inventory_entry(
+            guard_input.files,
+            filenames=(_guard_ablation_equity_filename(configuration),),
+            required=False,
+        )
+        if entry is not None:
+            values[configuration] = _guard_ablation_value_series(
+                _guard_ablation_read_bytes(guard_input, entry), label=configuration
+            )
+        elif configuration in {"factor_pit_ext2026", "factor_nonpit_diagnostic_ext2026"} and factor_input is not None:
+            values[configuration] = _guard_ablation_parent_equity(factor_input, configuration)
+        else:
+            raise ValueError(
+                f"guard-ablation run has no validated curve table or equity stream for {configuration}; "
+                "supply the verified parent Factor run for guarded curves"
+            )
+    common = values[GUARD_ABLATION_CONFIG_ORDER[0]].index
+    for series in values.values():
+        common = common.intersection(series.index)
+    common = common.sort_values()
+    if len(common) < 2:
+        raise ValueError("guard-ablation equity inputs have no viable common window")
+    normalized = {
+        configuration: values[configuration].loc[common] / float(values[configuration].loc[common].iloc[0])
+        for configuration in GUARD_ABLATION_CONFIG_ORDER
+    }
+    controlled = normalized["factor_pit_unguarded_diagnostic_ext2026"] / normalized["factor_pit_ext2026"]
+    stress = normalized["factor_nonpit_unguarded_diagnostic_ext2026"] / normalized["factor_pit_ext2026"]
+    rows: list[dict[str, object]] = []
+    for configuration in GUARD_ABLATION_CONFIG_ORDER:
+        curve = normalized[configuration]
+        relative_kind = {
+            "factor_pit_ext2026": None,
+            "factor_pit_unguarded_diagnostic_ext2026": "controlled_pit_unguarded_vs_guarded",
+            "factor_nonpit_diagnostic_ext2026": None,
+            "factor_nonpit_unguarded_diagnostic_ext2026": "combined_nonpit_unguarded_vs_pit_guarded_stress",
+        }[configuration]
+        relative = (
+            controlled
+            if configuration == "factor_pit_unguarded_diagnostic_ext2026"
+            else stress
+            if configuration == "factor_nonpit_unguarded_diagnostic_ext2026"
+            else None
+        )
+        drawdown = curve / curve.cummax() - 1.0
+        for date, wealth in curve.items():
+            rows.append(
+                {
+                    "date": pd.Timestamp(date),
+                    "configuration": configuration,
+                    "normalized_wealth": float(wealth),
+                    "drawdown": float(drawdown.loc[date]),
+                    "relative_wealth": None if relative is None else float(relative.loc[date]),
+                    "relative_wealth_kind": relative_kind,
+                }
+            )
+    return _validate_guard_ablation_curve_table(
+        pd.DataFrame(rows, columns=list(_GUARD_ABLATION_EQUITY_COLUMNS))
+    )
+
+
+def build_guard_ablation_report_tables(
+    guard_input: VerifiedGuardAblationRun,
+    *,
+    factor_input: VerifiedFactorRun | None = None,
+) -> GuardAblationReportTables:
+    """Build the isolated four-cell diagnostic tables from verified inputs only."""
+    if not isinstance(guard_input, VerifiedGuardAblationRun):
+        raise TypeError("guard_input must come from load_completed_guard_ablation_run")
+    if factor_input is not None:
+        if not isinstance(factor_input, VerifiedFactorRun):
+            raise TypeError("factor_input must come from load_factor_report_input")
+        parent = guard_input.manifest["input_manifests"]["factor_run"]
+        if (parent.get("run_id"), parent.get("manifest_sha256")) != (
+            factor_input.run_id,
+            factor_input.manifest_sha256,
+        ):
+            raise ValueError(
+                "guard-ablation parent Factor lineage diverges from the supplied completed Factor run"
+            )
+    metric_rows, metrics = project_guard_ablation_metric_records(guard_input.metric_records)
+    equity = (
+        _validate_guard_ablation_curve_table(guard_input.curve_table)
+        if guard_input.curve_table is not None
+        else _guard_ablation_equity_from_inputs(guard_input, factor_input=factor_input)
+    )
+    panel = _validate_guard_ablation_panel(
+        guard_input.panel,
+        columns=_guard_ablation_panel_contract(guard_input.panel_entry, guard_input.manifest),
+    )
+    return GuardAblationReportTables(
+        owner=REPORT_TABLE_OWNER,
+        lineage={
+            "factor_guard_ablation_run": {
+                "run_id": guard_input.run_id,
+                "manifest_sha256": guard_input.manifest_sha256,
+            },
+            "parent_factor_run": dict(guard_input.manifest["input_manifests"]["factor_run"]),
+            "market_snapshot": dict(guard_input.manifest["input_manifests"]["market_snapshot"]),
+        },
+        rows={"tear_sheet_factor_guard_ablation_ext2026": metric_rows},
+        tables={
+            "tear_sheet_factor_guard_ablation_ext2026": metrics,
+            "factor_guard_ablation_equity_ext2026": equity,
+            "factor_guard_ablation_panel_ext2026": panel,
+        },
+    )
+
+
+@dataclass(frozen=True)
+class CanonicalGuardAblationReportBundle:
+    """One immutable Appendix diagnostic report bundle, outside data-v4."""
+
+    root: Path
+    manifest: Mapping[str, object]
+    tables: Mapping[str, pd.DataFrame]
+
+
+def _guard_ablation_report_manifest(
+    *,
+    report_id: str,
+    guard_input: VerifiedGuardAblationRun,
+    tables: Mapping[str, pd.DataFrame],
+    root: Path,
+) -> dict[str, object]:
+    source_artifacts = {
+        "metric_records": {
+            "file": guard_input.metric_entry["file"],
+            "sha256": guard_input.metric_entry["sha256"],
+        },
+        "panel": {
+            "file": guard_input.panel_entry["file"],
+            "sha256": guard_input.panel_entry["sha256"],
+        },
+    }
+    if guard_input.curve_entry is not None:
+        source_artifacts["curves"] = {
+            "file": guard_input.curve_entry["file"],
+            "sha256": guard_input.curve_entry["sha256"],
+        }
+    table_inventory: dict[str, dict[str, object]] = {}
+    mirror_inventory: dict[str, dict[str, object]] = {}
+    for stem in sorted(GUARD_ABLATION_REPORT_TABLE_SCHEMAS):
+        table = tables[stem]
+        table_path = root / "tables" / f"{stem}.parquet"
+        table_inventory[stem] = _report_manifest_entry(
+            path=table_path,
+            relative=table_path.relative_to(root),
+            schema=GUARD_ABLATION_REPORT_TABLE_SCHEMAS[stem],
+            rows=len(table),
+        )
+        if stem == "factor_guard_ablation_panel_ext2026":
+            table_inventory[stem]["columns"] = list(table.columns)
+        for locale, suffix in (("en-US", ".csv"), ("de-DE", "_de.csv")):
+            mirror_path = root / "mirrors" / f"{stem}{suffix}"
+            mirror_inventory[mirror_path.name] = {
+                **_report_manifest_entry(
+                    path=mirror_path,
+                    relative=mirror_path.relative_to(root),
+                    schema=GUARD_ABLATION_REPORT_TABLE_SCHEMAS[stem],
+                    rows=len(table),
+                ),
+                "locale": locale,
+                "source_table": stem,
+            }
+    return {
+        "schema": CANONICAL_GUARD_ABLATION_REPORTS_SCHEMA,
+        "completed": True,
+        "producer": REPORT_TABLE_OWNER,
+        "report_id": report_id,
+        "input_manifests": {
+            "factor_guard_ablation_run": {
+                "run_id": guard_input.run_id,
+                "manifest_sha256": guard_input.manifest_sha256,
+            }
+        },
+        "source_artifacts": source_artifacts,
+        "tables": table_inventory,
+        "mirrors": mirror_inventory,
+    }
+
+
+def _validate_guard_ablation_tear_table(table: pd.DataFrame) -> None:
+    if not table.index.equals(pd.RangeIndex(len(table))) or len(table) != 21:
+        raise ValueError("guard-ablation tear sheet must be a flat exact 21-row table")
+    required = {"row_order", "record_kind", "configuration", "comparison_id", "window", "metric_semantics", "schema"}
+    if not required.issubset(table.columns) or list(table["row_order"]) != list(range(21)):
+        raise ValueError("guard-ablation tear sheet has an invalid row identity/order contract")
+    reader = table.iloc[:12]
+    differential = table.iloc[12:]
+    expected_readers = [
+        (configuration, window)
+        for configuration in GUARD_ABLATION_CONFIG_ORDER
+        for window in GUARD_ABLATION_WINDOW_ORDER
+    ]
+    expected_differentials = [
+        (comparison, window)
+        for comparison in GUARD_ABLATION_COMPARISON_ORDER
+        for window in GUARD_ABLATION_WINDOW_ORDER
+    ]
+    if list(zip(reader["configuration"], reader["window"], strict=True)) != expected_readers or set(reader["record_kind"]) != {"reader"}:
+        raise ValueError("guard-ablation tear sheet reader rows diverge from the four-cell order")
+    if list(zip(differential["comparison_id"], differential["window"], strict=True)) != expected_differentials or set(differential["record_kind"]) != {"differential"}:
+        raise ValueError("guard-ablation tear sheet differential rows diverge from the comparison order")
+    for row in table.to_dict(orient="records"):
+        record = {
+            key: value
+            for key, value in row.items()
+            if key not in {"row_order", "record_kind", "configuration", "comparison_id", "window", "metric_semantics"}
+            and value is not None
+            and not (not isinstance(value, (str, bytes)) and bool(pd.isna(value)))
+        }
+        validate_report_row(record)
+        if row["record_kind"] == "differential":
+            if row["schema"] != DIFFERENTIAL_SCHEMA or "endpoint_total_return_difference" not in record or "endpoint_gap" not in str(row["metric_semantics"]):
+                raise ValueError("guard-ablation differential rows lost their return-versus-endpoint semantics")
+        elif row["schema"] != READER_SCHEMA:
+            raise ValueError("guard-ablation reader rows must retain the reader schema")
+
+
+def _validate_guard_ablation_report_tables(tables: Mapping[str, pd.DataFrame]) -> None:
+    if set(tables) != set(GUARD_ABLATION_REPORT_TABLE_SCHEMAS):
+        raise ValueError("guard-ablation bundle must contain exactly its three diagnostic tables")
+    _validate_guard_ablation_tear_table(tables["tear_sheet_factor_guard_ablation_ext2026"])
+    _validate_guard_ablation_curve_table(tables["factor_guard_ablation_equity_ext2026"])
+    panel = tables["factor_guard_ablation_panel_ext2026"]
+    # The panel column order is run-specific but is already sealed by its input
+    # inventory.  Here we preserve it and recheck its universal 360-row mechanics.
+    _validate_guard_ablation_panel(panel, columns=tuple(panel.columns))
+
+
+def materialize_canonical_guard_ablation_report_bundle(
+    guard_input: VerifiedGuardAblationRun,
+    *,
+    destination: Path | str,
+    factor_input: VerifiedFactorRun | None = None,
+) -> CanonicalGuardAblationReportBundle:
+    """Materialize the standalone immutable diagnostic canonical bundle.
+
+    Existing roots (including incomplete roots) are never reused.  All tables
+    and deterministic locale projections are finalized before the manifest; the
+    completion marker is the last filesystem mutation.
+    """
+    if not isinstance(guard_input, VerifiedGuardAblationRun):
+        raise TypeError("guard_input must come from load_completed_guard_ablation_run")
+    destination = Path(destination)
+    _require_new_report_destination(destination)
+    guard_input = load_completed_guard_ablation_run(
+        guard_input.run_dir,
+        run_id=guard_input.run_id,
+        manifest_sha256=guard_input.manifest_sha256,
+    )
+    if factor_input is not None:
+        factor_input = load_factor_report_input(
+            factor_input.run_dir,
+            run_id=factor_input.run_id,
+            manifest_sha256=factor_input.manifest_sha256,
+        )
+    reports = build_guard_ablation_report_tables(guard_input, factor_input=factor_input)
+    tables = {
+        stem: parquet_safe_report_table(table.reset_index(drop=True))
+        for stem, table in reports.tables.items()
+    }
+    _validate_guard_ablation_report_tables(tables)
+    destination.mkdir(parents=True, exist_ok=True)
+    tables_dir = destination / "tables"
+    tables_dir.mkdir()
+    for stem in sorted(tables):
+        tables[stem].to_parquet(tables_dir / f"{stem}.parquet", index=False)
+    try:
+        from scripts import export_csv_mirrors as mirror_exporter
+    except ImportError:
+        import export_csv_mirrors as mirror_exporter
+    # Do not call require_catalog_mirror_coverage: this diagnostic namespace is
+    # deliberately outside frozen data-v4 and is not a catalog extension.
+    mirror_exporter.write_locale_mirrors(tables, destination / "mirrors")
+    manifest = _guard_ablation_report_manifest(
+        report_id=destination.name,
+        guard_input=guard_input,
+        tables=tables,
+        root=destination,
+    )
+    manifest_path = destination / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n")
+    (destination / "COMPLETED").write_text(
+        f"manifest_sha256={_sha256_file(manifest_path)}\n"
+    )
+    verified = validate_canonical_guard_ablation_report_bundle(
+        destination, guard_input=guard_input, factor_input=factor_input
+    )
+    return CanonicalGuardAblationReportBundle(destination, verified, tables)
+
+
+def validate_canonical_guard_ablation_report_bundle(
+    root: Path | str,
+    *,
+    guard_input: VerifiedGuardAblationRun | None = None,
+    factor_input: VerifiedFactorRun | None = None,
+) -> Mapping[str, object]:
+    """Read-only validation for the separate guard-ablation canonical family."""
+    root = Path(root)
+    manifest_path, marker_path = root / "manifest.json", root / "COMPLETED"
+    if not root.is_dir() or not manifest_path.is_file() or not marker_path.is_file():
+        raise ValueError("canonical guard-ablation report root is incomplete")
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError("canonical guard-ablation report manifest is invalid JSON") from exc
+    if not isinstance(manifest, dict) or manifest.get("schema") != CANONICAL_GUARD_ABLATION_REPORTS_SCHEMA:
+        raise ValueError("canonical guard-ablation report manifest has an incompatible schema")
+    if manifest.get("completed") is not True or manifest.get("producer") != REPORT_TABLE_OWNER:
+        raise ValueError("canonical guard-ablation report manifest is not completed by the report owner")
+    _pinned_identity("report_id", manifest.get("report_id"))
+    inputs = manifest.get("input_manifests")
+    if not isinstance(inputs, Mapping) or set(inputs) != {"factor_guard_ablation_run"}:
+        raise ValueError("canonical guard-ablation report must pin exactly its diagnostic source run")
+    source = inputs["factor_guard_ablation_run"]
+    if not isinstance(source, Mapping):
+        raise ValueError("canonical guard-ablation source manifest identity is malformed")
+    _pinned_identity("input_manifests.factor_guard_ablation_run.run_id", source.get("run_id"))
+    _pinned_sha256("input_manifests.factor_guard_ablation_run.manifest_sha256", source.get("manifest_sha256"))
+
+    expected_stems = set(GUARD_ABLATION_REPORT_TABLE_SCHEMAS)
+    tables_inventory = manifest.get("tables")
+    expected_mirrors = {
+        f"{stem}{suffix}" for stem in expected_stems for suffix in (".csv", "_de.csv")
+    }
+    mirrors = manifest.get("mirrors")
+    if not isinstance(tables_inventory, Mapping) or set(tables_inventory) != expected_stems:
+        raise ValueError("canonical guard-ablation report table inventory is incomplete")
+    if not isinstance(mirrors, Mapping) or set(mirrors) != expected_mirrors:
+        raise ValueError("canonical guard-ablation report mirror inventory is incomplete")
+
+    loaded: dict[str, pd.DataFrame] = {}
+    table_files: set[Path] = set()
+    mirror_files: set[Path] = set()
+    try:
+        from scripts import export_csv_mirrors as mirror_exporter
+    except ImportError:
+        import export_csv_mirrors as mirror_exporter
+    for stem in sorted(expected_stems):
+        entry = tables_inventory[stem]
+        if not isinstance(entry, Mapping):
+            raise ValueError(f"{stem}: canonical guard-ablation table entry is malformed")
+        expected_path = Path("tables") / f"{stem}.parquet"
+        path = _safe_report_relative_path(entry.get("file"), directory="tables")
+        if path != expected_path or entry.get("schema") != GUARD_ABLATION_REPORT_TABLE_SCHEMAS[stem]:
+            raise ValueError(f"{stem}: canonical guard-ablation table inventory diverges")
+        if isinstance(entry.get("rows"), bool) or not isinstance(entry.get("rows"), int) or entry["rows"] < 1:
+            raise ValueError(f"{stem}: canonical guard-ablation row count is invalid")
+        _pinned_sha256(f"tables.{stem}.sha256", entry.get("sha256"))
+        disk_path = root / path
+        if not disk_path.is_file() or _sha256_file(disk_path) != entry["sha256"]:
+            raise ValueError(f"{stem}: canonical guard-ablation table is missing or mutated")
+        table = pd.read_parquet(disk_path)
+        if len(table) != entry["rows"]:
+            raise ValueError(f"{stem}: canonical guard-ablation table row count diverges")
+        if stem == "factor_guard_ablation_panel_ext2026" and entry.get("columns") != list(table.columns):
+            raise ValueError("guard-ablation panel columns diverge from the canonical report inventory")
+        loaded[stem] = table
+        table_files.add(path)
+        for locale, suffix in (("en-US", ".csv"), ("de-DE", "_de.csv")):
+            name = f"{stem}{suffix}"
+            mirror = mirrors[name]
+            if not isinstance(mirror, Mapping):
+                raise ValueError(f"{name}: canonical guard-ablation mirror entry is malformed")
+            mirror_path = _safe_report_relative_path(mirror.get("file"), directory="mirrors")
+            if mirror_path != Path("mirrors") / name or (
+                mirror.get("schema"), mirror.get("source_table"), mirror.get("locale"), mirror.get("rows")
+            ) != (GUARD_ABLATION_REPORT_TABLE_SCHEMAS[stem], stem, locale, entry["rows"]):
+                raise ValueError(f"{name}: canonical guard-ablation mirror inventory diverges")
+            _pinned_sha256(f"mirrors.{name}.sha256", mirror.get("sha256"))
+            disk_mirror = root / mirror_path
+            if not disk_mirror.is_file() or _sha256_file(disk_mirror) != mirror["sha256"]:
+                raise ValueError(f"{name}: canonical guard-ablation mirror is missing or mutated")
+            mirror_exporter.verify_mirror_round_trip(table, disk_mirror, locale=locale)
+            mirror_files.add(mirror_path)
+    _validate_guard_ablation_report_tables(loaded)
+    actual_tables = {
+        Path("tables") / path.name for path in (root / "tables").iterdir() if path.is_file()
+    } if (root / "tables").is_dir() else set()
+    actual_mirrors = {
+        Path("mirrors") / path.name for path in (root / "mirrors").iterdir() if path.is_file()
+    } if (root / "mirrors").is_dir() else set()
+    if actual_tables != table_files or actual_mirrors != mirror_files or {path.name for path in root.iterdir()} != {"manifest.json", "COMPLETED", "tables", "mirrors"}:
+        raise ValueError("canonical guard-ablation report root contains unmanifested output")
+    if marker_path.read_text().splitlines() != [f"manifest_sha256={_sha256_file(manifest_path)}"]:
+        raise ValueError("canonical guard-ablation COMPLETED marker does not bind the final manifest")
+
+    source_artifacts = manifest.get("source_artifacts")
+    if not isinstance(source_artifacts, Mapping) or not {"metric_records", "panel"}.issubset(source_artifacts):
+        raise ValueError("canonical guard-ablation report must pin metric-record and panel source hashes")
+    if guard_input is not None:
+        if not isinstance(guard_input, VerifiedGuardAblationRun):
+            raise TypeError("guard_input must come from load_completed_guard_ablation_run")
+        current = load_completed_guard_ablation_run(
+            guard_input.run_dir,
+            run_id=guard_input.run_id,
+            manifest_sha256=guard_input.manifest_sha256,
+        )
+        if dict(source) != {"run_id": current.run_id, "manifest_sha256": current.manifest_sha256}:
+            raise ValueError("canonical guard-ablation report source lineage diverges from the validated run")
+        expected_sources = {
+            "metric_records": {"file": current.metric_entry["file"], "sha256": current.metric_entry["sha256"]},
+            "panel": {"file": current.panel_entry["file"], "sha256": current.panel_entry["sha256"]},
+        }
+        if current.curve_entry is not None:
+            expected_sources["curves"] = {"file": current.curve_entry["file"], "sha256": current.curve_entry["sha256"]}
+        if {key: dict(value) for key, value in source_artifacts.items() if isinstance(value, Mapping)} != expected_sources:
+            raise ValueError("canonical guard-ablation report source table hashes diverge from the validated run")
+        if factor_input is not None:
+            factor_input = load_factor_report_input(
+                factor_input.run_dir,
+                run_id=factor_input.run_id,
+                manifest_sha256=factor_input.manifest_sha256,
+            )
+        expected_reports = build_guard_ablation_report_tables(current, factor_input=factor_input)
+        for stem, expected in expected_reports.tables.items():
+            # Parquet normalizes Timestamp frequency metadata.  Compare the
+            # canonical values while treating both date-bearing projections as
+            # the same persisted timestamps rather than requiring an in-memory
+            # DatetimeIndex frequency that Parquet cannot retain.
+            expected = expected.reset_index(drop=True).copy()
+            actual = loaded[stem].copy()
+            for column in expected.columns:
+                if column in actual.columns and (
+                    column in {"date", "start", "end"} or column.endswith("_date")
+                ):
+                    expected[column] = pd.to_datetime(expected[column], errors="raise")
+                    actual[column] = pd.to_datetime(actual[column], errors="raise")
+            pd.testing.assert_frame_equal(actual, expected, check_dtype=False, check_freq=False)
+    return manifest
+
+
+def load_completed_canonical_guard_ablation_report_bundle(
+    root: Path | str,
+    *,
+    guard_input: VerifiedGuardAblationRun | None = None,
+    factor_input: VerifiedFactorRun | None = None,
+) -> CanonicalGuardAblationReportBundle:
+    """Validate and load all three tables from a completed diagnostic bundle."""
+    root = Path(root)
+    manifest = validate_canonical_guard_ablation_report_bundle(
+        root, guard_input=guard_input, factor_input=factor_input
+    )
+    return CanonicalGuardAblationReportBundle(
+        root=root,
+        manifest=manifest,
+        tables={
+            stem: pd.read_parquet(root / str(entry["file"]))
+            for stem, entry in sorted(manifest["tables"].items())
+        },
+    )
+
+
 if __name__ == "__main__":
     main()

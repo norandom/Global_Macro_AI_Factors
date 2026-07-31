@@ -1,0 +1,154 @@
+{
+  "completed": true,
+  "input_manifests": {
+    "factor_guard_ablation_run": {
+      "manifest_sha256": "f007c6d82a15435ae238e4daede12af7c4977c4c71bc9107ac1b797acf193f54",
+      "run_id": "factor_guard_ablation_ext2026_2019-01-01_2026-06-30_v2"
+    }
+  },
+  "mirrors": {
+    "factor_guard_ablation_equity_ext2026.csv": {
+      "file": "mirrors/factor_guard_ablation_equity_ext2026.csv",
+      "locale": "en-US",
+      "rows": 12336,
+      "schema": "factor_guard_ablation.equity.v1",
+      "sha256": "0c50fbaa0996161a813bc2b99530422e1f19c1188ae6878e5562e53266f72c26",
+      "source_table": "factor_guard_ablation_equity_ext2026"
+    },
+    "factor_guard_ablation_equity_ext2026_de.csv": {
+      "file": "mirrors/factor_guard_ablation_equity_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 12336,
+      "schema": "factor_guard_ablation.equity.v1",
+      "sha256": "6b64ab6157322e12fe035d2fdee4ded2ccf046f27eae03f494c698a0b7101c6b",
+      "source_table": "factor_guard_ablation_equity_ext2026"
+    },
+    "factor_guard_ablation_panel_ext2026.csv": {
+      "file": "mirrors/factor_guard_ablation_panel_ext2026.csv",
+      "locale": "en-US",
+      "rows": 360,
+      "schema": "factor_guard_ablation.panel.v1",
+      "sha256": "e2acdcd1de3a9c09f7cc624b42911319d38c19b0a9e90e29d98d0912edd18c01",
+      "source_table": "factor_guard_ablation_panel_ext2026"
+    },
+    "factor_guard_ablation_panel_ext2026_de.csv": {
+      "file": "mirrors/factor_guard_ablation_panel_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 360,
+      "schema": "factor_guard_ablation.panel.v1",
+      "sha256": "15d3346a345f1cf98b0456c167e8959fae5723df084571214ae48c633e91ae9e",
+      "source_table": "factor_guard_ablation_panel_ext2026"
+    },
+    "tear_sheet_factor_guard_ablation_ext2026.csv": {
+      "file": "mirrors/tear_sheet_factor_guard_ablation_ext2026.csv",
+      "locale": "en-US",
+      "rows": 21,
+      "schema": "tear_sheet.factor_guard_ablation.v1",
+      "sha256": "80c514bd3c15b16174269e003e58f3a7d8be33b445795783c6c778fc31b4c0ae",
+      "source_table": "tear_sheet_factor_guard_ablation_ext2026"
+    },
+    "tear_sheet_factor_guard_ablation_ext2026_de.csv": {
+      "file": "mirrors/tear_sheet_factor_guard_ablation_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 21,
+      "schema": "tear_sheet.factor_guard_ablation.v1",
+      "sha256": "f91057ddd4733f7a23a4f81c68a5a2c8d90328ea533d5237b8e80935e8106d05",
+      "source_table": "tear_sheet_factor_guard_ablation_ext2026"
+    }
+  },
+  "producer": "scripts/build_tear_sheet.py",
+  "report_id": "canonical_guard_ablation_reports_v2",
+  "schema": "canonical_guard_ablation_reports.v1",
+  "source_artifacts": {
+    "curves": {
+      "file": "factor_guard_ablation_curves_ext2026.parquet",
+      "sha256": "0f30226d90399fdb77de83dbc17730ebf98cbf91de3903713bc050cf897a7b38"
+    },
+    "metric_records": {
+      "file": "factor_guard_ablation_metric_records_ext2026.json",
+      "sha256": "89392a24b032c1076ba791aca63c938fb6f433c67d5252669cec529e7a7e462e"
+    },
+    "panel": {
+      "file": "factor_guard_ablation_panel_ext2026.parquet",
+      "sha256": "b76e0cce3c91f05cd0262f3594fad2e21abb0b1fdd912ce63efdc82d2ceabbbb"
+    }
+  },
+  "tables": {
+    "factor_guard_ablation_equity_ext2026": {
+      "file": "tables/factor_guard_ablation_equity_ext2026.parquet",
+      "rows": 12336,
+      "schema": "factor_guard_ablation.equity.v1",
+      "sha256": "4766a0f06907d5cd81d61c845a3de3ba816c56d8dabb5be0ab5aa66f14433919"
+    },
+    "factor_guard_ablation_panel_ext2026": {
+      "columns": [
+        "rebalance_date",
+        "macro_source_date",
+        "configuration",
+        "evidence_id",
+        "prompt_mode",
+        "guard_enabled",
+        "p_memorized",
+        "parse_ok",
+        "steered",
+        "conviction",
+        "cpi_yoy_z",
+        "t10y2y_z",
+        "hy_oas_z",
+        "macro_state_norm",
+        "loading_inflation",
+        "loading_growth",
+        "loading_credit_stress",
+        "loading_policy",
+        "loading_risk_appetite",
+        "raw_view_tilt",
+        "applied_view_tilt",
+        "expected_attenuation",
+        "observed_attenuation",
+        "relation_error",
+        "allocation_status",
+        "bl_fallback_reason",
+        "target_effective_date",
+        "target_reconstruction_error",
+        "raw_tilt_SWDA_L",
+        "raw_tilt_XLK",
+        "raw_tilt_IAU",
+        "raw_tilt_BIL",
+        "applied_tilt_SWDA_L",
+        "applied_tilt_XLK",
+        "applied_tilt_IAU",
+        "applied_tilt_BIL",
+        "bl_q_SWDA_L",
+        "bl_q_XLK",
+        "bl_q_IAU",
+        "bl_q_BIL",
+        "hrp_base_weight_SWDA_L",
+        "hrp_base_weight_XLK",
+        "hrp_base_weight_IAU",
+        "hrp_base_weight_BIL",
+        "bl_weight_SWDA_L",
+        "bl_weight_XLK",
+        "bl_weight_IAU",
+        "bl_weight_BIL",
+        "target_weight_SWDA_L",
+        "target_weight_XLK",
+        "target_weight_IAU",
+        "target_weight_BIL",
+        "target_delta_SWDA_L",
+        "target_delta_XLK",
+        "target_delta_IAU",
+        "target_delta_BIL"
+      ],
+      "file": "tables/factor_guard_ablation_panel_ext2026.parquet",
+      "rows": 360,
+      "schema": "factor_guard_ablation.panel.v1",
+      "sha256": "720572a16d6ede207a3fcf1d86aa2e34f005398d674f4ef936fcb6726a14f6a7"
+    },
+    "tear_sheet_factor_guard_ablation_ext2026": {
+      "file": "tables/tear_sheet_factor_guard_ablation_ext2026.parquet",
+      "rows": 21,
+      "schema": "tear_sheet.factor_guard_ablation.v1",
+      "sha256": "12ef959b3a08fbb28eba0c207f8a066a2c6f68e62074ff9cf19dd8b5f2f1fac9"
+    }
+  }
+}

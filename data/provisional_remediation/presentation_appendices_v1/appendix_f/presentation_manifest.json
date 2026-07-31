@@ -1,0 +1,102 @@
+{
+  "appendix_id": "appendix_f_macro_to_bl_tilt",
+  "completed": true,
+  "generated_at": "2026-07-31T11:21:26.761730+00:00",
+  "notebook": {
+    "file": "notebooks/appendix_f_macro_to_bl_tilt.ipynb",
+    "sha256": "018b9193ce1807995409363f5d1f3f63ee0ed9cd710d8be69f301d8bfb66faf8"
+  },
+  "outputs": {
+    "appendix_f_macro_state_heatmap.png": {
+      "bytes": 135735,
+      "file": "appendix_f_macro_state_heatmap.png",
+      "height_px": 866,
+      "media_type": "image/png",
+      "sha256": "d00c6daf926389856224fec7766449e30099812085eaad1603999881184e3f2f",
+      "width_px": 2630
+    },
+    "appendix_f_macro_tilt_links.png": {
+      "bytes": 189350,
+      "file": "appendix_f_macro_tilt_links.png",
+      "height_px": 887,
+      "media_type": "image/png",
+      "sha256": "7ae4cc5bf69fc1c944f07d1b6230b01a4e7e188c520e25a0e20f324e7250a315",
+      "width_px": 2756
+    },
+    "appendix_f_target_delta_heatmap.png": {
+      "bytes": 204537,
+      "file": "appendix_f_target_delta_heatmap.png",
+      "height_px": 956,
+      "media_type": "image/png",
+      "sha256": "9646d2b3106d92b7b463b9b1aaabdf392819ff11ed24dccf3eb65f0e147ea205",
+      "width_px": 2630
+    },
+    "appendix_f_worked_dates.png": {
+      "bytes": 191991,
+      "file": "appendix_f_worked_dates.png",
+      "height_px": 1730,
+      "media_type": "image/png",
+      "sha256": "e3b79dd80fe14a261f5dedb13305e3d0fdef4d26b00c9eb97f15e5e98ded6859",
+      "width_px": 3080
+    }
+  },
+  "schema": "appendix_f_macro_to_bl_tilt.presentation.v1",
+  "source_artifacts": {
+    "curves": {
+      "file": "factor_guard_ablation_curves_ext2026.parquet",
+      "sha256": "0f30226d90399fdb77de83dbc17730ebf98cbf91de3903713bc050cf897a7b38"
+    },
+    "metric_records": {
+      "file": "factor_guard_ablation_metric_records_ext2026.json",
+      "sha256": "89392a24b032c1076ba791aca63c938fb6f433c67d5252669cec529e7a7e462e"
+    },
+    "panel": {
+      "file": "factor_guard_ablation_panel_ext2026.parquet",
+      "sha256": "b76e0cce3c91f05cd0262f3594fad2e21abb0b1fdd912ce63efdc82d2ceabbbb"
+    }
+  },
+  "source_bundle": {
+    "completed_marker_sha256": "afcf9539fe63825ea111859588c74e4bbe318aa98739b762228376edbb0b45b4",
+    "manifest_sha256": "eb58ecbe7a1a2f99e92b7593263d7049bab9b0a6af59f6a4e2f1100455110d91",
+    "path": "data/provisional_remediation/canonical_guard_ablation_reports_v2",
+    "report_id": "canonical_guard_ablation_reports_v2",
+    "schema": "canonical_guard_ablation_reports.v1"
+  },
+  "source_child_run": {
+    "manifest_path": "data/provisional_remediation/factor_guard_ablation_runs/factor_guard_ablation_ext2026_2019-01-01_2026-06-30_v2/manifest.json",
+    "manifest_sha256": "f007c6d82a15435ae238e4daede12af7c4977c4c71bc9107ac1b797acf193f54",
+    "parent_manifests": {
+      "factor_run": {
+        "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+        "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+      },
+      "market_snapshot": {
+        "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+        "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+      }
+    },
+    "run_id": "factor_guard_ablation_ext2026_2019-01-01_2026-06-30_v2",
+    "schema": "factor_guard_ablation_run.v1",
+    "source_commit": "050824acb4ba7014b52fc7b70295018e9f197d96"
+  },
+  "source_tables": {
+    "factor_guard_ablation_equity_ext2026.parquet": {
+      "file": "data/provisional_remediation/canonical_guard_ablation_reports_v2/tables/factor_guard_ablation_equity_ext2026.parquet",
+      "rows": 12336,
+      "schema": "factor_guard_ablation.equity.v1",
+      "sha256": "4766a0f06907d5cd81d61c845a3de3ba816c56d8dabb5be0ab5aa66f14433919"
+    },
+    "factor_guard_ablation_panel_ext2026.parquet": {
+      "file": "data/provisional_remediation/canonical_guard_ablation_reports_v2/tables/factor_guard_ablation_panel_ext2026.parquet",
+      "rows": 360,
+      "schema": "factor_guard_ablation.panel.v1",
+      "sha256": "720572a16d6ede207a3fcf1d86aa2e34f005398d674f4ef936fcb6726a14f6a7"
+    },
+    "tear_sheet_factor_guard_ablation_ext2026.parquet": {
+      "file": "data/provisional_remediation/canonical_guard_ablation_reports_v2/tables/tear_sheet_factor_guard_ablation_ext2026.parquet",
+      "rows": 21,
+      "schema": "tear_sheet.factor_guard_ablation.v1",
+      "sha256": "12ef959b3a08fbb28eba0c207f8a066a2c6f68e62074ff9cf19dd8b5f2f1fac9"
+    }
+  }
+}

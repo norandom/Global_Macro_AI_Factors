@@ -1,0 +1,16 @@
+{
+  "counts": {
+    "consumed_keys": 180,
+    "rebalances_per_variant": 90,
+    "unguarded_variants": 2
+  },
+  "guard_enabled": false,
+  "parent_evidence": {
+    "file": "factor_evidence_ext2026.parquet",
+    "rows": 180,
+    "sha256": "e637af52fff564edb79a1d05a6c089e126e5dd0695e315a8312d675c4d94de6c"
+  },
+  "result": "pass",
+  "schema": "factor_guard_ablation.replay_audit.v1",
+  "source_to_consumption": "validated for each unguarded variant/date through parent dated evidence"
+}

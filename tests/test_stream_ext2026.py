@@ -610,6 +610,57 @@ def test_dated_replay_weight_fn_two_dates_zero_live_calls() -> None:
         assert abs(t2[a] / t1[a] - 2.25) < 1e-9
 
 
+def test_dated_replay_weight_fn_forwards_disabled_guard_and_keeps_score() -> None:
+    """Guard-off replay keeps dated scoring but removes only attenuation."""
+    import pytest
+
+    from macro_framework import factor_scoring as fs
+
+    ext = _mod()
+    macro_state, snapshot, amap, _, d1, _, evidence = _replay_fixture(ext)
+    guarded_views = []
+    unguarded_views = []
+
+    class _Agent:
+        asset_map = amap
+
+        def __init__(self, sink):
+            self.sink = sink
+
+        def views_to_bl(self, views, real_symbols):
+            self.sink.extend(views)
+            return None, None
+
+    def build_inputs(ctx):
+        return macro_state, snapshot, ctx["rebalance_date"], None
+
+    def combine(ctx, P, Q):
+        return pd.Series(1.0, index=ctx["prices"].columns)
+
+    prices = pd.DataFrame({"XX": [1.0, 2.0], "YY": [1.0, 2.0]})
+    ctx = {"rebalance_date": pd.Timestamp(d1), "prices": prices}
+    ext.make_dated_replay_weight_fn(
+        variant="pit",
+        evidence=evidence,
+        agent=_Agent(guarded_views),
+        build_inputs=build_inputs,
+        combine=combine,
+    )(ctx)
+    ext.make_dated_replay_weight_fn(
+        variant="pit",
+        evidence=evidence,
+        agent=_Agent(unguarded_views),
+        build_inputs=build_inputs,
+        combine=combine,
+        recall_guarded_config=fs.RecallGuardedConfig(enabled=False),
+    )(ctx)
+
+    guarded = {v.asset_long: v.expected_excess_annualized for v in guarded_views}
+    unguarded = {v.asset_long: v.expected_excess_annualized for v in unguarded_views}
+    nonzero = [symbol for symbol, tilt in unguarded.items() if abs(tilt) > 1e-12]
+    assert nonzero
+    for symbol in nonzero:
+        assert guarded[symbol] == pytest.approx(unguarded[symbol] * (1.0 - 0.2))
 
 
 def test_dated_replay_prompt_mismatch_raises_never_degrades() -> None:

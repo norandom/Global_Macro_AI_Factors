@@ -2456,6 +2456,49 @@ def test_factor_rebalance_end_to_end_steered_with_recall_guard_discount() -> Non
         )
 
 
+def test_factor_rebalance_disabled_guard_preserves_score_and_raw_tilts() -> None:
+    """Guard ablation measures recall while passing raw tilts to BL unchanged."""
+    from macro_framework.factor_scoring import (
+        REGIME_ASSET_EXPOSURE,
+        RecallGuardedConfig,
+        factor_rebalance,
+        parse_loadings,
+    )
+
+    reply = _factor_well_formed_reply()
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.65, is_weak=False)
+    as_of = pd.Timestamp("2022-06-30")
+
+    dec = factor_rebalance(
+        generate_loadings=lambda prompt: reply,
+        scorer=scorer,
+        agent=agent,
+        macro_state={"cpi_yoy_z": 0.5, "t10y2y_z": -0.2, "hy_oas_z": 0.8},
+        asset_snapshot=AssetMap.default().pseudo_assets(),
+        real_symbols=_all_real_symbols(),
+        as_of=as_of,
+        raw_levels={"cpi_yoy": 8.5},
+        recall_guarded_config=RecallGuardedConfig(enabled=False),
+    )
+
+    assert dec.parse_ok is True
+    assert dec.p_memorized == pytest.approx(0.65)
+    assert dec.steered is True
+    assert scorer.scored_prompts
+    assert dec.P is not None and dec.Q is not None
+
+    loadings = parse_loadings(reply, as_of)
+    assert loadings is not None
+    by_long = {view.asset_long: view for view in dec.views}
+    for pseudo, category in agent.asset_map.categories.items():
+        raw_tilt = sum(
+            loadings.loadings[axis] * REGIME_ASSET_EXPOSURE[category][axis]
+            for axis in loadings.loadings
+        )
+        assert by_long[pseudo].expected_excess_annualized == pytest.approx(raw_tilt)
+
+
 def test_factor_rebalance_parse_fail_returns_none_pq_unsteered() -> None:
     """A loadings parse failure ⇒ (None, None), parse_ok=False, steered=False (R3.2)."""
     from macro_framework.factor_scoring import factor_rebalance
@@ -2619,6 +2662,45 @@ def test_make_factor_weight_fn_end_to_end_valid_target_row() -> None:
     assert row.notna().all()
     # The steered path produced a real (P, Q) that reached combine.
     assert captured["P"] is not None and captured["Q"] is not None
+
+
+def test_make_factor_weight_fn_forwards_disabled_guard_configuration() -> None:
+    """The walk-forward adapter uses one explicit guard state for every decision."""
+    from macro_framework.factor_scoring import RecallGuardedConfig, make_factor_weight_fn
+
+    ctx = _factor_ctx()
+    agent = _FactorFakeAgent()
+    scorer = _FactorFakeScorer(p_memorized=0.5, is_weak=False)
+    combine, _ = _factor_combine_with_base(pd.Series(0.25, index=_all_real_symbols()))
+
+    weight_fn = make_factor_weight_fn(
+        generate_loadings=lambda prompt: _factor_well_formed_reply(),
+        scorer=scorer,
+        agent=agent,
+        build_inputs=_factor_build_inputs(_factor_well_formed_reply()),
+        combine=combine,
+        recall_guarded_config=RecallGuardedConfig(enabled=False),
+    )
+    weight_fn(ctx)
+
+    guarded_agent = _FactorFakeAgent()
+    guarded_weight_fn = make_factor_weight_fn(
+        generate_loadings=lambda prompt: _factor_well_formed_reply(),
+        scorer=_FactorFakeScorer(p_memorized=0.5, is_weak=False),
+        agent=guarded_agent,
+        build_inputs=_factor_build_inputs(_factor_well_formed_reply()),
+        combine=combine,
+    )
+    guarded_weight_fn(ctx)
+
+    raw = {v.asset_long: v.expected_excess_annualized for v in agent.seen_views}
+    guarded = {
+        v.asset_long: v.expected_excess_annualized for v in guarded_agent.seen_views
+    }
+    nonzero = [symbol for symbol, tilt in raw.items() if abs(tilt) > 1e-12]
+    assert nonzero
+    for symbol in nonzero:
+        assert guarded[symbol] == pytest.approx(raw[symbol] * 0.5)
 
 
 def test_make_factor_weight_fn_sources_real_symbols_from_prices_columns() -> None:

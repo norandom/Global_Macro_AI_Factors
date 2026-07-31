@@ -1,0 +1,252 @@
+{
+  "build_time": "2026-07-31T11:10:18.793532+00:00",
+  "completed": true,
+  "config": {
+    "guard_enabled": false,
+    "macro_panel": "data/macro_panel_monthly.parquet",
+    "macro_panel_sha256": "1444e80a3e1d9e375e581d829c507b84e406e504dfed421e072edaa6eb061cac",
+    "n_boot": 1000,
+    "parent_factor_config": {
+      "init_cash": 10000.0,
+      "lookback_days": 756,
+      "panel_source": "committed data/macro_panel_monthly.parquet (replay mode: zero-provider panel replay)",
+      "price_window_end": "2026-06-30",
+      "price_window_start": "2014-01-01",
+      "replay_mode": true,
+      "sim_end": "2026-06-30",
+      "sim_start": "2019-01-01",
+      "tilt": 0.3
+    }
+  },
+  "files": {
+    "curves": {
+      "columns": [
+        "date",
+        "configuration",
+        "normalized_wealth",
+        "drawdown",
+        "relative_wealth",
+        "relative_wealth_kind"
+      ],
+      "file": "factor_guard_ablation_curves_ext2026.parquet",
+      "rows": 12336,
+      "schema": "factor_guard_ablation.equity.v1",
+      "sha256": "0f30226d90399fdb77de83dbc17730ebf98cbf91de3903713bc050cf897a7b38",
+      "size": 200951
+    },
+    "decision_log_nonpit_unguarded": {
+      "file": "factor_nonpit_unguarded_diagnostic_decision_log_ext2026.json",
+      "rows": 90,
+      "schema": "factor_guard_ablation.decision_log.v1",
+      "sha256": "3db41855b95597cc5ba8b864bf1659bf525faa6e424cfc2c57704c0f0ef429b3",
+      "size": 171394
+    },
+    "decision_log_pit_unguarded": {
+      "file": "factor_pit_unguarded_diagnostic_decision_log_ext2026.json",
+      "rows": 90,
+      "schema": "factor_guard_ablation.decision_log.v1",
+      "sha256": "6b3f169d1e6d376782538987381c1fec2ca3db1fae728067dd0f9c47932975ca",
+      "size": 180260
+    },
+    "equity_nonpit_guarded": {
+      "file": "factor_nonpit_diagnostic_equity_ext2026.parquet",
+      "rows": 3084,
+      "schema": "factor_guard_ablation.equity_input.v1",
+      "sha256": "3dfd01169a378b118b67e5989936ae149d136613f638989c39812188a0c7952d",
+      "size": 46753
+    },
+    "equity_nonpit_unguarded": {
+      "file": "factor_nonpit_unguarded_diagnostic_equity_ext2026.parquet",
+      "rows": 3084,
+      "schema": "factor_guard_ablation.equity_input.v1",
+      "sha256": "17a44da3e23d778bb8cd68980f024d08cba35b2f34f1dadb6ef28439827f30c7",
+      "size": 46753
+    },
+    "equity_pit_guarded": {
+      "file": "factor_equity_ext2026.parquet",
+      "rows": 3084,
+      "schema": "factor_guard_ablation.equity_input.v1",
+      "sha256": "9ea6f9529dcb39bcebda934a89940e2dd5ce6784cecf9bc5c1ff5b48a04f2d75",
+      "size": 46753
+    },
+    "equity_pit_unguarded": {
+      "file": "factor_pit_unguarded_diagnostic_equity_ext2026.parquet",
+      "rows": 3084,
+      "schema": "factor_guard_ablation.equity_input.v1",
+      "sha256": "6a70dfbebb8e98032e35613e2715891b3c721f611e6b72dfd5c57b4f26032687",
+      "size": 46757
+    },
+    "metric_records": {
+      "file": "factor_guard_ablation_metric_records_ext2026.json",
+      "rows": 21,
+      "schema": "factor_guard_ablation.metric_records.v1",
+      "sha256": "89392a24b032c1076ba791aca63c938fb6f433c67d5252669cec529e7a7e462e",
+      "size": 35570
+    },
+    "panel": {
+      "columns": [
+        "rebalance_date",
+        "macro_source_date",
+        "configuration",
+        "evidence_id",
+        "prompt_mode",
+        "guard_enabled",
+        "p_memorized",
+        "parse_ok",
+        "steered",
+        "conviction",
+        "cpi_yoy_z",
+        "t10y2y_z",
+        "hy_oas_z",
+        "macro_state_norm",
+        "loading_inflation",
+        "loading_growth",
+        "loading_credit_stress",
+        "loading_policy",
+        "loading_risk_appetite",
+        "raw_view_tilt",
+        "applied_view_tilt",
+        "expected_attenuation",
+        "observed_attenuation",
+        "relation_error",
+        "allocation_status",
+        "bl_fallback_reason",
+        "target_effective_date",
+        "target_reconstruction_error",
+        "raw_tilt_SWDA_L",
+        "raw_tilt_XLK",
+        "raw_tilt_IAU",
+        "raw_tilt_BIL",
+        "applied_tilt_SWDA_L",
+        "applied_tilt_XLK",
+        "applied_tilt_IAU",
+        "applied_tilt_BIL",
+        "bl_q_SWDA_L",
+        "bl_q_XLK",
+        "bl_q_IAU",
+        "bl_q_BIL",
+        "hrp_base_weight_SWDA_L",
+        "hrp_base_weight_XLK",
+        "hrp_base_weight_IAU",
+        "hrp_base_weight_BIL",
+        "bl_weight_SWDA_L",
+        "bl_weight_XLK",
+        "bl_weight_IAU",
+        "bl_weight_BIL",
+        "target_weight_SWDA_L",
+        "target_weight_XLK",
+        "target_weight_IAU",
+        "target_weight_BIL",
+        "target_delta_SWDA_L",
+        "target_delta_XLK",
+        "target_delta_IAU",
+        "target_delta_BIL"
+      ],
+      "file": "factor_guard_ablation_panel_ext2026.parquet",
+      "rows": 360,
+      "schema": "factor_guard_ablation.panel.v1",
+      "sha256": "b76e0cce3c91f05cd0262f3594fad2e21abb0b1fdd912ce63efdc82d2ceabbbb",
+      "size": 136062
+    },
+    "replay_audit": {
+      "file": "factor_guard_ablation_replay_audit_ext2026.json",
+      "rows": 180,
+      "schema": "factor_guard_ablation.replay_audit.v1",
+      "sha256": "9f10253dfc2f7da8f1ecb76161b7012fc7a0462c08f3045f45af136e972a4a08",
+      "size": 484
+    },
+    "targets_nonpit_unguarded": {
+      "file": "factor_nonpit_unguarded_diagnostic_targets_ext2026.parquet",
+      "rows": 3084,
+      "schema": "factor_guard_ablation.targets.v1",
+      "sha256": "a47aad39650d8d4fd1631324cf4ac8bf6338a0917bf8920504be00a523ae400a",
+      "size": 34392
+    },
+    "targets_pit_unguarded": {
+      "file": "factor_pit_unguarded_diagnostic_targets_ext2026.parquet",
+      "rows": 3084,
+      "schema": "factor_guard_ablation.targets.v1",
+      "sha256": "7858223b7175004c4e6c3868ec13ac4e6e001e7fd28a9d8ef642ef033c8643df",
+      "size": 34454
+    }
+  },
+  "input_manifests": {
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    }
+  },
+  "panel_schema": {
+    "columns": [
+      "rebalance_date",
+      "macro_source_date",
+      "configuration",
+      "evidence_id",
+      "prompt_mode",
+      "guard_enabled",
+      "p_memorized",
+      "parse_ok",
+      "steered",
+      "conviction",
+      "cpi_yoy_z",
+      "t10y2y_z",
+      "hy_oas_z",
+      "macro_state_norm",
+      "loading_inflation",
+      "loading_growth",
+      "loading_credit_stress",
+      "loading_policy",
+      "loading_risk_appetite",
+      "raw_view_tilt",
+      "applied_view_tilt",
+      "expected_attenuation",
+      "observed_attenuation",
+      "relation_error",
+      "allocation_status",
+      "bl_fallback_reason",
+      "target_effective_date",
+      "target_reconstruction_error",
+      "raw_tilt_SWDA_L",
+      "raw_tilt_XLK",
+      "raw_tilt_IAU",
+      "raw_tilt_BIL",
+      "applied_tilt_SWDA_L",
+      "applied_tilt_XLK",
+      "applied_tilt_IAU",
+      "applied_tilt_BIL",
+      "bl_q_SWDA_L",
+      "bl_q_XLK",
+      "bl_q_IAU",
+      "bl_q_BIL",
+      "hrp_base_weight_SWDA_L",
+      "hrp_base_weight_XLK",
+      "hrp_base_weight_IAU",
+      "hrp_base_weight_BIL",
+      "bl_weight_SWDA_L",
+      "bl_weight_XLK",
+      "bl_weight_IAU",
+      "bl_weight_BIL",
+      "target_weight_SWDA_L",
+      "target_weight_XLK",
+      "target_weight_IAU",
+      "target_weight_BIL",
+      "target_delta_SWDA_L",
+      "target_delta_XLK",
+      "target_delta_IAU",
+      "target_delta_BIL"
+    ]
+  },
+  "parent_source_commit": "e9aed6d31d16925b7506989e6e855a8ccdd694a7",
+  "producer_source": {
+    "file": "scripts/build_factor_guard_ablation.py",
+    "git_head": "050824acb4ba7014b52fc7b70295018e9f197d96",
+    "sha256": "4b7087accc38eb930ece54c1b06b4368b75f5c21bf005d2fe5ab675f0bac136c"
+  },
+  "run_id": "factor_guard_ablation_ext2026_2019-01-01_2026-06-30_v2",
+  "schema": "factor_guard_ablation_run.v1",
+  "source_commit": "050824acb4ba7014b52fc7b70295018e9f197d96"
+}

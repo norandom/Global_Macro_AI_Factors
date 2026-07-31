@@ -1096,6 +1096,7 @@ def make_dated_replay_weight_fn(
     combine: Callable,
     failures: list[ReplayValidationError] | None = None,
     consumed: dict[EvidenceKey, dict[str, object]] | None = None,
+    recall_guarded_config: fs.RecallGuardedConfig = fs.RecallGuardedConfig(),
 ) -> Callable[[dict], pd.Series]:
     """A walk-forward ``weight_fn`` that replays immutable DATED evidence.
 
@@ -1104,7 +1105,9 @@ def make_dated_replay_weight_fn(
     path, closes the selected response and score over that one call via
     :func:`dated_replay_closures`, and delegates to the UNCHANGED
     ``fs.make_factor_weight_fn`` — no scorer API or PIT prompt renderer change
-    (R6.2, design 'Corrected Factor Replay').
+    (R6.2, design 'Corrected Factor Replay'). ``recall_guarded_config`` is
+    explicit so diagnostic replays can preserve the dated contamination score
+    while disabling only the tilt attenuation.
 
     ``mf.build_walk_forward_targets`` swallows weight_fn exceptions ("holding
     previous"), so every :class:`ReplayValidationError` is ALSO appended to the
@@ -1126,8 +1129,13 @@ def make_dated_replay_weight_fn(
                     rec)
             gen, scorer = dated_replay_closures(rec)
             inner = fs.make_factor_weight_fn(
-                generate_loadings=gen, scorer=scorer, agent=agent,
-                build_inputs=build_inputs, combine=combine)
+                generate_loadings=gen,
+                scorer=scorer,
+                agent=agent,
+                build_inputs=build_inputs,
+                combine=combine,
+                recall_guarded_config=recall_guarded_config,
+            )
             return inner(ctx)
         except ReplayValidationError as exc:
             if failures is not None:
