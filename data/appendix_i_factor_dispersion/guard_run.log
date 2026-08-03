@@ -1,0 +1,5 @@
+calibrator holdout_auc=0.9668 is_weak=False
+rebalance 2020-03-02 | macro source 2020-02-29 | draws 100
+scored 100/100 in 0.5 min
+p_memorized mean 0.2114 sd 0.2184 min 0.0000 max 0.7602
+[done] /home/mc/projects/Global_Macro_AI_Factors/data/appendix_i_factor_dispersion/factor_dispersion_guard.csv

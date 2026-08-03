@@ -1,0 +1,463 @@
+{
+  "completed": true,
+  "configuration": {
+    "markowitz": {
+      "10y_requested_start": "2016-02-01",
+      "frontier_points": 60,
+      "max_requested_start": "2009-09-25",
+      "requested_end": "2026-01-30"
+    },
+    "ssr_settings": {
+      "alpha": 0.05,
+      "n_boot": 1000,
+      "periods_per_year": 252,
+      "seed": 0,
+      "sr_star": 0.0,
+      "window": 252
+    },
+    "static_windows": [
+      {
+        "end": "2026-05-29",
+        "label": "Full 16.7y (buy 2009)",
+        "start": "2009-09-25"
+      },
+      {
+        "end": "2026-01-30",
+        "label": "16.4y (buy 2009)",
+        "start": "2009-09-25"
+      },
+      {
+        "end": "2026-01-30",
+        "label": "10.0y (buy 2016)",
+        "start": "2016-02-01"
+      },
+      {
+        "end": "2026-01-30",
+        "label": "7.1y (buy 2019)",
+        "start": "2019-01-02"
+      }
+    ],
+    "trio_static_window": {
+      "end": "2026-06-30",
+      "label": "Factor performance window (buy 2015-12-31)",
+      "start": "2015-12-31"
+    }
+  },
+  "input_manifests": {
+    "factor_run": {
+      "manifest_sha256": "6319f7cb3c8f0f61a5b874f21c1453ab38cb5d4e5a2e42c9a3cdc3d9b6da1d1f",
+      "run_id": "factor_ext2026_2016-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "sjm_run": {
+      "manifest_sha256": "f1b1b56fa6c10af592ba9bc8b8cac8cd62b41dc19214ad7dfc8d3b4bb2ca4047",
+      "run_id": "sjm_crowding_v3_total_return_bil_provisional_full2016_20260801T100439Z"
+    }
+  },
+  "mirrors": {
+    "attribution_raw_market_model_ext2026.csv": {
+      "file": "mirrors/attribution_raw_market_model_ext2026.csv",
+      "locale": "en-US",
+      "rows": 2,
+      "schema": "attribution.raw_market_model.v1",
+      "sha256": "c8a4dd3bd0fa07a9c022137ee6b47008f5b3fb1c842a141a5243d5c02b4df961",
+      "source_table": "attribution_raw_market_model_ext2026"
+    },
+    "attribution_raw_market_model_ext2026_de.csv": {
+      "file": "mirrors/attribution_raw_market_model_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 2,
+      "schema": "attribution.raw_market_model.v1",
+      "sha256": "3920e468f703366947e2bfcec75e355dc894dd5ec47bf181febe357b312a2211",
+      "source_table": "attribution_raw_market_model_ext2026"
+    },
+    "crisis_metrics_ext2026.csv": {
+      "file": "mirrors/crisis_metrics_ext2026.csv",
+      "locale": "en-US",
+      "rows": 2,
+      "schema": "crisis_metrics.boundary_anchored.v1",
+      "sha256": "ab2734d33dd2816129f4c9b76e1106756adabd2157ead94e26cd801223e5dc4c",
+      "source_table": "crisis_metrics_ext2026"
+    },
+    "crisis_metrics_ext2026_de.csv": {
+      "file": "mirrors/crisis_metrics_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 2,
+      "schema": "crisis_metrics.boundary_anchored.v1",
+      "sha256": "2b35f4ad217683d8ef3150b81ac22cae0192e64d4750d5d051a5f9939f0f0ebe",
+      "source_table": "crisis_metrics_ext2026"
+    },
+    "markowitz_10y_frontier.csv": {
+      "file": "mirrors/markowitz_10y_frontier.csv",
+      "locale": "en-US",
+      "rows": 60,
+      "schema": "markowitz.frontier.v1",
+      "sha256": "893c05e6a115c89eca24c7057dd3cb05994c2a4d81aa66de4ffc45af683bef3c",
+      "source_table": "markowitz_10y_frontier"
+    },
+    "markowitz_10y_frontier_de.csv": {
+      "file": "mirrors/markowitz_10y_frontier_de.csv",
+      "locale": "de-DE",
+      "rows": 60,
+      "schema": "markowitz.frontier.v1",
+      "sha256": "70adccbbcd26956f9faeabb385ead22dc2d5f6a2d13453b4af4714dd9688d9e9",
+      "source_table": "markowitz_10y_frontier"
+    },
+    "markowitz_10y_moments.csv": {
+      "file": "mirrors/markowitz_10y_moments.csv",
+      "locale": "en-US",
+      "rows": 4,
+      "schema": "markowitz.moments.v1",
+      "sha256": "aa2e4fe18eab242e642ead400cd03b2fc68ebb53f92fc8cf03a211d9808abe4d",
+      "source_table": "markowitz_10y_moments"
+    },
+    "markowitz_10y_moments_de.csv": {
+      "file": "mirrors/markowitz_10y_moments_de.csv",
+      "locale": "de-DE",
+      "rows": 4,
+      "schema": "markowitz.moments.v1",
+      "sha256": "31620b83152faa0c8b157b0bd8456ecc1de1c12cf48de189c7e3e8db8f9089c6",
+      "source_table": "markowitz_10y_moments"
+    },
+    "markowitz_max_frontier.csv": {
+      "file": "mirrors/markowitz_max_frontier.csv",
+      "locale": "en-US",
+      "rows": 60,
+      "schema": "markowitz.frontier.v1",
+      "sha256": "63dfa074780d6b9c961d44c27e58d275208d1b9d8b78cc148685dda53432a47f",
+      "source_table": "markowitz_max_frontier"
+    },
+    "markowitz_max_frontier_de.csv": {
+      "file": "mirrors/markowitz_max_frontier_de.csv",
+      "locale": "de-DE",
+      "rows": 60,
+      "schema": "markowitz.frontier.v1",
+      "sha256": "4d154e2c08d95aab7c9c576311627b296ae5f252565d68b20f2b0fb9bdb3bb9b",
+      "source_table": "markowitz_max_frontier"
+    },
+    "markowitz_max_moments.csv": {
+      "file": "mirrors/markowitz_max_moments.csv",
+      "locale": "en-US",
+      "rows": 4,
+      "schema": "markowitz.moments.v1",
+      "sha256": "849e83e3c10fa9eb4f5f33fc045556cf0a233729229d4e56b58be996c58a0323",
+      "source_table": "markowitz_max_moments"
+    },
+    "markowitz_max_moments_de.csv": {
+      "file": "mirrors/markowitz_max_moments_de.csv",
+      "locale": "de-DE",
+      "rows": 4,
+      "schema": "markowitz.moments.v1",
+      "sha256": "0d4c48d0234f09169a0d79a5dde63fd0cf09c3831562832666bec6ed9fbfbb9b",
+      "source_table": "markowitz_max_moments"
+    },
+    "monthly_returns_ext2026.csv": {
+      "file": "mirrors/monthly_returns_ext2026.csv",
+      "locale": "en-US",
+      "rows": 252,
+      "schema": "monthly_returns.reader.v1",
+      "sha256": "3c7b5aa6ac87a204709fc7182531645eec94c9e354974bbf40edad41643be56a",
+      "source_table": "monthly_returns_ext2026"
+    },
+    "monthly_returns_ext2026_de.csv": {
+      "file": "mirrors/monthly_returns_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 252,
+      "schema": "monthly_returns.reader.v1",
+      "sha256": "7d86dfc1a3377b94d0a3fc19480bbf2c43817064acf3e190dd1ad732385f9c18",
+      "source_table": "monthly_returns_ext2026"
+    },
+    "portfolio_metrics_differential_ext2026.csv": {
+      "file": "mirrors/portfolio_metrics_differential_ext2026.csv",
+      "locale": "en-US",
+      "rows": 1,
+      "schema": "portfolio_metrics.differential.v2",
+      "sha256": "51487b40caf7ab2599ad2eeb5629692d6eb8b84a749b9561a055fe5290802d07",
+      "source_table": "portfolio_metrics_differential_ext2026"
+    },
+    "portfolio_metrics_differential_ext2026_de.csv": {
+      "file": "mirrors/portfolio_metrics_differential_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 1,
+      "schema": "portfolio_metrics.differential.v2",
+      "sha256": "d4d594f8a67f4d8868b829aa03c7e056f26a2b1165e6b001c9e3d087e4827c16",
+      "source_table": "portfolio_metrics_differential_ext2026"
+    },
+    "portfolio_metrics_reader_ext2026.csv": {
+      "file": "mirrors/portfolio_metrics_reader_ext2026.csv",
+      "locale": "en-US",
+      "rows": 2,
+      "schema": "portfolio_metrics.reader.v2",
+      "sha256": "6db5ee56ea05fcb503f0c3cc023236bd42956000f0917a47e31ac43450d77b8a",
+      "source_table": "portfolio_metrics_reader_ext2026"
+    },
+    "portfolio_metrics_reader_ext2026_de.csv": {
+      "file": "mirrors/portfolio_metrics_reader_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 2,
+      "schema": "portfolio_metrics.reader.v2",
+      "sha256": "d86f22e41326d3db7a56ad7cd094d8abf313c30aa2005455d3646fd3eea68541",
+      "source_table": "portfolio_metrics_reader_ext2026"
+    },
+    "portfolio_metrics_vectorbt365_ext2026.csv": {
+      "file": "mirrors/portfolio_metrics_vectorbt365_ext2026.csv",
+      "locale": "en-US",
+      "rows": 2,
+      "schema": "portfolio_metrics.vectorbt365.v1",
+      "sha256": "d241ccc1b10571724b2663ed6054d22a6533864bd33e6ed72615352233f20d54",
+      "source_table": "portfolio_metrics_vectorbt365_ext2026"
+    },
+    "portfolio_metrics_vectorbt365_ext2026_de.csv": {
+      "file": "mirrors/portfolio_metrics_vectorbt365_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 2,
+      "schema": "portfolio_metrics.vectorbt365.v1",
+      "sha256": "d4e7673c553b4650497bb04c9f572ccd94d0083431bfab6e97fa6f9b24047c2e",
+      "source_table": "portfolio_metrics_vectorbt365_ext2026"
+    },
+    "risk_decomposition_ext2026.csv": {
+      "file": "mirrors/risk_decomposition_ext2026.csv",
+      "locale": "en-US",
+      "rows": 2,
+      "schema": "risk_decomposition.v1",
+      "sha256": "90c95ee95d81beb5bf5a2520e497b4cafde6a7487e68bbd9038977c0da68bdb4",
+      "source_table": "risk_decomposition_ext2026"
+    },
+    "risk_decomposition_ext2026_de.csv": {
+      "file": "mirrors/risk_decomposition_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 2,
+      "schema": "risk_decomposition.v1",
+      "sha256": "dd86b09a1f4339d10e2b2ca884662eb4b176d497c856fe6e6812d0417969f1e2",
+      "source_table": "risk_decomposition_ext2026"
+    },
+    "tear_sheet_ai_variants_ext2026.csv": {
+      "file": "mirrors/tear_sheet_ai_variants_ext2026.csv",
+      "locale": "en-US",
+      "rows": 3,
+      "schema": "tear_sheet.ai_variants.v1",
+      "sha256": "8b0093541376a149906c41730907ebb36d0304c2e29f720b790fc7932f72428c",
+      "source_table": "tear_sheet_ai_variants_ext2026"
+    },
+    "tear_sheet_ai_variants_ext2026_de.csv": {
+      "file": "mirrors/tear_sheet_ai_variants_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 3,
+      "schema": "tear_sheet.ai_variants.v1",
+      "sha256": "03351d09a6c0965e463e8e4e1e9ed2068f4b72646f4b75315b88d2424042055c",
+      "source_table": "tear_sheet_ai_variants_ext2026"
+    },
+    "tear_sheet_sjm_crowding_ext2026.csv": {
+      "file": "mirrors/tear_sheet_sjm_crowding_ext2026.csv",
+      "locale": "en-US",
+      "rows": 10,
+      "schema": "tear_sheet.sjm.v3",
+      "sha256": "7688d39cf218a266dd5b6b5fd271219cc39de80a80072a3c996879618af4f94f",
+      "source_table": "tear_sheet_sjm_crowding_ext2026"
+    },
+    "tear_sheet_sjm_crowding_ext2026_de.csv": {
+      "file": "mirrors/tear_sheet_sjm_crowding_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 10,
+      "schema": "tear_sheet.sjm.v3",
+      "sha256": "fd3a00e6479d550bbf05ab271d2b5d7e0d46cff296eb8bc59d07fb7d488d4d54",
+      "source_table": "tear_sheet_sjm_crowding_ext2026"
+    },
+    "tear_sheet_static_bh_window_dashboard.csv": {
+      "file": "mirrors/tear_sheet_static_bh_window_dashboard.csv",
+      "locale": "en-US",
+      "rows": 8,
+      "schema": "tear_sheet.window_dashboard.v1",
+      "sha256": "a1d87360a6b00c8d3c1a35d972a0a32a7f2baf66b4b97ffab355a772aca6c928",
+      "source_table": "tear_sheet_static_bh_window_dashboard"
+    },
+    "tear_sheet_static_bh_window_dashboard_de.csv": {
+      "file": "mirrors/tear_sheet_static_bh_window_dashboard_de.csv",
+      "locale": "de-DE",
+      "rows": 8,
+      "schema": "tear_sheet.window_dashboard.v1",
+      "sha256": "2ebeeb01f369a1a50fd8cb69c0708d5e0da55b3c22dc35920470771a3c51fe66",
+      "source_table": "tear_sheet_static_bh_window_dashboard"
+    },
+    "tear_sheet_static_bh_windows.csv": {
+      "file": "mirrors/tear_sheet_static_bh_windows.csv",
+      "locale": "en-US",
+      "rows": 4,
+      "schema": "tear_sheet.static_windows.v1",
+      "sha256": "4427a0a4f0c10eb7817e0882a034839730e15398ab6e0e04228593c9f7db35d9",
+      "source_table": "tear_sheet_static_bh_windows"
+    },
+    "tear_sheet_static_bh_windows_de.csv": {
+      "file": "mirrors/tear_sheet_static_bh_windows_de.csv",
+      "locale": "de-DE",
+      "rows": 4,
+      "schema": "tear_sheet.static_windows.v1",
+      "sha256": "28f5710e5cb2f1a3982a1607298a159868ec6eb554b15de09cbe0045197bd523",
+      "source_table": "tear_sheet_static_bh_windows"
+    },
+    "tear_sheet_trio_10y.csv": {
+      "file": "mirrors/tear_sheet_trio_10y.csv",
+      "locale": "en-US",
+      "rows": 3,
+      "schema": "tear_sheet.trio_10y.v1",
+      "sha256": "68a4c68456090b5a61752b8439f26a50dd46a8903bcd7c4a90b7d3b15aeb6342",
+      "source_table": "tear_sheet_trio_10y"
+    },
+    "tear_sheet_trio_10y_de.csv": {
+      "file": "mirrors/tear_sheet_trio_10y_de.csv",
+      "locale": "de-DE",
+      "rows": 3,
+      "schema": "tear_sheet.trio_10y.v1",
+      "sha256": "3b15675800c30719ed8d250a63aa8deae7ef103477c5b36ae0c2714cb76ac7ad",
+      "source_table": "tear_sheet_trio_10y"
+    },
+    "tear_sheet_trio_ext2026.csv": {
+      "file": "mirrors/tear_sheet_trio_ext2026.csv",
+      "locale": "en-US",
+      "rows": 3,
+      "schema": "tear_sheet.trio.v4",
+      "sha256": "64fe9d809906e04b4556d0d2e5deaa84a6552704f4b20bc0930ee858654ac745",
+      "source_table": "tear_sheet_trio_ext2026"
+    },
+    "tear_sheet_trio_ext2026_de.csv": {
+      "file": "mirrors/tear_sheet_trio_ext2026_de.csv",
+      "locale": "de-DE",
+      "rows": 3,
+      "schema": "tear_sheet.trio.v4",
+      "sha256": "e191e5e08765a8d5fb4515c09aa6c0194f5294903bfc3bf4dc779cfda37fe49e",
+      "source_table": "tear_sheet_trio_ext2026"
+    },
+    "tear_sheet_trio_max.csv": {
+      "file": "mirrors/tear_sheet_trio_max.csv",
+      "locale": "en-US",
+      "rows": 3,
+      "schema": "tear_sheet.trio_max.v1",
+      "sha256": "8c131f06a1c0fef31875491515fb950e0b6f83bf5364979e3751e27a79e04c34",
+      "source_table": "tear_sheet_trio_max"
+    },
+    "tear_sheet_trio_max_de.csv": {
+      "file": "mirrors/tear_sheet_trio_max_de.csv",
+      "locale": "de-DE",
+      "rows": 3,
+      "schema": "tear_sheet.trio_max.v1",
+      "sha256": "18431f2eda45c75267e6871b0c07bc1fce29efdba15123fb36384d9b33836b7f",
+      "source_table": "tear_sheet_trio_max"
+    }
+  },
+  "producer": "scripts/build_tear_sheet.py",
+  "report_id": "canonical_reports_full2016_20260801T100439Z",
+  "schema": "canonical_reports.v1",
+  "tables": {
+    "attribution_raw_market_model_ext2026": {
+      "file": "tables/attribution_raw_market_model_ext2026.parquet",
+      "rows": 2,
+      "schema": "attribution.raw_market_model.v1",
+      "sha256": "b3d15b616b42db4a294910c18d5eb58d3b4876c1f86032966c29f51e08d9db0d"
+    },
+    "crisis_metrics_ext2026": {
+      "file": "tables/crisis_metrics_ext2026.parquet",
+      "rows": 2,
+      "schema": "crisis_metrics.boundary_anchored.v1",
+      "sha256": "a45abe41217a058806150202c43f1d55e6294b0b2f5546e85096a4d3c92275e8"
+    },
+    "markowitz_10y_frontier": {
+      "file": "tables/markowitz_10y_frontier.parquet",
+      "rows": 60,
+      "schema": "markowitz.frontier.v1",
+      "sha256": "291319708c28569212bc488ba873ec8dad763bf74dd68b9682307c8da540bd14"
+    },
+    "markowitz_10y_moments": {
+      "file": "tables/markowitz_10y_moments.parquet",
+      "rows": 4,
+      "schema": "markowitz.moments.v1",
+      "sha256": "6a3e7381106e2b444b46e0fb32d616d987234fb614b114657811675aff603efb"
+    },
+    "markowitz_max_frontier": {
+      "file": "tables/markowitz_max_frontier.parquet",
+      "rows": 60,
+      "schema": "markowitz.frontier.v1",
+      "sha256": "398a031245f621357f3728c6ca099f9e0f8fc788aee9b20bde9987fc5dd33b85"
+    },
+    "markowitz_max_moments": {
+      "file": "tables/markowitz_max_moments.parquet",
+      "rows": 4,
+      "schema": "markowitz.moments.v1",
+      "sha256": "2a423e152e53517a6269bec0b2e7d97c7904579634cefeb7a6f438abddb148ab"
+    },
+    "monthly_returns_ext2026": {
+      "file": "tables/monthly_returns_ext2026.parquet",
+      "rows": 252,
+      "schema": "monthly_returns.reader.v1",
+      "sha256": "e382700fa06f12120ba3f871d3e4c0ce873a599a48ee73727695fb012649ae33"
+    },
+    "portfolio_metrics_differential_ext2026": {
+      "file": "tables/portfolio_metrics_differential_ext2026.parquet",
+      "rows": 1,
+      "schema": "portfolio_metrics.differential.v2",
+      "sha256": "b403ca038b33182f356716ac256bda6b678329c5e3cc501cbc3a391e0331dfef"
+    },
+    "portfolio_metrics_reader_ext2026": {
+      "file": "tables/portfolio_metrics_reader_ext2026.parquet",
+      "rows": 2,
+      "schema": "portfolio_metrics.reader.v2",
+      "sha256": "20489d3403dfad21a50f6824494a5419b1430aad218adbd263cff13ce4d83126"
+    },
+    "portfolio_metrics_vectorbt365_ext2026": {
+      "file": "tables/portfolio_metrics_vectorbt365_ext2026.parquet",
+      "rows": 2,
+      "schema": "portfolio_metrics.vectorbt365.v1",
+      "sha256": "d9f8c66dc93df413711b9cb3a92271e03afb21e432854252f45850e6af5d64cd"
+    },
+    "risk_decomposition_ext2026": {
+      "file": "tables/risk_decomposition_ext2026.parquet",
+      "rows": 2,
+      "schema": "risk_decomposition.v1",
+      "sha256": "ef75ea7b8e886959281f12d7ff8915b154947bdb88313957bcdccb1bad608912"
+    },
+    "tear_sheet_ai_variants_ext2026": {
+      "file": "tables/tear_sheet_ai_variants_ext2026.parquet",
+      "rows": 3,
+      "schema": "tear_sheet.ai_variants.v1",
+      "sha256": "fd03131d6ce8dc452669ad340f45827baf4657c3f3d27ea599d403e72f81ff17"
+    },
+    "tear_sheet_sjm_crowding_ext2026": {
+      "file": "tables/tear_sheet_sjm_crowding_ext2026.parquet",
+      "rows": 10,
+      "schema": "tear_sheet.sjm.v3",
+      "sha256": "6aa12c3d6e286c4e2e54aef9ef6157c2343e684926b732b6d8a869699038c7b2"
+    },
+    "tear_sheet_static_bh_window_dashboard": {
+      "file": "tables/tear_sheet_static_bh_window_dashboard.parquet",
+      "rows": 8,
+      "schema": "tear_sheet.window_dashboard.v1",
+      "sha256": "0323cc522a19506e1432b8a1b3531151abb2a7554b2eefc90c76dd2a38b8f7f9"
+    },
+    "tear_sheet_static_bh_windows": {
+      "file": "tables/tear_sheet_static_bh_windows.parquet",
+      "rows": 4,
+      "schema": "tear_sheet.static_windows.v1",
+      "sha256": "807d4b65845b801cbc6242123e8f59bb8aead7fe1284490ea7cd060f1ccdf83e"
+    },
+    "tear_sheet_trio_10y": {
+      "file": "tables/tear_sheet_trio_10y.parquet",
+      "rows": 3,
+      "schema": "tear_sheet.trio_10y.v1",
+      "sha256": "69e91136d7024fcde8d623ef04f950b140f53519825cd83e4d0cdd076a10e1ea"
+    },
+    "tear_sheet_trio_ext2026": {
+      "file": "tables/tear_sheet_trio_ext2026.parquet",
+      "rows": 3,
+      "schema": "tear_sheet.trio.v4",
+      "sha256": "9bdd3a9d8844606f8d0c353d331b6b352e3d538dca9e4b6056900a0b1a76d551"
+    },
+    "tear_sheet_trio_max": {
+      "file": "tables/tear_sheet_trio_max.parquet",
+      "rows": 3,
+      "schema": "tear_sheet.trio_max.v1",
+      "sha256": "fb4c1320082cde5d405c1aab8c821dcffda8b4230dba25c7c6e05f260a4cab6f"
+    }
+  }
+}

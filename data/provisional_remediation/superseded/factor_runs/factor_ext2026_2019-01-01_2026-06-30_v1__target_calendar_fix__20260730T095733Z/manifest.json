@@ -1,0 +1,336 @@
+{
+  "build_time": "2026-07-30T08:06:31.061535+00:00",
+  "completed": true,
+  "config": {
+    "init_cash": 10000.0,
+    "lookback_days": 756,
+    "panel_source": "committed data/macro_panel_monthly.parquet (replay mode: zero-provider panel replay)",
+    "price_window_end": "2026-06-30",
+    "price_window_start": "2014-01-01",
+    "replay_mode": true,
+    "sim_end": "2026-06-30",
+    "sim_start": "2019-01-01",
+    "tilt": 0.3
+  },
+  "expected_evidence": {
+    "dates": [
+      "2019-01-02",
+      "2019-02-01",
+      "2019-03-01",
+      "2019-04-01",
+      "2019-05-01",
+      "2019-06-03",
+      "2019-07-01",
+      "2019-08-01",
+      "2019-09-02",
+      "2019-10-01",
+      "2019-11-01",
+      "2019-12-02",
+      "2020-01-02",
+      "2020-02-03",
+      "2020-03-02",
+      "2020-04-01",
+      "2020-05-01",
+      "2020-06-01",
+      "2020-07-01",
+      "2020-08-03",
+      "2020-09-01",
+      "2020-10-01",
+      "2020-11-02",
+      "2020-12-01",
+      "2021-01-04",
+      "2021-02-01",
+      "2021-03-01",
+      "2021-04-01",
+      "2021-05-03",
+      "2021-06-01",
+      "2021-07-01",
+      "2021-08-02",
+      "2021-09-01",
+      "2021-10-01",
+      "2021-11-01",
+      "2021-12-01",
+      "2022-01-03",
+      "2022-02-01",
+      "2022-03-01",
+      "2022-04-01",
+      "2022-05-02",
+      "2022-06-01",
+      "2022-07-01",
+      "2022-08-01",
+      "2022-09-01",
+      "2022-10-03",
+      "2022-11-01",
+      "2022-12-01",
+      "2023-01-03",
+      "2023-02-01",
+      "2023-03-01",
+      "2023-04-03",
+      "2023-05-01",
+      "2023-06-01",
+      "2023-07-03",
+      "2023-08-01",
+      "2023-09-01",
+      "2023-10-02",
+      "2023-11-01",
+      "2023-12-01",
+      "2024-01-02",
+      "2024-02-01",
+      "2024-03-01",
+      "2024-04-01",
+      "2024-05-01",
+      "2024-06-03",
+      "2024-07-01",
+      "2024-08-01",
+      "2024-09-02",
+      "2024-10-01",
+      "2024-11-01",
+      "2024-12-02",
+      "2025-01-02",
+      "2025-02-03",
+      "2025-03-03",
+      "2025-04-01",
+      "2025-05-01",
+      "2025-06-02",
+      "2025-07-01",
+      "2025-08-01",
+      "2025-09-01",
+      "2025-10-01",
+      "2025-11-03",
+      "2025-12-01",
+      "2026-01-02",
+      "2026-02-02",
+      "2026-03-02",
+      "2026-04-01",
+      "2026-05-01",
+      "2026-06-01"
+    ],
+    "n_dates": 90,
+    "n_keys": 180,
+    "variants": [
+      "nonpit_diagnostic",
+      "pit"
+    ]
+  },
+  "files": {
+    "contrast": {
+      "end": "2026-06-01",
+      "file": "factor_contrast_ext2026.parquet",
+      "lineage": "per-date PIT vs non-PIT p_memorized contrast",
+      "rows": 90,
+      "schema_id": "factor_run.v1/contrast",
+      "sha256": "ddfbec82555e658f618589402e30c960e746be6908239b1e170f66c67ec6878c",
+      "size": 6827,
+      "start": "2019-01-02"
+    },
+    "contrast_split": {
+      "end": null,
+      "file": "factor_contrast_split_ext2026.json",
+      "lineage": "in-training vs post-cutoff contrast split table",
+      "rows": 3,
+      "schema_id": "factor_run.v1/contrast_split",
+      "sha256": "406c2db5b65e32197a0447b05be06c4f7d7ddb62fca6c730ba920e494848348d",
+      "size": 976,
+      "start": null
+    },
+    "decision_log_nonpit": {
+      "end": "2026-06-01",
+      "file": "factor_nonpit_diagnostic_decision_log_ext2026.json",
+      "lineage": "per-rebalance decision log from the dated-evidence replay (non-PIT)",
+      "rows": 90,
+      "schema_id": "factor_run.v1/decision_log_nonpit",
+      "sha256": "3888279443898d650d2cadf89774db497a94423298ae4aad61f85bd5eed01244",
+      "size": 170721,
+      "start": "2019-01-02"
+    },
+    "decision_log_pit": {
+      "end": "2026-06-01",
+      "file": "factor_decision_log_ext2026.json",
+      "lineage": "per-rebalance decision log from the dated-evidence replay (PIT)",
+      "rows": 90,
+      "schema_id": "factor_run.v1/decision_log_pit",
+      "sha256": "3a1630fa7f28d0b45b459c1c2dbadeb8744d55aa65a13508c90097a227111064",
+      "size": 179568,
+      "start": "2019-01-02"
+    },
+    "equity_nonpit": {
+      "end": "2026-06-30",
+      "file": "factor_nonpit_diagnostic_equity_ext2026.parquet",
+      "lineage": "rebalance-simulation equity curve (non-PIT diagnostic line)",
+      "rows": 3084,
+      "schema_id": "factor_run.v1/equity_nonpit",
+      "sha256": "3dfd01169a378b118b67e5989936ae149d136613f638989c39812188a0c7952d",
+      "size": 46753,
+      "start": "2014-01-02"
+    },
+    "equity_pit": {
+      "end": "2026-06-30",
+      "file": "factor_equity_ext2026.parquet",
+      "lineage": "rebalance-simulation equity curve (PIT deployable line)",
+      "rows": 3084,
+      "schema_id": "factor_run.v1/equity_pit",
+      "sha256": "9ea6f9529dcb39bcebda934a89940e2dd5ce6784cecf9bc5c1ff5b48a04f2d75",
+      "size": 46753,
+      "start": "2014-01-02"
+    },
+    "evidence": {
+      "end": "2026-06-01",
+      "file": "factor_evidence_ext2026.parquet",
+      "lineage": "task 6.2 dated (variant, rebalance_date) replay evidence",
+      "rows": 180,
+      "schema_id": "factor_run.v1/evidence",
+      "sha256": "e637af52fff564edb79a1d05a6c089e126e5dd0695e315a8312d675c4d94de6c",
+      "size": 108317,
+      "start": "2019-01-02"
+    },
+    "loadings_nonpit": {
+      "end": "2026-06-01",
+      "file": "factor_nonpit_diagnostic_loadings_ext2026.parquet",
+      "lineage": "full-stream non-PIT diagnostic loadings (v1 replay + live ext2026)",
+      "rows": 90,
+      "schema_id": "factor_run.v1/loadings_nonpit",
+      "sha256": "818b306cd5da63072ffb8d9561873ae4e560ec0313d2060c6ed6a547cb891adc",
+      "size": 8250,
+      "start": "2019-01-02"
+    },
+    "loadings_pit": {
+      "end": "2026-06-01",
+      "file": "factor_loadings_ext2026.parquet",
+      "lineage": "full-stream PIT loadings (v1 replay + live ext2026)",
+      "rows": 90,
+      "schema_id": "factor_run.v1/loadings_pit",
+      "sha256": "827156db16ec9a0bcff7a798b9055a231a572dcc5565c317e7ddfd47373e411f",
+      "size": 7643,
+      "start": "2019-01-02"
+    },
+    "metric_records": {
+      "end": "2026-06-30",
+      "file": "factor_metric_records_ext2026.json",
+      "lineage": "task 6.6/6.7 run-local metric and report records",
+      "rows": 9,
+      "schema_id": "factor_run.v1/metric_records",
+      "sha256": "489ae24de1a8bb23ab3c180364e3cb66e34809afe3a6903d9080c409307aca4e",
+      "size": 15990,
+      "start": "2019-01-03"
+    },
+    "replay_audit": {
+      "end": "2026-06-01",
+      "file": "factor_ext2026_replay_audit.json",
+      "lineage": "task 6.4 passing source-to-consumption replay audit",
+      "rows": 180,
+      "schema_id": "factor_run.v1/replay_audit",
+      "sha256": "b85963f6f75c4ef784b6428501a815c406d3c0d3cb510a70d99506b8194ec353",
+      "size": 709,
+      "start": "2019-01-02"
+    },
+    "scores_nonpit": {
+      "end": "2026-06-01",
+      "file": "factor_nonpit_diagnostic_scores_ext2026.parquet",
+      "lineage": "full-stream non-PIT diagnostic scores (v1 replay + live ext2026)",
+      "rows": 90,
+      "schema_id": "factor_run.v1/scores_nonpit",
+      "sha256": "47619422505685daf1bffd5effdf0153dd61c984082138a9437551462c9c36cf",
+      "size": 5190,
+      "start": "2019-01-02"
+    },
+    "scores_pit": {
+      "end": "2026-06-01",
+      "file": "factor_scores_ext2026.parquet",
+      "lineage": "full-stream PIT recall-guard scores (v1 replay + live ext2026)",
+      "rows": 90,
+      "schema_id": "factor_run.v1/scores_pit",
+      "sha256": "bf0983edd73a7ff4c4b9812771d6328d23348c4b2821b3f0bc08f6565bdad5b9",
+      "size": 5120,
+      "start": "2019-01-02"
+    },
+    "targets_nonpit": {
+      "end": "2026-06-30",
+      "file": "factor_nonpit_diagnostic_targets_ext2026.parquet",
+      "lineage": "walk-forward monthly target weights (non-PIT diagnostic line)",
+      "rows": 3212,
+      "schema_id": "factor_run.v1/targets_nonpit",
+      "sha256": "8d910f039e5debee0569dbdd651abadaafc9ff5dd96579f715c83693832b11bf",
+      "size": 31594,
+      "start": "2014-01-02"
+    },
+    "targets_pit": {
+      "end": "2026-06-30",
+      "file": "factor_targets_ext2026.parquet",
+      "lineage": "walk-forward monthly target weights (PIT deployable line)",
+      "rows": 3212,
+      "schema_id": "factor_run.v1/targets_pit",
+      "sha256": "9519f0f4c76fa414b93f1595648f232659436c75dbb5364ac29efd584605a847",
+      "size": 31638,
+      "start": "2014-01-02"
+    }
+  },
+  "input_manifests": {
+    "factor_equity_v1": {
+      "path": "data/factor_equity_v1.parquet",
+      "sha256": "f675ad14c1569086b53632c916663a672c0686150c20f68ce1be98e7d756c96b"
+    },
+    "factor_loadings_v1": {
+      "path": "data/factor_loadings_v1.parquet",
+      "sha256": "315a06a5888c7e08d7c861ef7a25fe76bb16480ec47e4eef703d026fb0ae0141"
+    },
+    "factor_nonpit_diagnostic_loadings_v1": {
+      "path": "data/factor_nonpit_diagnostic_loadings_v1.parquet",
+      "sha256": "fc4ed44eb214019f6f976c5fcae6c461152660d4c9c639f508cd34dfab78cbdb"
+    },
+    "factor_nonpit_diagnostic_scores_v1": {
+      "path": "data/factor_nonpit_diagnostic_scores_v1.parquet",
+      "sha256": "3a4caf04d6ebf604e6b22d99df79762c39ce162dabd5eba4f085f9ae242bf334"
+    },
+    "factor_scores_v1": {
+      "path": "data/factor_scores_v1.parquet",
+      "sha256": "e669c1ca12eee172e4eda8ebce47887a9eda1c6b04060282b351e63ed09db2d4"
+    },
+    "factor_targets_v1": {
+      "path": "data/factor_targets_v1.parquet",
+      "sha256": "7a37ce984908846773d181d12468e7fadf7903423d6ce45692aef889ebe5a900"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    }
+  },
+  "model": {
+    "calibrator_dir": "factor_calibrator_openai_gpt-oss-20b",
+    "cutoff_date": "2024-06-01",
+    "holdout_auc": 0.9667774086378738,
+    "is_weak": false,
+    "nim_model": "openai/gpt-oss-20b"
+  },
+  "price_input": {
+    "columns": [
+      "SWDA.L",
+      "XLK",
+      "IAU",
+      "BIL",
+      "SPY"
+    ],
+    "content_sha256": "e72d89a52ae305b8f171c3e20abc21ebbcc90ed9c08f40c9461f1e213818776f",
+    "end": "2026-06-30",
+    "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+    "path": "/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/market_snapshots/provisional_market_total_return_fx_2026-06-30_v1",
+    "rows": 3212,
+    "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1",
+    "start": "2014-01-02"
+  },
+  "prompt_renderer": {
+    "id": "macro_framework.factor_scoring.render_regime_loadings_prompt",
+    "source_sha256": "bbc3522ebd57464adc9dc346ec5970f0767648dc936f9cace519f645477e95a0"
+  },
+  "replay_audit": {
+    "counts": {
+      "consumed_keys": 180,
+      "decision_identities": 180,
+      "expected_keys": 180,
+      "source_records": 180
+    },
+    "result": "pass"
+  },
+  "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1",
+  "schema": "factor_run.v1",
+  "source_commit": "e9aed6d31d16925b7506989e6e855a8ccdd694a7"
+}

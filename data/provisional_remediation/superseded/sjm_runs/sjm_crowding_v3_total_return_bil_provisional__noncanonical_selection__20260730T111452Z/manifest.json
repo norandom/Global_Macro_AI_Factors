@@ -1,0 +1,125 @@
+{
+  "baselines": {
+    "control_dev_maxdd": -0.040000000000000036,
+    "factor_dev_cagr": 0.10180479741072657
+  },
+  "build_time": "2026-07-30T10:15:00+00:00",
+  "cash_benchmark": {
+    "cash_benchmark_id": "BIL",
+    "cash_semantics": "adjusted_total_return",
+    "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+  },
+  "completed": true,
+  "coverage": {
+    "anchor": "2014-01-02",
+    "end": "2026-06-30",
+    "n_obs": 3083,
+    "start": "2014-01-03"
+  },
+  "files": {
+    "control_returns": {
+      "end": "2026-06-30",
+      "file": "sjm_control_returns.parquet",
+      "rows": 3083,
+      "sha256": "22ed52660e37967282d89bb590e44843ffbacf3aaf5ae6ebea8dfe98dc5ba260",
+      "size": 48323,
+      "start": "2014-01-03"
+    },
+    "daily_returns": {
+      "end": "2026-06-30",
+      "file": "sjm_daily_returns.parquet",
+      "rows": 3083,
+      "sha256": "b02b391e53eea87104294d933ed10b16fc2d7a368f0d14bfc0a2af3134838ba1",
+      "size": 79603,
+      "start": "2014-01-03"
+    },
+    "equity": {
+      "end": "2026-06-30",
+      "file": "sjm_equity.parquet",
+      "rows": 3084,
+      "sha256": "61f41770acf9d326a0157d28aab2ee9a73095c735a99f3a4cdd90bce9c3d3ce4",
+      "size": 46752,
+      "start": "2014-01-02"
+    },
+    "exposures": {
+      "end": "2026-06-30",
+      "file": "sjm_exposures.parquet",
+      "rows": 3083,
+      "sha256": "40c9d14b2ea5578282d4113d0f9e5b5eaa2a4ef1b6389fc7e9210cc73d5e6de5",
+      "size": 30325,
+      "start": "2014-01-03"
+    },
+    "ledger": {
+      "file": "sjm_ledger.json",
+      "rows": 25,
+      "sha256": "ae669807a97c1c1049e90dc1ef9edf7a73585f3c4d8d66f4bbe5ac8168e3dbdb",
+      "size": 21302
+    },
+    "protocol": {
+      "file": "sjm_protocol.json",
+      "sha256": "250fc86ad644da1ea608d067b5715deb9f3239102b750c8f1a8cac21bcdc5e05",
+      "size": 2728
+    },
+    "targets": {
+      "end": "2026-06-30",
+      "file": "sjm_targets.parquet",
+      "rows": 3083,
+      "sha256": "893f950d94424fd47939eaf5fcaedab9662870bf2a00724c8fba4a796bbc73f1",
+      "size": 29546,
+      "start": "2014-01-03"
+    }
+  },
+  "gate_results": {
+    "cagr_budget_pass": true,
+    "maxdd_vs_control_pass": true,
+    "passed": true
+  },
+  "input_manifests": {
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    }
+  },
+  "ledger_sha256": "ebf4feca938f06b109b6b6efa52bcea20349a87072950957505c465ed3291e05",
+  "protocol": {
+    "control_rule": "derisk_cash_pin",
+    "dev_end": "2024-06-30",
+    "limit_table_sha256": "c201da04d8209fdadefa516f64d8f538b67187be8763bd674326fe6a4af4722c",
+    "mutation_registry_sha256": "b9f69e1a22522846853d941ab232e9bec11d53f992437e94ab5d4e4cf550f13d",
+    "objective": "dev_calmar",
+    "protocol_id": "sjm_selection_v2_calmar_frozen",
+    "protocol_sha256": "33f9307ef941dca0b0bff7105ae0523fdaceb1b8e66fea39643a3f480538b983",
+    "seed": 42
+  },
+  "run_id": "sjm_crowding_v3_total_return_bil_provisional",
+  "schema": "sjm_run.v3",
+  "selected_config": {
+    "arm": -0.02,
+    "floor": 0.4,
+    "lam": 50.0,
+    "limits": {
+      "bear": {
+        "0": 1.0,
+        "1": 0.8,
+        "2": 0.5
+      },
+      "bull": {
+        "0": 1.0,
+        "1": 0.9,
+        "2": 0.8
+      },
+      "neutral": {
+        "0": 1.0,
+        "1": 0.9,
+        "2": 0.8
+      }
+    },
+    "scale": 1.0,
+    "signal": "absorption",
+    "window": 252
+  }
+}

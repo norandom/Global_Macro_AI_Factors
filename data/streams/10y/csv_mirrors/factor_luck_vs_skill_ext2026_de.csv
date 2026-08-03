@@ -1,0 +1,4 @@
+line;n_obs;n_rolling;total_return;sharpe;mean_rolling_sr;ssr;nw_long_run_var;nw_sigma_hac;nw_bandwidth_L;mbb_p;mbb_block;verdict
+PIT recall-guarded (deployable, ext2026);2587;2336;2,01985393;1,24065415;1,25567565;0,13120514;91,59109798;9,57032382;155;0,00099900;1;SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim
+Non-PIT recall-enabled (DIAGNOSTIC, ext2026);2587;2336;2,17815500;1,32749539;1,37842353;0,13426322;105,40258704;10,26657621;155;0,00099900;1;SSR=0.13: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim
+Differential (non-PIT minus PIT, ext2026);2587;2336;0,15830106;0,17499128;0,40357951;0,04054180;99,09509028;9,95465169;155;0,18981019;18;SSR=0.04: differential NOT distinguishable from zero (one-sided MBB p=0.190, mirror p=0.811) — luck-compatible, not skill

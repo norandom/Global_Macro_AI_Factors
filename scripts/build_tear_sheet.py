@@ -2521,7 +2521,7 @@ def _panel_rows_for_markowitz_window(
         market_input,
         StaticWindowSpec(f"{name} Markowitz static panel", start, end),
         ssr_settings=ssr_settings,
-        attribution=False,
+        attribution=True,
     )
     factor = _factor_panel_reader_row(
         factor_input,

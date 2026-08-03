@@ -1,0 +1,161 @@
+{
+  "arm_candidates": [
+    null,
+    -0.02,
+    -0.03,
+    -0.04,
+    -0.05
+  ],
+  "cagr_budget": 0.035,
+  "control_rule": "derisk_cash_pin",
+  "dev_end": "2024-06-30",
+  "dev_start": "2019-01-03",
+  "dry_rounds": 12,
+  "floor_candidates": [
+    0.5,
+    0.3
+  ],
+  "holdout_start": "2024-07-01",
+  "lambda_candidates": [
+    20.0,
+    100.0
+  ],
+  "limit_table": {
+    "bear": {
+      "0": 1.0,
+      "1": 0.8,
+      "2": 0.5
+    },
+    "bull": {
+      "0": 1.0,
+      "1": 0.9,
+      "2": 0.8
+    },
+    "neutral": {
+      "0": 1.0,
+      "1": 0.9,
+      "2": 0.8
+    }
+  },
+  "limit_table_sha256": "c201da04d8209fdadefa516f64d8f538b67187be8763bd674326fe6a4af4722c",
+  "max_iters": 60,
+  "mutation_registry": [
+    {
+      "parameter": "lam",
+      "value": 20.0
+    },
+    {
+      "parameter": "lam",
+      "value": 100.0
+    },
+    {
+      "parameter": "window",
+      "value": 126
+    },
+    {
+      "parameter": "window",
+      "value": 504
+    },
+    {
+      "parameter": "signal",
+      "value": "turbulence"
+    },
+    {
+      "parameter": "signal",
+      "value": "absorption"
+    },
+    {
+      "parameter": "scale",
+      "value": 0.9
+    },
+    {
+      "parameter": "scale",
+      "value": 1.1
+    },
+    {
+      "parameter": "scale",
+      "value": 1.2
+    },
+    {
+      "parameter": "scale",
+      "value": 1.3
+    },
+    {
+      "parameter": "floor",
+      "value": 0.5
+    },
+    {
+      "parameter": "floor",
+      "value": 0.3
+    },
+    {
+      "parameter": "arm",
+      "value": null
+    },
+    {
+      "parameter": "arm",
+      "value": -0.02
+    },
+    {
+      "parameter": "arm",
+      "value": -0.03
+    },
+    {
+      "parameter": "arm",
+      "value": -0.04
+    },
+    {
+      "parameter": "arm",
+      "value": -0.05
+    }
+  ],
+  "mutation_registry_sha256": "b9f69e1a22522846853d941ab232e9bec11d53f992437e94ab5d4e4cf550f13d",
+  "objective": "dev_calmar",
+  "protocol_id": "sjm_selection_v2_calmar_frozen",
+  "protocol_sha256": "33f9307ef941dca0b0bff7105ae0523fdaceb1b8e66fea39643a3f480538b983",
+  "require_maxdd_not_worse_than_control": true,
+  "scale_candidates": [
+    0.9,
+    1.1,
+    1.2,
+    1.3
+  ],
+  "seed": 42,
+  "seed_config": {
+    "arm": null,
+    "floor": 0.4,
+    "lam": 50.0,
+    "limits": {
+      "bear": {
+        "0": 1.0,
+        "1": 0.8,
+        "2": 0.5
+      },
+      "bull": {
+        "0": 1.0,
+        "1": 0.9,
+        "2": 0.8
+      },
+      "neutral": {
+        "0": 1.0,
+        "1": 0.9,
+        "2": 0.8
+      }
+    },
+    "scale": 1.0,
+    "signal": "absorption",
+    "window": 252
+  },
+  "signal_candidates": [
+    "turbulence",
+    "absorption"
+  ],
+  "signal_step": {
+    "absorption": 5,
+    "turbulence": 1
+  },
+  "window_candidates": [
+    126,
+    504
+  ]
+}

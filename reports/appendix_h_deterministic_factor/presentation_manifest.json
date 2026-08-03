@@ -1,0 +1,206 @@
+{
+  "appendix_id": "appendix_h_deterministic_factor",
+  "completed": true,
+  "decision_log_crosscheck": {
+    "loading_table_display_authority": true,
+    "mismatch_dates": [
+      "2025-10-01",
+      "2026-04-01",
+      "2026-05-01"
+    ],
+    "parse_failure_date": "2024-03-01"
+  },
+  "deterministic_transformation": {
+    "bl_q": "guarded_tilt * clip(conviction, 0, 1) / 252",
+    "exposure_map": {
+      "gold_commodity": {
+        "credit_stress": 0.7,
+        "growth": -0.4,
+        "inflation": 0.8,
+        "policy": 0.1,
+        "risk_appetite": -0.5
+      },
+      "short_treasury_cash": {
+        "credit_stress": 0.6,
+        "growth": -0.6,
+        "inflation": 0.3,
+        "policy": 0.8,
+        "risk_appetite": -0.6
+      },
+      "tech_sector": {
+        "credit_stress": -0.7,
+        "growth": 1.0,
+        "inflation": -0.6,
+        "policy": -0.5,
+        "risk_appetite": 0.8
+      },
+      "world_equity": {
+        "credit_stress": -0.8,
+        "growth": 1.0,
+        "inflation": -0.3,
+        "policy": -0.3,
+        "risk_appetite": 0.6
+      }
+    },
+    "factor_module": "macro_framework.factor_scoring",
+    "guarded_tilt": "raw_tilt * (1 - p_memorized)",
+    "not_allocation_replay": true,
+    "raw_tilt": "sum(loading_axis * category_exposure_axis)"
+  },
+  "generated_at": "2026-07-31T19:12:50.938076+00:00",
+  "loading_standardization": {
+    "axes": [
+      "inflation",
+      "growth",
+      "credit_stress",
+      "policy",
+      "risk_appetite"
+    ],
+    "ddof": 1,
+    "method": "expanding_prior_history",
+    "minimum_prior_valid_observations": 12,
+    "parse_failure_policy": "unavailable_not_zero"
+  },
+  "macro_asof_contract": {
+    "late_source_lag_days_max": 62,
+    "release_vintage_pit": false,
+    "rule": "macro_source_date < rebalance_date",
+    "zscore_columns": [
+      "cpi_yoy_z",
+      "t10y2y_z",
+      "hy_oas_z"
+    ]
+  },
+  "notebook": {
+    "file": "notebooks/appendix_h_deterministic_factor.ipynb",
+    "sha256": "dcf323194e6f60380abdc1c88ebb4aa2612cae59388c8652ea497e470268f613"
+  },
+  "outputs": {
+    "appendix_h_factor_loading_zscores.png": {
+      "bytes": 103843,
+      "file": "appendix_h_factor_loading_zscores.png",
+      "height_px": 1064,
+      "media_type": "image/png",
+      "sha256": "26aaf5bb9969165fd86f77322ad4978a801614669f307455ccdb04358a131792",
+      "width_px": 2755
+    },
+    "appendix_h_persisted_equity_level.png": {
+      "bytes": 120116,
+      "file": "appendix_h_persisted_equity_level.png",
+      "height_px": 884,
+      "media_type": "image/png",
+      "sha256": "2ec4799e0c864d274d2ed736599aaa463b45660220d2a3d9f8789ca27eb5ea15",
+      "width_px": 2450
+    },
+    "appendix_h_persisted_target_weights.png": {
+      "bytes": 256031,
+      "file": "appendix_h_persisted_target_weights.png",
+      "height_px": 1424,
+      "media_type": "image/png",
+      "sha256": "d19fc805708e206fec3a03fae147dd95b83a9af4057327532515f75d7edcafcb",
+      "width_px": 2450
+    },
+    "appendix_h_pit_macro_zscores.png": {
+      "bytes": 90420,
+      "file": "appendix_h_pit_macro_zscores.png",
+      "height_px": 866,
+      "media_type": "image/png",
+      "sha256": "a00ae998a43cd8043c8d60372df2324cf8da85dac1fd71641c9697b5370f95fe",
+      "width_px": 2756
+    },
+    "appendix_h_signed_tilts_bl_q.png": {
+      "bytes": 748400,
+      "file": "appendix_h_signed_tilts_bl_q.png",
+      "height_px": 1910,
+      "media_type": "image/png",
+      "sha256": "bcc552bed55b1f033730eb052a48c7a2bb977f6f265b49085032e2b786b86d8b",
+      "width_px": 2900
+    },
+    "appendix_h_worked_factor_trace.png": {
+      "bytes": 303365,
+      "file": "appendix_h_worked_factor_trace.png",
+      "height_px": 2036,
+      "media_type": "image/png",
+      "sha256": "1948380a00c99f94d8e1ec1fb90a1ab2532d4988cc874835c0aa6cf722e35626",
+      "width_px": 3260
+    }
+  },
+  "panel": {
+    "columns": [
+      "rebalance_date",
+      "macro_source_date",
+      "macro_source_lag_days",
+      "equity_observation_date",
+      "equity_observation_lag_days",
+      "segment",
+      "parse_ok",
+      "asset_id",
+      "ticker",
+      "category",
+      "p_memorized",
+      "steered",
+      "conviction",
+      "decision_log_loading_match",
+      "decision_log_mismatch_reason",
+      "persisted_target_weight",
+      "persisted_equity_value",
+      "cpi_yoy_z",
+      "t10y2y_z",
+      "hy_oas_z",
+      "inflation",
+      "growth",
+      "credit_stress",
+      "policy",
+      "risk_appetite",
+      "expanding_z_inflation",
+      "expanding_z_growth",
+      "expanding_z_credit_stress",
+      "expanding_z_policy",
+      "expanding_z_risk_appetite",
+      "raw_tilt",
+      "guarded_tilt",
+      "bl_q"
+    ],
+    "file": "appendix_h_deterministic_factor_panel.parquet",
+    "rows": 504,
+    "schema": "appendix_h.deterministic_factor_panel.v1",
+    "sha256": "161b93f33ae43cb06074ee3b0226bd4d16569acb8499c8673123c14273f8016a"
+  },
+  "presentation_only": true,
+  "schema": "appendix_h_deterministic_factor.presentation.v1",
+  "source_hashes": {
+    "decision_log": "d0f77d59f92854965bce3cc6c543b4738dfd7c4ccb9883599d63f45928db042c",
+    "equity": "6fedeb27c327580ea83fc599adadc3a6ea8c3cff54293ea138600b267e764296",
+    "header": "b42c855970619c4eb2f33a1e537faa6a3a1d4c9c27bb2d2c013f287d5a07c392",
+    "loadings": "97b3eaff5a004be0ce0bbe3b69264da9410cf0eb5230c1cebdeb854e05d1ea83",
+    "macro_panel": "1444e80a3e1d9e375e581d829c507b84e406e504dfed421e072edaa6eb061cac",
+    "targets": "c5bb7dda289377ea0d3fc4938abf19a7eea14719478611bf0201c743310a00fc"
+  },
+  "source_inventory": {
+    "decision_log": {
+      "file": "data/streams/10y/factor_decision_log_ext2026.json",
+      "sha256": "d0f77d59f92854965bce3cc6c543b4738dfd7c4ccb9883599d63f45928db042c"
+    },
+    "equity": {
+      "file": "data/streams/10y/factor_equity_ext2026.parquet",
+      "sha256": "6fedeb27c327580ea83fc599adadc3a6ea8c3cff54293ea138600b267e764296"
+    },
+    "header": {
+      "file": "data/streams/10y/factor_ext2026_run_header.json",
+      "sha256": "b42c855970619c4eb2f33a1e537faa6a3a1d4c9c27bb2d2c013f287d5a07c392"
+    },
+    "loadings": {
+      "file": "data/streams/10y/factor_loadings_ext2026.parquet",
+      "sha256": "97b3eaff5a004be0ce0bbe3b69264da9410cf0eb5230c1cebdeb854e05d1ea83"
+    },
+    "macro_panel": {
+      "file": "data/macro_panel_monthly.parquet",
+      "sha256": "1444e80a3e1d9e375e581d829c507b84e406e504dfed421e072edaa6eb061cac"
+    },
+    "targets": {
+      "file": "data/streams/10y/factor_targets_ext2026.parquet",
+      "sha256": "c5bb7dda289377ea0d3fc4938abf19a7eea14719478611bf0201c743310a00fc"
+    }
+  },
+  "source_status": "non-manifested legacy/reconstructed"
+}

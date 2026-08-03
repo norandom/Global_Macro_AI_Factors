@@ -1,0 +1,47 @@
+rebalance 2020-03-02 | macro source 2020-02-29 {'cpi_yoy_z': 0.846, 't10y2y_z': -0.978, 'hy_oas_z': 0.432}
+model openai/gpt-oss-20b | T=0.0 | max_tokens=2048
+draws requested 1000 | already stored 0 | to run 1000
+rebalance 2020-03-02 | macro source 2020-02-29 {'cpi_yoy_z': 0.846, 't10y2y_z': -0.978, 'hy_oas_z': 0.432}
+model openai/gpt-oss-20b | T=0.0 | max_tokens=2048
+draws requested 1000 | already stored 18 | to run 982
+  25/982 draws (25 parsed) | 135.0/min | ~7 min left
+  50/982 draws (50 parsed) | 155.0/min | ~6 min left
+  75/982 draws (74 parsed) | 176.8/min | ~5 min left
+  100/982 draws (96 parsed) | 196.4/min | ~4 min left
+  125/982 draws (119 parsed) | 210.1/min | ~4 min left
+  150/982 draws (143 parsed) | 224.5/min | ~4 min left
+  175/982 draws (168 parsed) | 230.7/min | ~3 min left
+  200/982 draws (193 parsed) | 232.4/min | ~3 min left
+  225/982 draws (218 parsed) | 237.6/min | ~3 min left
+  250/982 draws (243 parsed) | 243.6/min | ~3 min left
+  275/982 draws (268 parsed) | 252.7/min | ~3 min left
+  300/982 draws (292 parsed) | 254.1/min | ~3 min left
+  325/982 draws (316 parsed) | 255.4/min | ~3 min left
+  350/982 draws (341 parsed) | 255.1/min | ~2 min left
+  375/982 draws (366 parsed) | 258.1/min | ~2 min left
+  400/982 draws (391 parsed) | 257.2/min | ~2 min left
+  425/982 draws (414 parsed) | 260.0/min | ~2 min left
+  450/982 draws (439 parsed) | 263.1/min | ~2 min left
+  475/982 draws (464 parsed) | 264.1/min | ~2 min left
+  500/982 draws (489 parsed) | 264.9/min | ~2 min left
+  525/982 draws (514 parsed) | 268.7/min | ~2 min left
+  550/982 draws (539 parsed) | 269.4/min | ~2 min left
+  575/982 draws (564 parsed) | 270.2/min | ~2 min left
+  600/982 draws (588 parsed) | 271.7/min | ~1 min left
+  625/982 draws (613 parsed) | 273.5/min | ~1 min left
+  650/982 draws (638 parsed) | 274.8/min | ~1 min left
+  675/982 draws (663 parsed) | 276.0/min | ~1 min left
+  700/982 draws (688 parsed) | 278.9/min | ~1 min left
+  725/982 draws (712 parsed) | 279.8/min | ~1 min left
+  750/982 draws (737 parsed) | 279.5/min | ~1 min left
+  775/982 draws (762 parsed) | 280.0/min | ~1 min left
+  800/982 draws (787 parsed) | 279.8/min | ~1 min left
+  825/982 draws (810 parsed) | 279.6/min | ~1 min left
+  850/982 draws (835 parsed) | 276.9/min | ~0 min left
+  875/982 draws (858 parsed) | 276.6/min | ~0 min left
+  900/982 draws (881 parsed) | 276.7/min | ~0 min left
+  925/982 draws (906 parsed) | 275.6/min | ~0 min left
+  950/982 draws (929 parsed) | 274.1/min | ~0 min left
+  975/982 draws (954 parsed) | 274.5/min | ~0 min left
+  982/982 draws (959 parsed) | 260.7/min | ~0 min left
+[done] /home/mc/projects/Global_Macro_AI_Factors/data/appendix_i_factor_dispersion/factor_dispersion_draws.csv

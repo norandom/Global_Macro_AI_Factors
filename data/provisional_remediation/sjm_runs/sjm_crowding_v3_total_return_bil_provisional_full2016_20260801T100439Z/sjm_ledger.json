@@ -1,0 +1,1363 @@
+[
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 50.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "KEEP",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 0,
+    "metrics": {
+      "dev_cagr": 0.07665949750937684,
+      "dev_calmar": 0.9877742928928499,
+      "dev_maxdd": -0.0776083140257352,
+      "dev_n_obs": 1353
+    },
+    "mutation": null
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "KEEP",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 1,
+    "metrics": {
+      "dev_cagr": 0.07918784992504824,
+      "dev_calmar": 1.0671470901136924,
+      "dev_maxdd": -0.07420518751225913,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "lam",
+      "value": 20.0
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 100.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 2,
+    "metrics": {
+      "dev_cagr": 0.07475522648732436,
+      "dev_calmar": 0.8559426365297934,
+      "dev_maxdd": -0.08733672479548493,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "lam",
+      "value": 100.0
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 3,
+    "metrics": {
+      "dev_cagr": 0.07847946971015562,
+      "dev_calmar": 1.057600854349858,
+      "dev_maxdd": -0.07420518751225813,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "window",
+      "value": 126
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "absorption",
+      "window": 504
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 4,
+    "metrics": {
+      "dev_cagr": 0.07380698172494227,
+      "dev_calmar": 0.8475095010067007,
+      "dev_maxdd": -0.08708690774235783,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "window",
+      "value": 504
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.0,
+      "signal": "turbulence",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 5,
+    "metrics": {
+      "dev_cagr": 0.08112666454732165,
+      "dev_calmar": 0.9995358730826065,
+      "dev_maxdd": -0.0811643350999739,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "signal",
+      "value": "turbulence"
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "KEEP",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 6,
+    "metrics": {
+      "dev_cagr": 0.07330074126832575,
+      "dev_calmar": 1.1038065365202094,
+      "dev_maxdd": -0.06640723608994836,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 0.9
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 100.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 7,
+    "metrics": {
+      "dev_cagr": 0.06933198835604193,
+      "dev_calmar": 0.8853628836212487,
+      "dev_maxdd": -0.07830912006663882,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "lam",
+      "value": 100.0
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 8,
+    "metrics": {
+      "dev_cagr": 0.07266879673750215,
+      "dev_calmar": 1.0942903366595889,
+      "dev_maxdd": -0.06640723608994814,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "window",
+      "value": 126
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 504
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": false,
+      "maxdd_vs_control_pass": true,
+      "passed": false
+    },
+    "iteration": 9,
+    "metrics": {
+      "dev_cagr": 0.06848424259721564,
+      "dev_calmar": 0.8771834454608318,
+      "dev_maxdd": -0.07807288538287127,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "window",
+      "value": 504
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "turbulence",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 10,
+    "metrics": {
+      "dev_cagr": 0.0750680326074964,
+      "dev_calmar": 1.0324163329289215,
+      "dev_maxdd": -0.07271100835312394,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "signal",
+      "value": "turbulence"
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.1,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 11,
+    "metrics": {
+      "dev_cagr": 0.08507679485917663,
+      "dev_calmar": 1.0381234720887285,
+      "dev_maxdd": -0.08195248171009961,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 1.1
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.2,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 12,
+    "metrics": {
+      "dev_cagr": 0.09079569258554954,
+      "dev_calmar": 1.012787429200628,
+      "dev_maxdd": -0.08964930840148033,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 1.2
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.3,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 13,
+    "metrics": {
+      "dev_cagr": 0.0943311798627482,
+      "dev_calmar": 0.9950635952739484,
+      "dev_maxdd": -0.09479914681913182,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 1.3
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.5,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 14,
+    "metrics": {
+      "dev_cagr": 0.07467829010111338,
+      "dev_calmar": 1.0806870726170172,
+      "dev_maxdd": -0.06910260332833507,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "floor",
+      "value": 0.5
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.3,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 15,
+    "metrics": {
+      "dev_cagr": 0.07330074126832575,
+      "dev_calmar": 1.1038065365202094,
+      "dev_maxdd": -0.06640723608994836,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "floor",
+      "value": 0.3
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "KEEP",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 16,
+    "metrics": {
+      "dev_cagr": 0.08959887574899694,
+      "dev_calmar": 1.2308375784552663,
+      "dev_maxdd": -0.07279504405564696,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "arm",
+      "value": -0.02
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 100.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 252
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 17,
+    "metrics": {
+      "dev_cagr": 0.08662741972988486,
+      "dev_calmar": 1.0237772827510234,
+      "dev_maxdd": -0.08461549322241813,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "lam",
+      "value": 100.0
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "KEEP",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 18,
+    "metrics": {
+      "dev_cagr": 0.08973280780737225,
+      "dev_calmar": 1.2326774297818348,
+      "dev_maxdd": -0.07279504405564852,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "window",
+      "value": 126
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 100.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 19,
+    "metrics": {
+      "dev_cagr": 0.08676098654080144,
+      "dev_calmar": 1.0253557975812257,
+      "dev_maxdd": -0.08461549322241824,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "lam",
+      "value": 100.0
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 504
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 20,
+    "metrics": {
+      "dev_cagr": 0.08688557316678014,
+      "dev_calmar": 1.0463951812400811,
+      "dev_maxdd": -0.08303323134937624,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "window",
+      "value": 504
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "turbulence",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 21,
+    "metrics": {
+      "dev_cagr": 0.09549835076746693,
+      "dev_calmar": 1.0510096622287441,
+      "dev_maxdd": -0.09086343751108394,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "signal",
+      "value": "turbulence"
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.1,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 22,
+    "metrics": {
+      "dev_cagr": 0.09458130732910175,
+      "dev_calmar": 1.1172908931272396,
+      "dev_maxdd": -0.08465235679525995,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 1.1
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.2,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 23,
+    "metrics": {
+      "dev_cagr": 0.09684490498126008,
+      "dev_calmar": 1.069601006301191,
+      "dev_maxdd": -0.09054301969681333,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 1.2
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 1.3,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 24,
+    "metrics": {
+      "dev_cagr": 0.09835994145665206,
+      "dev_calmar": 1.037561462913955,
+      "dev_maxdd": -0.09479914681913071,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "scale",
+      "value": 1.3
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.5,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 25,
+    "metrics": {
+      "dev_cagr": 0.09054029695023269,
+      "dev_calmar": 1.1996546269604254,
+      "dev_maxdd": -0.07547196911133947,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "floor",
+      "value": 0.5
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.02,
+      "floor": 0.3,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 26,
+    "metrics": {
+      "dev_cagr": 0.08973280780737225,
+      "dev_calmar": 1.2326774297818348,
+      "dev_maxdd": -0.07279504405564852,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "floor",
+      "value": 0.3
+    }
+  },
+  {
+    "candidate": {
+      "arm": null,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 27,
+    "metrics": {
+      "dev_cagr": 0.07266879673750215,
+      "dev_calmar": 1.0942903366595889,
+      "dev_maxdd": -0.06640723608994814,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "arm",
+      "value": null
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.03,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 28,
+    "metrics": {
+      "dev_cagr": 0.09319815131185782,
+      "dev_calmar": 1.1201221971513338,
+      "dev_maxdd": -0.08320355720909467,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "arm",
+      "value": -0.03
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.04,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 29,
+    "metrics": {
+      "dev_cagr": 0.09636878065678056,
+      "dev_calmar": 0.9681631272555099,
+      "dev_maxdd": -0.0995377513807626,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "arm",
+      "value": -0.04
+    }
+  },
+  {
+    "candidate": {
+      "arm": -0.05,
+      "floor": 0.4,
+      "lam": 20.0,
+      "limits": {
+        "bear": {
+          "0": 1.0,
+          "1": 0.8,
+          "2": 0.5
+        },
+        "bull": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        },
+        "neutral": {
+          "0": 1.0,
+          "1": 0.9,
+          "2": 0.8
+        }
+      },
+      "scale": 0.9,
+      "signal": "absorption",
+      "window": 126
+    },
+    "decision": "REVERT",
+    "gates": {
+      "cagr_budget_pass": true,
+      "maxdd_vs_control_pass": true,
+      "passed": true
+    },
+    "iteration": 30,
+    "metrics": {
+      "dev_cagr": 0.09097384103405415,
+      "dev_calmar": 0.9305521629634553,
+      "dev_maxdd": -0.09776329007106599,
+      "dev_n_obs": 1353
+    },
+    "mutation": {
+      "parameter": "arm",
+      "value": -0.05
+    }
+  }
+]

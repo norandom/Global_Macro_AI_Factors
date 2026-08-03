@@ -1,0 +1,11 @@
+**Trio tear sheet** — 2019-01-03 to 2026-01-30, 1745 trading days
+
+| Metric | Buy-and-hold | AI macro-factor | SJM de-risk |
+|---|---|---|---|
+| **Return vs. risk** | | | |
+| CAGR | 18.1% | 13.7% | 13.0% |
+| Ann. volatility | 14.6% | 9.2% | 8.1% |
+| Sharpe | 1.23 | 1.48 | 1.57 |
+| Max drawdown | -19.6% | -12.1% | -8.4% |
+| Calmar | 0.92 | 1.14 | 1.55 |
+| SSR | 0.14 | 0.13 | 0.13 |

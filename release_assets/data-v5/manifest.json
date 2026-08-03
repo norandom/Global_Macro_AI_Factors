@@ -1,0 +1,86 @@
+{
+  "build_time": "2026-08-02T09:06:06.351588+00:00",
+  "description": "Full-period (2016-2026) trio release: tear sheets, equity curves, and macro data for Buy & hold 25%, AI macro-factor (PIT), and SJM v3 overlay. All strategies are actual walk-forward simulations on the verified market snapshot.",
+  "files": {
+    "benchmark_configuration_de.csv": {
+      "bytes": 3803,
+      "sha256": "2530dfaf195f7a8bfdebdc6bf9390bc6e8e42026735fdfaa87c33a89d2394392"
+    },
+    "equity_curves/factor_pit_equity_2016_2026_de.csv": {
+      "bytes": 67292,
+      "sha256": "3a5baca9722ea31e780aa4095499b870860f927d90d08d0b43943383200a0dbe"
+    },
+    "equity_curves/sjm_overlay_equity_2016_2026_de.csv": {
+      "bytes": 56947,
+      "sha256": "c03ded9e9bed52d9105f8f621ec53e1022622c069899362ad1f31b26ad37e1b2"
+    },
+    "equity_curves/spy_bil_total_return_2016_2026_de.csv": {
+      "bytes": 95738,
+      "sha256": "fc10b2dd2c330100ae99a214eef99ee9f41753ea8f333549acef59ff470f3123"
+    },
+    "equity_curves/static_bh_25pct_equity_2016_2026_de.csv": {
+      "bytes": 54329,
+      "sha256": "3e92ff7bfffdf83c096b74e035fb18170848593793641f555e3cc5a33c2305a7"
+    },
+    "macro/factor_loadings_pit_2016_2026_de.csv": {
+      "bytes": 11381,
+      "sha256": "5b51c33ddbe162be84bb97729552fa347bc570e278777cc20af0f5fb2c03ee2b"
+    },
+    "macro/factor_scores_pit_2016_2026_de.csv": {
+      "bytes": 4977,
+      "sha256": "0e4c29ea2bd6c7b993634ca75a21867c99b8e8fa57349159c2f18c56a035a1d4"
+    },
+    "macro/macro_panel_monthly_2016_2026_de.csv": {
+      "bytes": 9908,
+      "sha256": "edf9308f11b1ac12a10eec5f7143018853a3ef114c50912ff92ae2413c9d9690"
+    },
+    "tear_sheets/nb18_3_risk_decomposition_10y_de.csv": {
+      "bytes": 560,
+      "sha256": "3350ef998f9cbf01e493bcc2a18250c57b2c768e1e81a4bb0c440ba0ee993b31"
+    },
+    "tear_sheets/nb18_3_tear_sheet_10y_de.csv": {
+      "bytes": 2595,
+      "sha256": "ffb25280e2072e96d758e30cccf66a79d54a96f99f9db01edb1c956257234539"
+    },
+    "tear_sheets/nb18_3_tear_sheet_supplement_10y_de.csv": {
+      "bytes": 577,
+      "sha256": "bafaa1a0a43e3257d4de9973b8577619b72b1b16b0954dcc40dea7b3ba5ff7f8"
+    },
+    "tear_sheets/tear_sheet_trio_10y_de.csv": {
+      "bytes": 3918,
+      "sha256": "3b15675800c30719ed8d250a63aa8deae7ef103477c5b36ae0c2714cb76ac7ad"
+    },
+    "tear_sheets/tear_sheet_trio_ext2026_de.csv": {
+      "bytes": 3566,
+      "sha256": "e191e5e08765a8d5fb4515c09aa6c0194f5294903bfc3bf4dc779cfda37fe49e"
+    },
+    "tear_sheets/tear_sheet_trio_max_de.csv": {
+      "bytes": 3918,
+      "sha256": "18431f2eda45c75267e6871b0c07bc1fce29efdba15123fb36384d9b33836b7f"
+    }
+  },
+  "input_manifests": {
+    "canonical_reports": {
+      "manifest_sha256": "7166554dc5611a12dcc723d30bcd6ea1799df7ae721e811672e41825c8c23fdd",
+      "path": "data/provisional_remediation/canonical_reports_full2016_20260801T100439Z"
+    },
+    "factor_run": {
+      "manifest_sha256": "6319f7cb3c8f0f61a5b874f21c1453ab38cb5d4e5a2e42c9a3cdc3d9b6da1d1f",
+      "run_id": "factor_ext2026_2016-01-01_2026-06-30_v1"
+    },
+    "macro_panel": {
+      "path": "data/macro_panel_monthly.parquet",
+      "sha256": "1444e80a3e1d9e375e581d829c507b84e406e504dfed421e072edaa6eb061cac"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "sjm_run": {
+      "manifest_sha256": "f1b1b56fa6c10af592ba9bc8b8cac8cd62b41dc19214ad7dfc8d3b4bb2ca4047",
+      "run_id": "sjm_crowding_v3_total_return_bil_provisional_full2016_20260801T100439Z"
+    }
+  },
+  "release_tag": "data-v5",
+  "schema": "data_release.v1"
+}

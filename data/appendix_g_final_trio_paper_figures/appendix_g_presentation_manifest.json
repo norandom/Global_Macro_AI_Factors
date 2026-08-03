@@ -1,0 +1,103 @@
+{
+  "display_table_columns": [
+    "Strategy",
+    "CAGR",
+    "Total volatility (annualized)",
+    "Market-model intercept (annualized)",
+    "Residual volatility (annualized)",
+    "Sharpe",
+    "Calmar",
+    "Derived appraisal ratio",
+    "Max drawdown"
+  ],
+  "figure_order": [
+    "appendix_g_total_risk_map.png",
+    "appendix_g_regression_adjusted_map.png",
+    "appendix_g_ratio_ladder.png",
+    "appendix_g_metric_profile.png",
+    "appendix_g_final_trio_composite.png"
+  ],
+  "notebook": {
+    "file": "notebooks/appendix_g_final_trio_paper_figures.ipynb",
+    "sha256": "ecb1fc8b547305db254df47b3d8d306d75702de8293ca7566b73d9b75ffac8de"
+  },
+  "outputs": {
+    "appendix_g_final_trio_composite.png": {
+      "dpi": 300,
+      "height_in": 10.6,
+      "height_px": 3180,
+      "media_type": "image/png",
+      "sha256": "078e36b47a3fd79745bc5147b9622c22fb4964d84ae947f05a6636eb4d8938ea",
+      "width_in": 6.9,
+      "width_px": 2070
+    },
+    "appendix_g_metric_profile.png": {
+      "dpi": 300,
+      "height_in": 3.7,
+      "height_px": 1110,
+      "media_type": "image/png",
+      "sha256": "61442729a84fdbe0b6166638cb617f862984222fc266cf3f6e75111bcb795a7f",
+      "width_in": 3.35,
+      "width_px": 1005
+    },
+    "appendix_g_ratio_ladder.png": {
+      "dpi": 300,
+      "height_in": 3.15,
+      "height_px": 945,
+      "media_type": "image/png",
+      "sha256": "94ef3d138320d89cb3fcf1db89b8a6cee622af5b80809b693c836c85a33bd529",
+      "width_in": 3.35,
+      "width_px": 1005
+    },
+    "appendix_g_regression_adjusted_map.png": {
+      "dpi": 300,
+      "height_in": 2.6,
+      "height_px": 780,
+      "media_type": "image/png",
+      "sha256": "e31f81a147b45d55a91e7e8965d7c53efb71514cd7b2e106857c436d575524ec",
+      "width_in": 3.35,
+      "width_px": 1005
+    },
+    "appendix_g_total_risk_map.png": {
+      "dpi": 300,
+      "height_in": 2.6,
+      "height_px": 780,
+      "media_type": "image/png",
+      "sha256": "fff87b3ca5e4e2f1579d680cb759220cbf4cc600940ab9b192c2aa4fae6270ad",
+      "width_in": 3.35,
+      "width_px": 1005
+    }
+  },
+  "palette": {
+    "categorical_hex": [
+      "#0072B2",
+      "#D55E00",
+      "#009E73"
+    ],
+    "secondary_encoding": "circle/square/triangle markers",
+    "validated_with": "dataviz/scripts/validate_palette.js --mode light"
+  },
+  "presentation_only": true,
+  "producer": "notebooks/appendix_g_final_trio_paper_figures.ipynb",
+  "projection_of": {
+    "canonical_table": "tables/tear_sheet_trio_ext2026.parquet",
+    "canonical_table_schema": "tear_sheet.trio.v4",
+    "canonical_table_sha256": "1380f9aa2ed77e7b86154d95407e0b9fbd32d92a52f6b02af450310e780497cf",
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "report_bundle": "data/provisional_remediation/canonical_reports_devstartfix_full_20260730T154855Z",
+    "report_id": "canonical_reports_devstartfix_full_20260730T154855Z",
+    "report_manifest_sha256": "f156792752e6ea43c3d9161ca6b08c62a1944e6017f4ad26ff5d3c7a87b0a046",
+    "sjm_run": {
+      "manifest_sha256": "070c5f371cc3ea5083c59300f03721fc12f7a5025494668179b9b429748ea0d4",
+      "run_id": "sjm_crowding_v3_total_return_bil_provisional_devstartfix_20260730T154855Z"
+    }
+  },
+  "schema": "appendix_g.presentation_figures.v1"
+}

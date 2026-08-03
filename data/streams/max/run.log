@@ -1,0 +1,98 @@
+=== Task 8.1: extend the stream to 2026 (post-cutoff natural experiment) ===
+macro panel: (196, 6) | 2010-01-31 -> 2026-04-30
+panel source: committed data/macro_panel_monthly.parquet (FRED live rebuild unavailable: ReadTimeout)
+prices: (3212, 5) | 2014-01-02 -> 2026-06-30
+150 monthly rebalances  2014-01-02 -> 2026-06-01
+WARNING: duplicate PIT prompts across dates (identical 2dp macro states) — replay maps key by prompt; the later date wins for the duplicated key
+stream: 150 prompts total | replayed v1: 72 | live new (2025+): 78
+FactorScorer loaded from factor_calibrator_openai_gpt-oss-20b: holdout_auc=0.9668 is_weak=False
+[live] PIT loadings generation for 78 new dates ...
+[live] PIT scoring ...
+[live] non-PIT loadings generation (identifying, 2048 up front) ...
+  [non-PIT] format-retried 24 replies at max_tokens=4096; still unparsed: 4
+[live] non-PIT scoring ...
+loadings parsed: PIT 149/150 | non-PIT 140/150
+[live] naive directional generation for 78 new dates ...
+naive directional accuracy (full stream, n=148): 0.439 Wilson 95% CI [0.362, 0.520] | 0.5 inside: True
+[sim] extended PIT deployable line ...
+[sim] extended non-PIT diagnostic line ...
+recall-guarded decisions: PIT 145/146 | non-PIT 136/146
+consistency: replayed-vs-v1 equity max rel diff = 1.61e-03 (tol 2e-03) | targets max abs diff = 7.56e-03
+[sim] extended baseline (HRP+momentum, nb07 logic) ...
+[baseline @ 2014-05-01] weight_fn failed: ValueError('prices_window has 84 rows; need ≥ 253'); holding previous
+[baseline @ 2014-06-02] weight_fn failed: ValueError('prices_window has 105 rows; need ≥ 253'); holding previous
+[baseline @ 2014-07-01] weight_fn failed: ValueError('prices_window has 126 rows; need ≥ 253'); holding previous
+[baseline @ 2014-08-01] weight_fn failed: ValueError('prices_window has 149 rows; need ≥ 253'); holding previous
+[baseline @ 2014-09-01] weight_fn failed: ValueError('prices_window has 170 rows; need ≥ 253'); holding previous
+[baseline @ 2014-10-01] weight_fn failed: ValueError('prices_window has 192 rows; need ≥ 253'); holding previous
+[baseline @ 2014-11-03] weight_fn failed: ValueError('prices_window has 215 rows; need ≥ 253'); holding previous
+[baseline @ 2014-12-01] weight_fn failed: ValueError('prices_window has 235 rows; need ≥ 253'); holding previous
+[sim] extended track B (MC-Nash, nb08 logic; slow MC step) ...
+[track_b @ 2014-05-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-06-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-07-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-08-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-09-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-10-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-11-03] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2014-12-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-01-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-02-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-03-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-04-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-05-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-06-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-07-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-08-03] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-09-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-10-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-11-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2015-12-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-01-04] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-02-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-03-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-04-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-05-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-06-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-07-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-08-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-09-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-10-03] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-11-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2016-12-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2017-01-03] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-02-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-03-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-04-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-05-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-06-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+
+=== head-to-head (extended 2019-01..2026-06) ===
+                             total_return annualized_return annualized_vol    sharpe   sortino    calmar max_drawdown crisis_return crisis_max_drawdown defensive_lead_date avg_turnover
+Baseline (ext2026)               0.186335          0.020429       0.075277  0.306332  0.422979  0.127086    -0.160747     -0.122821           -0.155447          2015-02-02     0.164435
+Track B (ext2026)                1.913585          0.134923       0.135286  1.003399  1.424223  0.547643     -0.24637     -0.134628           -0.181223          2017-07-03     0.167457
+Factor PIT (ext2026)             1.991354          0.138467       0.101831  1.324626   1.93128   1.21406    -0.114052     -0.035974            -0.11314          2014-11-03     0.208507
+Non-PIT DIAGNOSTIC (ext2026)     2.319968          0.152597       0.104113   1.41646  2.037003  1.379704    -0.110602      -0.03568           -0.101078          2014-06-02     0.241339
+
+=== SPLIT TABLE: PIT-vs-non-PIT p_memorized premium ===
+             n_pairs  mean_delta  median_delta  paired_d
+in_training    125.0      0.4276        0.4385    1.4787
+post_cutoff     25.0      0.3565        0.3277    1.1949
+full_stream    150.0      0.4158        0.4255    1.4242
+
+PREDICTION FALSIFIED: the p_memorized premium did NOT collapse post-cutoff (in-training +0.4276 -> post-cutoff +0.3565) — reported either way per task 8.1.
+(on v1's own dates reproduces published +0.400 within 0.0000)
+
+=== luck-vs-skill (extended span, NW-HAC/Andrews) ===
+- PIT recall-guarded (deployable, ext2026): SSR=0.11: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim
+- Non-PIT recall-enabled (DIAGNOSTIC, ext2026): SSR=0.12: rolling Sharpe stably > 0 in this sample (one-sided MBB p=0.001 < 0.05) — temporal consistency, not a skill claim
+- Differential (non-PIT minus PIT, ext2026): SSR=0.05: differential NOT distinguishable from zero (one-sided MBB p=0.137, mirror p=0.864) — luck-compatible, not skill
+
+[tear sheet] re-cutting over the extended span ...
+[csv] writing ext2026 mirrors (US + _de) ...
+
+=== headline numbers ===
+stream: 150 rebalances 2014-01-02 -> 2026-06-01 (78 new live)
+premium in-training: mean +0.4276 (d=1.48, n=125) | post-cutoff: mean +0.3565 (d=1.19, n=25)
+PIT total_return +1.9914 vs non-PIT +2.3200 | differential SSR +0.05
+[done] all *_ext2026 artifacts written under data/ (+ csv_mirrors, tear_sheet)

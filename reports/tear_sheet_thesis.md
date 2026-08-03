@@ -1,0 +1,24 @@
+**Trio tear sheet** — 2019-01-03 to 2026-01-30, 1745 trading days
+
+| Metric | Buy-and-hold | AI macro-factor | SJM de-risk |
+|---|---|---|---|
+| **Return vs. risk** | | | |
+| CAGR | 18.1% | 13.7% | 13.0% |
+| Ann. volatility | 14.6% | 9.2% | 8.1% |
+| Sharpe | 1.23 | 1.48 | 1.57 |
+| Max drawdown | -19.6% | -12.1% | -8.4% |
+| Calmar | 0.92 | 1.14 | 1.55 |
+| SSR | 0.14 | 0.13 | 0.13 |
+| **Benchmark vs. S&P 500** | | | |
+| Correlation to S&P 500 | 0.86 | 0.49 | 0.41 |
+| Beta | 0.63 | 0.23 | 0.17 |
+| Active return (ann.) | -0.1% | -4.6% | -5.4% |
+| Tracking error (ann.) | 10.5% | 17.3% | 18.0% |
+| Information Ratio | -0.01 | -0.27 | -0.30 |
+| **Factor risk and performance** | | | |
+| R² (CAPM, 1-factor) | 0.74 | 0.24 | 0.17 |
+| Idio vol σε (ann., CAPM) | 7.5% | 8.0% | 7.4% |
+| α (regression, ann.) | 6.5% | 9.5% | 9.7% |
+| Appraisal ratio (α/σε) | 0.87 | 1.18 | 1.31 |
+| R² (4-ETF basket) | 0.99 | 0.91 | 0.87 |
+| Residual vol basket (ann.) | 1.5% | 2.8% | 2.9% |

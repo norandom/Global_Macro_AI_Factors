@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "<stdin>", line 32, in <module>
+  File "/home/mc/projects/Global_Macro_AI_Factors/scripts/build_sjm_crowding.py", line 1060, in load_sjm_inputs
+    return SJMInputs(
+           ^^^^^^^^^^
+  File "<string>", line 14, in __init__
+  File "/home/mc/projects/Global_Macro_AI_Factors/scripts/build_sjm_crowding.py", line 939, in __post_init__
+    raise ValueError("rebalance_dates must all lie on the factor calendar")
+ValueError: rebalance_dates must all lie on the factor calendar

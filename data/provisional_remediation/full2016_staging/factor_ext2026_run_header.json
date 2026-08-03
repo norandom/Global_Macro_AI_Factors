@@ -1,0 +1,139 @@
+{
+  "built_utc": "2026-08-01T09:59:58.417464+00:00",
+  "calibrator": {
+    "dir": "factor_calibrator_openai_gpt-oss-20b",
+    "holdout_auc": 0.9667774086378738,
+    "is_weak": false
+  },
+  "consistency": {
+    "in_training_premium": 0.39777868013276885,
+    "in_training_reproduction_abs_diff": 1.1102230246251565e-16,
+    "published_v1_premium": 0.3995801783229548,
+    "replay_equity_max_rel_diff_vs_v1": 0.0016226758161975718,
+    "replay_equity_tolerance": 0.002,
+    "replay_targets_max_abs_diff_vs_v1": 0.0044958823503609135
+  },
+  "cutoff_date": "2024-06-01",
+  "dated_evidence": {
+    "n_expected_keys": 252,
+    "n_records": 252,
+    "path": "data/provisional_remediation/full2016_staging/evidence_staging/run_20260801T095818Z/factor_evidence_ext2026.parquet"
+  },
+  "factor_run_bundle": {
+    "dir": "data/provisional_remediation/full2016_staging/factor_runs/factor_ext2026_2016-01-01_2026-06-30_v1",
+    "run_id": "factor_ext2026_2016-01-01_2026-06-30_v1"
+  },
+  "immutability": "all outputs under NEW *_ext2026 names; v1/v2 artifacts untouched (data-v2 immutable)",
+  "metric_records": {
+    "market_snapshot": {
+      "attribution_anchor": "2015-12-31 00:00:00",
+      "attribution_end": "2026-06-30 00:00:00",
+      "attribution_n_obs": 2588,
+      "attribution_start": "2016-01-04 00:00:00",
+      "benchmark_file": "cash_market_total_return.parquet",
+      "benchmark_file_sha256": "87a8f564aefb4534b692bf5cba693264639bfb88f44e4a32a18655bb7689f0b3",
+      "benchmark_id": "SPY",
+      "benchmark_observed_end": "2026-06-30 00:00:00",
+      "benchmark_observed_start": "2009-09-01 00:00:00",
+      "benchmark_semantics": "adjusted_total_return",
+      "cash_anchor": "2015-12-31 00:00:00",
+      "cash_benchmark_id": "BIL",
+      "cash_end": "2026-06-30 00:00:00",
+      "cash_file": "cash_market_total_return.parquet",
+      "cash_file_sha256": "87a8f564aefb4534b692bf5cba693264639bfb88f44e4a32a18655bb7689f0b3",
+      "cash_n_obs": 2588,
+      "cash_semantics": "adjusted_total_return",
+      "cash_start": "2016-01-04 00:00:00",
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "schema": "market_snapshot.v1",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "n_records": 9,
+    "path": "data/provisional_remediation/full2016_staging/factor_metric_records_ext2026.json",
+    "schema": "factor_run.metric_records.v1",
+    "schema_ids": [
+      "attribution.raw_market_model.v1",
+      "crisis_metrics.boundary_anchored.v1",
+      "portfolio_metrics.differential.v2",
+      "portfolio_metrics.reader.v2",
+      "portfolio_metrics.vectorbt365.v1"
+    ],
+    "ssr_settings": {
+      "alpha": 0.05,
+      "n_boot": 1000,
+      "periods_per_year": 252,
+      "seed": 0,
+      "sr_star": 0.0,
+      "window": 252
+    }
+  },
+  "n_rebalances": {
+    "live_new": 54,
+    "replayed_v1": 72,
+    "total": 126
+  },
+  "naive_eval": {
+    "accuracy": 0.43548387096774194,
+    "half_inside_ci": true,
+    "n_directional": 124,
+    "wilson_ci": [
+      0.35145103373797243,
+      0.5233940870990632
+    ]
+  },
+  "nim_model": "openai/gpt-oss-20b",
+  "panel": {
+    "rows": 196,
+    "source": "committed data/macro_panel_monthly.parquet (replay mode: zero-provider panel replay)",
+    "span": "2010-01-31..2026-04-30"
+  },
+  "parse": {
+    "n_rows": 126,
+    "nonpit_parsed": 116,
+    "pit_parsed": 125
+  },
+  "prediction_outcome": "PREDICTION FALSIFIED: the p_memorized premium did NOT collapse post-cutoff (in-training +0.3978 -> post-cutoff +0.3403) \u2014 reported either way per task 8.1.",
+  "prices": {
+    "columns": [
+      "SWDA.L",
+      "XLK",
+      "IAU",
+      "BIL",
+      "SPY"
+    ],
+    "content_sha256": "e72d89a52ae305b8f171c3e20abc21ebbcc90ed9c08f40c9461f1e213818776f",
+    "end": "2026-06-30",
+    "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+    "rows": 3212,
+    "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1",
+    "source": "completed market snapshot",
+    "start": "2014-01-02"
+  },
+  "split_table": {
+    "full_stream": {
+      "mean_delta": 0.38637937473601297,
+      "median_delta": 0.41124900983131396,
+      "n_pairs": 126,
+      "paired_d": 1.40038237231307
+    },
+    "in_training": {
+      "mean_delta": 0.39777868013276885,
+      "median_delta": 0.4170350971228135,
+      "n_pairs": 101,
+      "paired_d": 1.3832249230331604
+    },
+    "post_cutoff": {
+      "mean_delta": 0.3403261809331194,
+      "median_delta": 0.2922855668860594,
+      "n_pairs": 25,
+      "paired_d": 1.5709977355325155
+    }
+  },
+  "task": "8.1 post-cutoff extension (data-v3)",
+  "window": {
+    "first_rebalance": "2016-01-04",
+    "last_rebalance": "2026-06-01",
+    "sim_end": "2026-06-30",
+    "sim_start": "2016-01-01"
+  }
+}

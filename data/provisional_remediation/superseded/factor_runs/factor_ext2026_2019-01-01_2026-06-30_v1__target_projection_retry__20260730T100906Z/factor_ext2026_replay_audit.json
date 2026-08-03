@@ -1,0 +1,33 @@
+{
+  "audit": "source_to_consumption_replay",
+  "built_utc": "2026-07-30T09:59:01.956827+00:00",
+  "checked_fields": [
+    "evidence_id",
+    "pit_prompt_sha256",
+    "response_sha256",
+    "score_p_memorized",
+    "score_parse_ok",
+    "score_fail_reason",
+    "loadings_parse_ok",
+    "loading_inflation",
+    "loading_growth",
+    "loading_credit_stress",
+    "loading_policy",
+    "loading_risk_appetite"
+  ],
+  "counts": {
+    "consumed_keys": 180,
+    "decision_identities": 180,
+    "expected_keys": 180,
+    "source_records": 180
+  },
+  "result": "pass",
+  "variants": [
+    "nonpit_diagnostic",
+    "pit"
+  ],
+  "window": {
+    "first_rebalance": "2019-01-02",
+    "last_rebalance": "2026-06-01"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "input_manifests": {
+    "factor_run": {
+      "manifest_sha256": "ef38f37f6798773f366b8631a1205cd945e03044d597fd281a9acf94adf33278",
+      "run_id": "factor_ext2026_2019-01-01_2026-06-30_v1"
+    },
+    "market_snapshot": {
+      "manifest_sha256": "d56e1d0a17dd3ad05747dd58b829ba3fbf6b56ca46d2f744fc4672ebb8b22a09",
+      "snapshot_id": "provisional_market_total_return_fx_2026-06-30_v1"
+    },
+    "sjm_run": {
+      "manifest_sha256": "070c5f371cc3ea5083c59300f03721fc12f7a5025494668179b9b429748ea0d4",
+      "run_id": "sjm_crowding_v3_total_return_bil_provisional_devstartfix_20260730T154855Z"
+    }
+  },
+  "producer": "scripts/build_tear_sheet.py",
+  "schema": "canonical_reports.v1",
+  "tables": {
+    "tear_sheet_trio_ext2026": {
+      "file": "tables/tear_sheet_trio_ext2026.parquet",
+      "rows": 3,
+      "schema": "tear_sheet.trio.v4",
+      "sha256": "1380f9aa2ed77e7b86154d95407e0b9fbd32d92a52f6b02af450310e780497cf"
+    }
+  },
+  "trio_static_window": {
+    "end": "2026-06-30",
+    "label": "Factor performance window (buy 2019-01-02)",
+    "start": "2019-01-02"
+  }
+}

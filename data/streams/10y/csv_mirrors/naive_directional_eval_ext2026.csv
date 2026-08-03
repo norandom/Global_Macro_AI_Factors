@@ -1,0 +1,3208 @@
+date,prompt,reply,predicted_direction,confidence,realized_direction,correct
+2019-01-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.55
+  t10y2y_z = -1.59
+  hy_oas_z = 0.65
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.031, trailing annualized vol=0.144
+  - Asset_B (tech_sector), trailing 12m return=-0.022, trailing annualized vol=0.223
+  - Asset_C (gold_commodity), trailing 12m return=-0.012, trailing annualized vol=0.097
+  - Asset_D (short_treasury_cash), trailing 12m return=0.017, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,1,False
+2019-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.03
+  t10y2y_z = -1.6
+  hy_oas_z = -0.18
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.013, trailing annualized vol=0.148
+  - Asset_B (tech_sector), trailing 12m return=-0.01, trailing annualized vol=0.237
+  - Asset_C (gold_commodity), trailing 12m return=-0.015, trailing annualized vol=0.097
+  - Asset_D (short_treasury_cash), trailing 12m return=0.018, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2019-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.0
+  t10y2y_z = -1.52
+  hy_oas_z = -0.58
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.048, trailing annualized vol=0.149
+  - Asset_B (tech_sector), trailing 12m return=0.047, trailing annualized vol=0.231
+  - Asset_C (gold_commodity), trailing 12m return=-0.006, trailing annualized vol=0.095
+  - Asset_D (short_treasury_cash), trailing 12m return=0.019, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2019-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.41
+  t10y2y_z = -1.61
+  hy_oas_z = -0.47
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.136, trailing annualized vol=0.139
+  - Asset_B (tech_sector), trailing 12m return=0.17, trailing annualized vol=0.223
+  - Asset_C (gold_commodity), trailing 12m return=-0.027, trailing annualized vol=0.096
+  - Asset_D (short_treasury_cash), trailing 12m return=0.02, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2019-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.54
+  t10y2y_z = -1.4
+  hy_oas_z = -0.75
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.117, trailing annualized vol=0.128
+  - Asset_B (tech_sector), trailing 12m return=0.212, trailing annualized vol=0.21
+  - Asset_C (gold_commodity), trailing 12m return=-0.033, trailing annualized vol=0.093
+  - Asset_D (short_treasury_cash), trailing 12m return=0.02, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2019-06-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.32
+  t10y2y_z = -1.46
+  hy_oas_z = -0.01
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.052, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.044, trailing annualized vol=0.211
+  - Asset_C (gold_commodity), trailing 12m return=0.002, trailing annualized vol=0.093
+  - Asset_D (short_treasury_cash), trailing 12m return=0.021, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2019-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.18
+  t10y2y_z = -1.32
+  hy_oas_z = -0.48
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.098, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.153, trailing annualized vol=0.217
+  - Asset_C (gold_commodity), trailing 12m return=0.125, trailing annualized vol=0.098
+  - Asset_D (short_treasury_cash), trailing 12m return=0.021, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2019-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.36
+  t10y2y_z = -1.52
+  hy_oas_z = -0.6
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.122, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.159, trailing annualized vol=0.216
+  - Asset_C (gold_commodity), trailing 12m return=0.154, trailing annualized vol=0.105
+  - Asset_D (short_treasury_cash), trailing 12m return=0.022, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2019-09-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.26
+  t10y2y_z = -1.72
+  hy_oas_z = -0.43
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.067, trailing annualized vol=0.138
+  - Asset_B (tech_sector), trailing 12m return=0.065, trailing annualized vol=0.228
+  - Asset_C (gold_commodity), trailing 12m return=0.258, trailing annualized vol=0.111
+  - Asset_D (short_treasury_cash), trailing 12m return=0.022, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2019-10-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.2
+  t10y2y_z = -1.59
+  hy_oas_z = -0.52
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.076, trailing annualized vol=0.138
+  - Asset_B (tech_sector), trailing 12m return=0.088, trailing annualized vol=0.231
+  - Asset_C (gold_commodity), trailing 12m return=0.241, trailing annualized vol=0.115
+  - Asset_D (short_treasury_cash), trailing 12m return=0.022, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2019-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.25
+  t10y2y_z = -1.32
+  hy_oas_z = -0.4
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.123, trailing annualized vol=0.139
+  - Asset_B (tech_sector), trailing 12m return=0.254, trailing annualized vol=0.229
+  - Asset_C (gold_commodity), trailing 12m return=0.233, trailing annualized vol=0.115
+  - Asset_D (short_treasury_cash), trailing 12m return=0.022, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=0.25 (slightly above mean), t10y2y_z = -1.32 (10-year minus 2-year yield spread negative, indicating steepening? Actually t10y2y_z negative means 10-year yield lower relative to 2-year? Wait t10y2y_z is the spread between 10-year and 2-year yields. Negative z means spread below mean, i.e., 10-year yield lower than 2-year? That would be inverted? Actually typical spread is positive. Negative z indicates spread lower than mean, maybe flattening or inverted. hy_oas_z = -0.4 (high-yield OAS below mean). So macro: mild inflation, flattening yield curve, lower high-yield spreads. That suggests a mild recession risk? But inflation is slightly above mean, but yield curve flattening indicates potential slowdown. Equity returns: Asset_A world equity has 12m return 12.3% and vol 13.9%. We need to forecast next period direction: up, down, flat. We need to consider macro signals: CPI slightly high, yield curve flattening, high-yield spreads lower. Historically, flattening yield curve is a predictor of recession and equity downturn. But inflation is mild. So maybe moderate risk of decline. So direction likely -1 (down). Confidence maybe moderate, say 0.6. But we need to think about the asset's past performance: world equity has high return 12.3% over 12 months, vol 13.9%. But macro signals are negative. So likely down. Confidence maybe 0.55. Let's produce final lines.
+
+But we need to consider that the macro state is z-scored against rolling 5-year window. So CPI 0.25 is slightly above mean, not too high. t10y2y_z -1.32 is significantly below mean (1.32 SD below). hy_oas_z -0.4 is slightly below mean. So yield curve flattening is strong negative. That is a strong recession indicator. So equity likely down. Confidence maybe 0.7. But we need to be careful: world equity might still be up if inflation is low. But yield curve flattening is a strong negative. So I'd choose -1 with confidence 0.7.
+
+Thus final answer: Direction: -1, Confidence",-1,,1,False
+2019-12-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.65
+  t10y2y_z = -1.29
+  hy_oas_z = -0.51
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.14, trailing annualized vol=0.134
+  - Asset_B (tech_sector), trailing 12m return=0.316, trailing annualized vol=0.212
+  - Asset_C (gold_commodity), trailing 12m return=0.195, trailing annualized vol=0.115
+  - Asset_D (short_treasury_cash), trailing 12m return=0.021, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2020-01-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.88
+  t10y2y_z = -0.91
+  hy_oas_z = -0.85
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.22, trailing annualized vol=0.133
+  - Asset_B (tech_sector), trailing 12m return=0.499, trailing annualized vol=0.188
+  - Asset_C (gold_commodity), trailing 12m return=0.18, trailing annualized vol=0.115
+  - Asset_D (short_treasury_cash), trailing 12m return=0.02, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2020-02-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.17
+  t10y2y_z = -1.2
+  hy_oas_z = -0.46
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.169, trailing annualized vol=0.127
+  - Asset_B (tech_sector), trailing 12m return=0.457, trailing annualized vol=0.171
+  - Asset_C (gold_commodity), trailing 12m return=0.2, trailing annualized vol=0.115
+  - Asset_D (short_treasury_cash), trailing 12m return=0.02, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+",-1,,-1,True
+2020-03-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.85
+  t10y2y_z = -0.98
+  hy_oas_z = 0.43
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.071, trailing annualized vol=0.137
+  - Asset_B (tech_sector), trailing 12m return=0.264, trailing annualized vol=0.187
+  - Asset_C (gold_commodity), trailing 12m return=0.198, trailing annualized vol=0.123
+  - Asset_D (short_treasury_cash), trailing 12m return=0.019, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2020-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.22
+  t10y2y_z = -0.53
+  hy_oas_z = 3.26
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.056, trailing annualized vol=0.199
+  - Asset_B (tech_sector), trailing 12m return=0.088, trailing annualized vol=0.352
+  - Asset_C (gold_commodity), trailing 12m return=0.223, trailing annualized vol=0.158
+  - Asset_D (short_treasury_cash), trailing 12m return=0.019, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,1,False
+2020-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -1.74
+  t10y2y_z = -0.57
+  hy_oas_z = 2.22
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.002, trailing annualized vol=0.217
+  - Asset_B (tech_sector), trailing 12m return=0.182, trailing annualized vol=0.374
+  - Asset_C (gold_commodity), trailing 12m return=0.319, trailing annualized vol=0.166
+  - Asset_D (short_treasury_cash), trailing 12m return=0.017, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2020-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -1.9
+  t10y2y_z = -0.44
+  hy_oas_z = 1.35
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.08, trailing annualized vol=0.224
+  - Asset_B (tech_sector), trailing 12m return=0.36, trailing annualized vol=0.378
+  - Asset_C (gold_commodity), trailing 12m return=0.341, trailing annualized vol=0.169
+  - Asset_D (short_treasury_cash), trailing 12m return=0.015, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2020-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -1.27
+  t10y2y_z = -0.39
+  hy_oas_z = 1.25
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.033, trailing annualized vol=0.228
+  - Asset_B (tech_sector), trailing 12m return=0.337, trailing annualized vol=0.381
+  - Asset_C (gold_commodity), trailing 12m return=0.282, trailing annualized vol=0.171
+  - Asset_D (short_treasury_cash), trailing 12m return=0.013, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2020-08-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.94
+  t10y2y_z = -0.5
+  hy_oas_z = 0.31
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.006, trailing annualized vol=0.232
+  - Asset_B (tech_sector), trailing 12m return=0.394, trailing annualized vol=0.384
+  - Asset_C (gold_commodity), trailing 12m return=0.364, trailing annualized vol=0.169
+  - Asset_D (short_treasury_cash), trailing 12m return=0.011, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2020-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.6
+  t10y2y_z = -0.14
+  hy_oas_z = 0.22
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.057, trailing annualized vol=0.23
+  - Asset_B (tech_sector), trailing 12m return=0.576, trailing annualized vol=0.382
+  - Asset_C (gold_commodity), trailing 12m return=0.289, trailing annualized vol=0.182
+  - Asset_D (short_treasury_cash), trailing 12m return=0.01, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.55",-1,0.55000000,1,False
+2020-10-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.51
+  t10y2y_z = -0.15
+  hy_oas_z = 0.53
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.086, trailing annualized vol=0.233
+  - Asset_B (tech_sector), trailing 12m return=0.483, trailing annualized vol=0.388
+  - Asset_C (gold_commodity), trailing 12m return=0.27, trailing annualized vol=0.183
+  - Asset_D (short_treasury_cash), trailing 12m return=0.008, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,-1,False
+2020-11-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.8
+  t10y2y_z = 0.35
+  hy_oas_z = 0.47
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.035, trailing annualized vol=0.233
+  - Asset_B (tech_sector), trailing 12m return=0.343, trailing annualized vol=0.393
+  - Asset_C (gold_commodity), trailing 12m return=0.237, trailing annualized vol=0.183
+  - Asset_D (short_treasury_cash), trailing 12m return=0.006, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 0
+Confidence: 0.55",0,0.55000000,1,False
+2020-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.93
+  t10y2y_z = 0.22
+  hy_oas_z = -0.25
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.114, trailing annualized vol=0.239
+  - Asset_B (tech_sector), trailing 12m return=0.42, trailing annualized vol=0.397
+  - Asset_C (gold_commodity), trailing 12m return=0.212, trailing annualized vol=0.189
+  - Asset_D (short_treasury_cash), trailing 12m return=0.005, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,1,True
+2021-01-04,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.74
+  t10y2y_z = 0.58
+  hy_oas_z = -0.58
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.108, trailing annualized vol=0.239
+  - Asset_B (tech_sector), trailing 12m return=0.41, trailing annualized vol=0.397
+  - Asset_C (gold_commodity), trailing 12m return=0.241, trailing annualized vol=0.192
+  - Asset_D (short_treasury_cash), trailing 12m return=0.004, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,1,True
+2021-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.66
+  t10y2y_z = 1.16
+  hy_oas_z = -0.57
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.114, trailing annualized vol=0.239
+  - Asset_B (tech_sector), trailing 12m return=0.332, trailing annualized vol=0.4
+  - Asset_C (gold_commodity), trailing 12m return=0.165, trailing annualized vol=0.197
+  - Asset_D (short_treasury_cash), trailing 12m return=0.003, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.55",1,0.55000000,1,True
+2021-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.21
+  t10y2y_z = 1.95
+  hy_oas_z = -0.78
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.201, trailing annualized vol=0.237
+  - Asset_B (tech_sector), trailing 12m return=0.509, trailing annualized vol=0.4
+  - Asset_C (gold_commodity), trailing 12m return=0.052, trailing annualized vol=0.201
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,1,True
+2021-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.38
+  t10y2y_z = 2.58
+  hy_oas_z = -0.95
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.436, trailing annualized vol=0.205
+  - Asset_B (tech_sector), trailing 12m return=0.668, trailing annualized vol=0.36
+  - Asset_C (gold_commodity), trailing 12m return=0.079, trailing annualized vol=0.191
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=1.38 (inflation high), t10y2y_z=2.58 (yield curve steepening, high 10y-2y spread), hy_oas_z=-0.95 (high-yield OAS negative? Actually hy_oas_z negative indicates high-yield OAS below mean? Not sure). We need to think about macro conditions: high inflation, steep yield curve, negative high-yield OAS. That suggests a tightening monetary policy environment, risk-on? Actually steep yield curve indicates expectations of higher growth and inflation. High inflation suggests higher rates. Negative high-yield OAS indicates high-yield bonds are overpriced relative to risk-free? Might be risk-off? Let's think: In a high inflation environment, equities may suffer if rates rise. But steep yield curve indicates growth expectations. The world equity asset has high return 0.436 over last 12 months, vol 0.205. We need to forecast next period direction: up, down, or flat.
+
+We need to consider macro: high inflation, steep yield curve, negative high-yield OAS. That might indicate a risk-on environment? Actually negative OAS means high-yield bonds are trading at lower spreads, implying lower risk premium, risk-on. So risk-on environment: equities likely to go up. But high inflation and steep yield curve may lead to rate hikes, which can pressure equities. But the steep yield curve indicates expectations of higher growth, which can support equities. So net effect: likely up.
+
+Confidence: moderate. Let's assign 0.65.
+
+Thus:
+
+Direction: 1
+Confidence: 0.65
+
+But we need to be careful: The macro state is z-scores relative to rolling 5-year window. So CPI yoy z=1.38 means inflation is 1.38 standard deviations above mean. t10y2y_z=2.58 means yield curve is 2.58 SD above mean (steep). hy_oas_z=-0.95 means high-yield OAS is below mean (negative). That suggests high-yield bonds are cheaper relative to risk-free, risk-on. So equities likely to go up. So direction 1.
+
+Confidence: maybe 0.7. Let's choose 0.7.
+
+Thus final lines:
+
+Direction: 1
+Confidence: 0.70
+
+But we need to output exactly two lines",1,0.70000000,1,True
+2021-05-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.36
+  t10y2y_z = 2.24
+  hy_oas_z = -0.99
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.354, trailing annualized vol=0.167
+  - Asset_B (tech_sector), trailing 12m return=0.543, trailing annualized vol=0.248
+  - Asset_C (gold_commodity), trailing 12m return=0.046, trailing annualized vol=0.17
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.0, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,-1,True
+2021-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.87
+  t10y2y_z = 2.04
+  hy_oas_z = -0.9
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.233, trailing annualized vol=0.157
+  - Asset_B (tech_sector), trailing 12m return=0.426, trailing annualized vol=0.238
+  - Asset_C (gold_commodity), trailing 12m return=0.097, trailing annualized vol=0.165
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.0, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2021-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.75
+  t10y2y_z = 1.41
+  hy_oas_z = -1.15
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.255, trailing annualized vol=0.144
+  - Asset_B (tech_sector), trailing 12m return=0.425, trailing annualized vol=0.226
+  - Asset_C (gold_commodity), trailing 12m return=-0.008, trailing annualized vol=0.166
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,1,True
+2021-08-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.3
+  t10y2y_z = 1.02
+  hy_oas_z = -0.86
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.285, trailing annualized vol=0.137
+  - Asset_B (tech_sector), trailing 12m return=0.436, trailing annualized vol=0.221
+  - Asset_C (gold_commodity), trailing 12m return=-0.074, trailing annualized vol=0.166
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.55",-1,0.55000000,1,False
+2021-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.92
+  t10y2y_z = 1.12
+  hy_oas_z = -0.93
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.266, trailing annualized vol=0.131
+  - Asset_B (tech_sector), trailing 12m return=0.297, trailing annualized vol=0.214
+  - Asset_C (gold_commodity), trailing 12m return=-0.08, trailing annualized vol=0.164
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,-1,True
+2021-10-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.84
+  t10y2y_z = 1.42
+  hy_oas_z = -0.96
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.232, trailing annualized vol=0.125
+  - Asset_B (tech_sector), trailing 12m return=0.29, trailing annualized vol=0.203
+  - Asset_C (gold_commodity), trailing 12m return=-0.071, trailing annualized vol=0.149
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2021-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.24
+  t10y2y_z = 1.01
+  hy_oas_z = -0.93
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.328, trailing annualized vol=0.124
+  - Asset_B (tech_sector), trailing 12m return=0.436, trailing annualized vol=0.192
+  - Asset_C (gold_commodity), trailing 12m return=-0.048, trailing annualized vol=0.146
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2021-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.35
+  t10y2y_z = 0.66
+  hy_oas_z = -0.42
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.224, trailing annualized vol=0.112
+  - Asset_B (tech_sector), trailing 12m return=0.377, trailing annualized vol=0.18
+  - Asset_C (gold_commodity), trailing 12m return=-0.006, trailing annualized vol=0.139
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=3.35 (high inflation), t10y2y_z=0.66 (positive spread, maybe steepening), hy_oas_z=-0.42 (maybe yield curve? hy_oas maybe high-yield OAS? negative indicates lower OAS? Not sure). We need to think about macro influences on world equity.
+
+High inflation (3.35 z) suggests inflation above 5-year mean. That could pressure equities, but also maybe corporate earnings impacted. T10Y2Y positive indicates yield curve steepening, maybe expectations of higher rates. That could weigh on equities. hy_oas negative indicates high-yield OAS lower than mean, maybe high-yield spreads narrowing, which could be positive for equities? Not sure.
+
+We need to produce a direction: -1, 0, or 1. Likely negative due to high inflation and steepening yield curve. But we need to consider that world equity has historically been resilient? But high inflation and steepening yield curve often weigh on equities. So likely down.
+
+Confidence: maybe moderate, say 0.6.
+
+But we need to think more: The macro state is z-scored against rolling 5-year window. So 3.35 z for CPI yoy indicates inflation is 3.35 standard deviations above 5-year mean. That's extremely high. That suggests inflation is high relative to recent history. That could be due to supply shocks or demand. In such environment, equities might suffer due to higher costs, lower real returns, and potential rate hikes. The t10y2y_z=0.66 indicates the 10-year minus 2-year spread is 0.66 standard deviations above mean. That indicates yield curve steepening, which often signals expectations of higher rates or stronger growth. But steepening can also be a sign of risk-off? Actually steepening can be due to expectations of higher rates, which can weigh on equities. The hy_oas_z=-0.42 indicates high-yield OAS is slightly below mean, maybe slightly lower risk premium. That could be positive for equities? But not huge.
+
+Given the high inflation and steepening yield curve, I'd lean negative. So Direction: -1.
+
+Confidence: maybe 0.65.
+
+But we need to produce exactly two lines. Let's produce:
+
+Direction: -1
+Confidence: 0.65
+
+Check: The confidence must",-1,0.65000000,1,False
+2022-01-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.17
+  t10y2y_z = 0.39
+  hy_oas_z = -0.93
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.236, trailing annualized vol=0.114
+  - Asset_B (tech_sector), trailing 12m return=0.347, trailing annualized vol=0.19
+  - Asset_C (gold_commodity), trailing 12m return=-0.04, trailing annualized vol=0.135
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=3.17 (high inflation), t10y2y_z=0.39 (yield curve flattening? Actually t10y2y_z is the 10-year minus 2-year spread z-score; positive means steepening? Wait typical: t10y2y is 10-year minus 2-year yield spread. Positive indicates steepening (10-year > 2-year). z=0.39 moderate positive. hy_oas_z = -0.93 (high yield OAS? negative indicates lower OAS relative to 5-year window, maybe high yield spreads narrowing? Actually hy_oas_z negative means OAS lower than average, maybe high yield bonds are cheaper? Not sure.
+
+We need to forecast direction of world equity. Use macro signals: high inflation, moderate steepening, high yield OAS narrowing. Typically high inflation and steepening yield curve can be negative for equities. But high inflation may push rates up, hurting equities. However, if yield curve steepening indicates expectations of stronger growth, equities might benefit. But high inflation may also lead to higher rates, hurting equities. The t10y2y_z is only 0.39, not huge. CPI yoy z=3.17 is high inflation. That suggests central banks may raise rates, which could hurt equities. Also high inflation may reduce real returns. So likely downward pressure.
+
+Also high yield OAS negative indicates high yield bonds are cheaper, maybe risk premium lower, could indicate risk appetite? But negative OAS could mean high yield bonds are undervalued, maybe risk appetite high, which could support equities. But overall inflation and potential rate hikes likely negative.
+
+Thus forecast direction: -1 (down). Confidence maybe moderate, say 0.65.
+
+But we need to consider the asset's past performance: world equity had 23.6% return over 12 months, vol 11.4%. That's strong. But macro signals may override.
+
+We need to produce final lines exactly:
+
+Direction: -1
+Confidence: 0.65
+
+But we need to think if maybe 0? Could be flat. But likely down.
+
+Confidence maybe 0.6-0.7. I'll choose 0.68.
+
+Thus final answer:
+
+Direction: -1
+Confidence: 0.68
+
+Check formatting: exactly two lines, no extra spaces. Use ""Direction: -1"" and",-1,0.68000000,-1,True
+2022-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.08
+  t10y2y_z = -0.02
+  hy_oas_z = -0.43
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.166, trailing annualized vol=0.126
+  - Asset_B (tech_sector), trailing 12m return=0.235, trailing annualized vol=0.201
+  - Asset_C (gold_commodity), trailing 12m return=-0.034, trailing annualized vol=0.134
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2022-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.0
+  t10y2y_z = -0.54
+  hy_oas_z = -0.3
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.132, trailing annualized vol=0.132
+  - Asset_B (tech_sector), trailing 12m return=0.151, trailing annualized vol=0.21
+  - Asset_C (gold_commodity), trailing 12m return=0.106, trailing annualized vol=0.13
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.001
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=3.0 (high inflation), t10y2y_z = -0.54 (yield curve steepening? Actually t10y2y is 10-year minus 2-year spread; negative means inverted? Wait t10y2y_z negative indicates yield curve flattening or inversion? Usually t10y2y is 10-year minus 2-year. Negative means 10-year yield lower than 2-year, i.e., inverted. So t10y2y_z = -0.54 indicates yield curve inversion relative to 5-year rolling mean. hy_oas_z = -0.3 (high yield OAS? maybe negative indicates lower OAS relative to mean). So macro: high inflation, inverted yield curve, slightly lower OAS.
+
+Asset_A: world equity, 12m return 13.2% (high), vol 13.2% (high). We need to forecast next period direction: up/down/flat.
+
+We need to think: high inflation tends to hurt equities, but also can lead to higher growth expectations. Inverted yield curve is historically a recession indicator, which tends to hurt equities. So likely down. But we need to consider the magnitude of inflation: z=3.0 is high. So likely negative. So direction -1.
+
+Confidence: maybe moderate, say 0.65.
+
+But we need to consider that the macro state is z-scored against rolling 5-year window. So 3.0 is 3 standard deviations above mean, so extreme. t10y2y_z = -0.54 is moderate negative. hy_oas_z = -0.3 is slightly negative. So overall negative.
+
+Thus direction -1. Confidence maybe 0.7.
+
+But we need to think about the asset's past performance: 13.2% return, high vol. But macro suggests downturn. So likely down.
+
+Confidence: maybe 0.75.
+
+Let's choose 0.75.
+
+Thus final lines:
+
+Direction: -1
+Confidence: 0.75
+
+But we need to be careful: The question: ""forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state."" So we need to output exactly two lines: Direction: <value> and Confidence: <value>.
+
+We need to choose a decimal between 0 and 1. Let's choose 0",-1,0.75000000,1,False
+2022-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 3.03
+  t10y2y_z = -1.38
+  hy_oas_z = -0.61
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.161, trailing annualized vol=0.134
+  - Asset_B (tech_sector), trailing 12m return=0.182, trailing annualized vol=0.216
+  - Asset_C (gold_commodity), trailing 12m return=0.119, trailing annualized vol=0.134
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2022-05-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.63
+  t10y2y_z = -0.97
+  hy_oas_z = -0.11
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.079, trailing annualized vol=0.137
+  - Asset_B (tech_sector), trailing 12m return=0.02, trailing annualized vol=0.229
+  - Asset_C (gold_commodity), trailing 12m return=0.069, trailing annualized vol=0.133
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2022-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.57
+  t10y2y_z = -0.61
+  hy_oas_z = 0.12
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.065, trailing annualized vol=0.147
+  - Asset_B (tech_sector), trailing 12m return=0.027, trailing annualized vol=0.254
+  - Asset_C (gold_commodity), trailing 12m return=-0.037, trailing annualized vol=0.135
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.0, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=2.57 (high inflation), t10y2y_z = -0.61 (short-term yield curve steepening? Actually t10y2y is 10-year minus 2-year yield spread; negative z means spread below 5-year mean, so steepening? Wait: t10y2y_z negative indicates 10-year yield lower relative to 2-year? Actually 10-year minus 2-year negative means 10-year yield lower than 2-year, i.e., inverted or steepening? Usually 10-year > 2-year, so positive spread. Negative indicates inversion. So t10y2y_z = -0.61 indicates yield curve inversion relative to 5-year mean. hy_oas_z = 0.12 (high yield OAS). Slightly positive.
+
+We need to forecast direction of world equity. We need to consider macro: high inflation, inverted yield curve, high yield OAS. Usually high inflation and inverted yield curve signals recession risk, negative equity. But also high yield OAS indicates risk premium. So likely negative.
+
+But we need to produce a direction: -1, 0, or 1. Likely -1.
+
+Confidence: maybe 0.7? But we need to consider that world equity has trailing 12m return 6.5% and vol 14.7%. But macro suggests negative.
+
+We need to think step by step.
+
+We have no calendar date, but macro state indicates high inflation (2.57 z). That is high relative to 5-year mean. t10y2y_z negative indicates yield curve inversion relative to mean. hy_oas_z slightly positive indicates high yield OAS. So macro environment is risk-off: high inflation, inverted yield curve, high yield OAS. So equities likely to decline.
+
+Thus direction -1.
+
+Confidence: maybe 0.75.
+
+But we need to consider that world equity may still be positive if inflation is high but not too high? But 2.57 z is high. Also yield curve inversion is a strong recession indicator. So negative.
+
+Confidence maybe 0.8.
+
+But we need to produce a decimal between 0 and 1. Let's choose 0.78.
+
+Thus final lines:
+
+Direction: -1
+Confidence: 0.78
+
+But we need to be careful: The macro state is z-scored against",-1,0.78000000,-1,True
+2022-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.57
+  t10y2y_z = -1.23
+  hy_oas_z = 1.59
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.026, trailing annualized vol=0.156
+  - Asset_B (tech_sector), trailing 12m return=-0.132, trailing annualized vol=0.266
+  - Asset_C (gold_commodity), trailing 12m return=0.018, trailing annualized vol=0.138
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z=2.57 (high inflation), t10y2y_z = -1.23 (negative 10-year minus 2-year spread, i.e., steepening? Actually negative means 10-year yield lower than 2-year? Wait t10y2y_z is z-score of 10-year minus 2-year spread. Negative z means spread below 5-year mean, so 10-year yield lower relative to 2-year, indicating flattening or inversion? Actually if spread negative, 10-year yield lower than 2-year, so steepening? Wait typical: 10-year minus 2-year >0 indicates normal upward slope. Negative indicates inversion. So negative z indicates inversion relative to 5-year mean. So we have an inverted yield curve.
+
+hy_oas_z = 1.59 (high yield OAS high). So high yield OAS indicates high risk premium.
+
+So macro: high inflation, inverted yield curve, high OAS. That suggests recessionary environment, high inflation, but yield curve inverted indicates expectations of slowdown. Historically, equity markets often decline when yield curve inverted and inflation high. But we need direction of world equity next period. Likely down.
+
+We need confidence between 0 and 1. We can assign maybe 0.7.
+
+But we need to think about the asset's past performance: trailing 12m return -0.026, vol 0.156. So negative return. But we forecast next period direction. We need to consider macro.
+
+We can also consider that high inflation may push equity returns down, but some sectors may benefit. But world equity overall may be down.
+
+Thus Direction: -1. Confidence: 0.65 maybe.
+
+But we need to be careful: The macro state is z-scores relative to rolling 5-year window. So CPI YoY z=2.57 indicates inflation is 2.57 standard deviations above 5-year mean. That's high. t10y2y_z = -1.23 indicates yield curve is below mean, i.e., inverted. hy_oas_z = 1.59 indicates high OAS, meaning risk premium high. So risk aversion high. So equity likely down.
+
+Thus we forecast down. Confidence maybe 0.7.
+
+Let's output:
+
+Direction: -1
+Confidence: 0.70
+
+But we need decimal between 0 and ",-1,0.70000000,1,False
+2022-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.2
+  t10y2y_z = -1.84
+  hy_oas_z = 0.62
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.031, trailing annualized vol=0.161
+  - Asset_B (tech_sector), trailing 12m return=-0.053, trailing annualized vol=0.274
+  - Asset_C (gold_commodity), trailing 12m return=-0.04, trailing annualized vol=0.134
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2022-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.99
+  t10y2y_z = -1.94
+  hy_oas_z = 0.78
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.009, trailing annualized vol=0.161
+  - Asset_B (tech_sector), trailing 12m return=-0.142, trailing annualized vol=0.281
+  - Asset_C (gold_commodity), trailing 12m return=-0.06, trailing annualized vol=0.137
+  - Asset_D (short_treasury_cash), trailing 12m return=0.003, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2022-10-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.88
+  t10y2y_z = -2.04
+  hy_oas_z = 1.11
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.023, trailing annualized vol=0.171
+  - Asset_B (tech_sector), trailing 12m return=-0.197, trailing annualized vol=0.29
+  - Asset_C (gold_commodity), trailing 12m return=-0.056, trailing annualized vol=0.138
+  - Asset_D (short_treasury_cash), trailing 12m return=0.005, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2022-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.64
+  t10y2y_z = -1.98
+  hy_oas_z = 0.37
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.019, trailing annualized vol=0.176
+  - Asset_B (tech_sector), trailing 12m return=-0.201, trailing annualized vol=0.305
+  - Asset_C (gold_commodity), trailing 12m return=-0.087, trailing annualized vol=0.141
+  - Asset_D (short_treasury_cash), trailing 12m return=0.007, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,1,False
+2022-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.35
+  t10y2y_z = -2.45
+  hy_oas_z = 0.28
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.04, trailing annualized vol=0.174
+  - Asset_B (tech_sector), trailing 12m return=-0.187, trailing annualized vol=0.325
+  - Asset_C (gold_commodity), trailing 12m return=-0.002, trailing annualized vol=0.147
+  - Asset_D (short_treasury_cash), trailing 12m return=0.01, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,-1,True
+2023-01-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.04
+  t10y2y_z = -1.98
+  hy_oas_z = 0.5
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.087, trailing annualized vol=0.177
+  - Asset_B (tech_sector), trailing 12m return=-0.281, trailing annualized vol=0.331
+  - Asset_C (gold_commodity), trailing 12m return=0.001, trailing annualized vol=0.149
+  - Asset_D (short_treasury_cash), trailing 12m return=0.014, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2023-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.98
+  t10y2y_z = -2.17
+  hy_oas_z = 0.03
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.034, trailing annualized vol=0.175
+  - Asset_B (tech_sector), trailing 12m return=-0.131, trailing annualized vol=0.328
+  - Asset_C (gold_commodity), trailing 12m return=0.075, trailing annualized vol=0.151
+  - Asset_D (short_treasury_cash), trailing 12m return=0.017, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2023-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.82
+  t10y2y_z = -2.39
+  hy_oas_z = -0.06
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.03, trailing annualized vol=0.171
+  - Asset_B (tech_sector), trailing 12m return=-0.107, trailing annualized vol=0.329
+  - Asset_C (gold_commodity), trailing 12m return=-0.037, trailing annualized vol=0.153
+  - Asset_D (short_treasury_cash), trailing 12m return=0.021, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2023-04-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.41
+  t10y2y_z = -1.73
+  hy_oas_z = 0.26
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.029, trailing annualized vol=0.169
+  - Asset_B (tech_sector), trailing 12m return=-0.054, trailing annualized vol=0.319
+  - Asset_C (gold_commodity), trailing 12m return=0.017, trailing annualized vol=0.16
+  - Asset_D (short_treasury_cash), trailing 12m return=0.024, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2023-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.41
+  t10y2y_z = -1.69
+  hy_oas_z = 0.2
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.017, trailing annualized vol=0.163
+  - Asset_B (tech_sector), trailing 12m return=0.074, trailing annualized vol=0.309
+  - Asset_C (gold_commodity), trailing 12m return=0.052, trailing annualized vol=0.153
+  - Asset_D (short_treasury_cash), trailing 12m return=0.028, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2023-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.1
+  t10y2y_z = -1.88
+  hy_oas_z = 0.33
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.052, trailing annualized vol=0.161
+  - Asset_B (tech_sector), trailing 12m return=0.173, trailing annualized vol=0.307
+  - Asset_C (gold_commodity), trailing 12m return=0.056, trailing annualized vol=0.153
+  - Asset_D (short_treasury_cash), trailing 12m return=0.032, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,1,False
+2023-07-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.3
+  t10y2y_z = -2.26
+  hy_oas_z = -0.27
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.12, trailing annualized vol=0.155
+  - Asset_B (tech_sector), trailing 12m return=0.362, trailing annualized vol=0.282
+  - Asset_C (gold_commodity), trailing 12m return=0.053, trailing annualized vol=0.152
+  - Asset_D (short_treasury_cash), trailing 12m return=0.036, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0",-1,0.00000000,1,False
+2023-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.22
+  t10y2y_z = -1.91
+  hy_oas_z = -0.52
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.09, trailing annualized vol=0.142
+  - Asset_B (tech_sector), trailing 12m return=0.268, trailing annualized vol=0.264
+  - Asset_C (gold_commodity), trailing 12m return=0.115, trailing annualized vol=0.149
+  - Asset_D (short_treasury_cash), trailing 12m return=0.039, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,-1,True
+2023-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.07
+  t10y2y_z = -1.61
+  hy_oas_z = -0.47
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.058, trailing annualized vol=0.138
+  - Asset_B (tech_sector), trailing 12m return=0.298, trailing annualized vol=0.26
+  - Asset_C (gold_commodity), trailing 12m return=0.124, trailing annualized vol=0.147
+  - Asset_D (short_treasury_cash), trailing 12m return=0.043, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2023-10-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.09
+  t10y2y_z = -1.08
+  hy_oas_z = -0.31
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.098, trailing annualized vol=0.137
+  - Asset_B (tech_sector), trailing 12m return=0.331, trailing annualized vol=0.254
+  - Asset_C (gold_commodity), trailing 12m return=0.11, trailing annualized vol=0.145
+  - Asset_D (short_treasury_cash), trailing 12m return=0.045, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,-1,True
+2023-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.26
+  t10y2y_z = -0.68
+  hy_oas_z = 0.04
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.045, trailing annualized vol=0.125
+  - Asset_B (tech_sector), trailing 12m return=0.278, trailing annualized vol=0.241
+  - Asset_C (gold_commodity), trailing 12m return=0.204, trailing annualized vol=0.143
+  - Asset_D (short_treasury_cash), trailing 12m return=0.047, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2023-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.31
+  t10y2y_z = -0.92
+  hy_oas_z = -0.49
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.085, trailing annualized vol=0.121
+  - Asset_B (tech_sector), trailing 12m return=0.444, trailing annualized vol=0.221
+  - Asset_C (gold_commodity), trailing 12m return=0.161, trailing annualized vol=0.141
+  - Asset_D (short_treasury_cash), trailing 12m return=0.049, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2024-01-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.25
+  t10y2y_z = -0.88
+  hy_oas_z = -0.89
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.172, trailing annualized vol=0.12
+  - Asset_B (tech_sector), trailing 12m return=0.599, trailing annualized vol=0.195
+  - Asset_C (gold_commodity), trailing 12m return=0.141, trailing annualized vol=0.136
+  - Asset_D (short_treasury_cash), trailing 12m return=0.05, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2024-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.35
+  t10y2y_z = -0.76
+  hy_oas_z = -0.68
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.145, trailing annualized vol=0.115
+  - Asset_B (tech_sector), trailing 12m return=0.487, trailing annualized vol=0.189
+  - Asset_C (gold_commodity), trailing 12m return=0.056, trailing annualized vol=0.132
+  - Asset_D (short_treasury_cash), trailing 12m return=0.051, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2024-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.34
+  t10y2y_z = -0.91
+  hy_oas_z = -0.95
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.188, trailing annualized vol=0.109
+  - Asset_B (tech_sector), trailing 12m return=0.529, trailing annualized vol=0.182
+  - Asset_C (gold_commodity), trailing 12m return=0.116, trailing annualized vol=0.127
+  - Asset_D (short_treasury_cash), trailing 12m return=0.052, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,1,False
+2024-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.22
+  t10y2y_z = -0.89
+  hy_oas_z = -1.06
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.248, trailing annualized vol=0.108
+  - Asset_B (tech_sector), trailing 12m return=0.457, trailing annualized vol=0.18
+  - Asset_C (gold_commodity), trailing 12m return=0.122, trailing annualized vol=0.128
+  - Asset_D (short_treasury_cash), trailing 12m return=0.052, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI yoy z = -0.22 (slightly below mean), t10y2y_z = -0.89 (yield curve steepening? Actually t10y2y is 10-year minus 2-year spread; negative z means flattening or inverted? Wait: t10y2y_z negative indicates the spread is below mean, meaning the 10-year yield is lower relative to 2-year, i.e., flattening or inversion. So negative indicates a flattening or inverted yield curve. hy_oas_z = -1.06 (high yield OAS? Actually hy_oas_z negative indicates OAS below mean, meaning high yield bonds are cheaper? Wait: hy_oas_z negative means the OAS is below mean, so high yield bonds are cheaper relative to risk-free? Actually OAS is spread over Treasury; negative means the spread is lower than average, so high yield bonds are cheaper relative to Treasuries. That could indicate risk premium lower, maybe risk appetite high? But negative OAS could also indicate a risk premium compression, maybe due to high demand for high yield. So macro: mild deflationary pressure (CPI slightly negative), yield curve flattening/inverted, high yield OAS compression. This suggests a potential recessionary environment, but also risk appetite? Let's think.
+
+We need to forecast direction of world equity. Usually equity returns are negative when CPI is negative? Actually CPI yoy negative indicates inflation below average, maybe deflationary environment. Yield curve flattening/inversion is a recession predictor. High yield OAS compression could be due to risk appetite or due to high demand for high yield. But overall macro suggests a risk-off environment. So world equity likely to go down.
+
+But we need to consider the asset's past performance: trailing 12m return 0.248 (24.8% annualized). Vol 10.8%. So it's a strong performer. But macro suggests risk-off. So likely down.
+
+Confidence: maybe moderate, say 0.6.
+
+But we need to think about the direction: -1 for down. So answer: Direction: -1. Confidence: 0.6.
+
+But we need to consider the possibility of flat? The macro is mild negative CPI, negative yield curve, negative OAS. Historically, yield curve inversion often precedes recession and equity downturn. So likely down. So -1.
+
+Confidence: maybe",-1,0.60000000,-1,True
+2024-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.28
+  t10y2y_z = -0.81
+  hy_oas_z = -1.01
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.206, trailing annualized vol=0.1
+  - Asset_B (tech_sector), trailing 12m return=0.312, trailing annualized vol=0.181
+  - Asset_C (gold_commodity), trailing 12m return=0.148, trailing annualized vol=0.124
+  - Asset_D (short_treasury_cash), trailing 12m return=0.053, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z = -0.28 (slightly below mean), t10y2y_z = -0.81 (yield curve steepening? Actually t10y2y is 10-year minus 2-year spread; negative z means spread lower than mean, i.e., flattening or inversion? Wait: t10y2y_z negative indicates spread lower than mean, so yield curve flattening or inverted. hy_oas_z = -1.01 (high-yield OAS lower than mean, i.e., high-yield spreads narrower). So macro: mild deflationary pressure, flattening yield curve, tightening high-yield spreads. That suggests a mild recessionary environment, but not severe. Equity returns? Historically, flattening yield curve and tightening high-yield spreads can signal upcoming recession, which tends to hurt equities. But we also have CPI slightly negative, so inflation lower. So overall risk-off environment. Asset_A world equity has trailing 12m return 20.6% and vol 10%. We need to forecast next period direction: up, down, or flat. Likely down due to risk-off. But we need to consider that the macro state is not extreme; it's mild. So maybe flat or slight down. We need to assign a direction and confidence.
+
+We need to produce two lines: Direction: <value> and Confidence: <value>.
+
+We need to think step by step: macro signals: negative CPI yoy z indicates lower inflation, which could be good for equities? Actually lower inflation can be good for equities because it reduces cost of capital. But negative CPI yoy z is mild. Yield curve flattening indicates potential slowdown. High-yield OAS lower indicates tightening credit spreads, which could be positive for equities? Actually tightening credit spreads can be positive for equities because it indicates lower risk. But overall risk-off environment due to flattening yield curve. So net effect uncertain. But given the macro state, I'd lean slightly down.
+
+Confidence: moderate, maybe 0.55.
+
+Thus output:
+
+Direction: -1
+Confidence: 0.55
+
+But we need to be careful: The trailing 12m return is high, but that doesn't matter. We need to forecast next period direction. I'd say down.
+
+Confidence maybe 0.6.
+
+Let's produce:
+
+Direction: -1
+Confidence: 0.60
+
+But we need to be precise:",-1,0.60000000,1,False
+2024-06-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.34
+  t10y2y_z = -0.83
+  hy_oas_z = -0.97
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.182, trailing annualized vol=0.099
+  - Asset_B (tech_sector), trailing 12m return=0.29, trailing annualized vol=0.18
+  - Asset_C (gold_commodity), trailing 12m return=0.183, trailing annualized vol=0.126
+  - Asset_D (short_treasury_cash), trailing 12m return=0.054, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","We need to forecast next-period direction of Asset_A (world_equity) given macro state: CPI YoY z = -0.34 (slightly below mean), t10y2y_z = -0.83 (yield curve steepness negative? Actually t10y2y_z negative indicates yield curve flattening or inverted? t10y2y_z is the 10-year minus 2-year spread; negative means 10-year yield lower than 2-year, indicating steepening? Wait typical: t10y2y is 10-year minus 2-year. Negative means 10-year yield lower than 2-year, i.e., steepening? Actually if 10-year yield is lower than 2-year, the spread is negative, meaning the curve is inverted. So t10y2y_z = -0.83 indicates a negative spread, i.e., inverted yield curve. hy_oas_z = -0.97 (housing yields? maybe housing market? hy_oas_z negative indicates housing yields below mean? Not sure.
+
+We need to forecast direction of world equity. Macro: inflation slightly below mean, yield curve inverted, housing yields below mean. That suggests a recessionary environment, low inflation, inverted yield curve, negative housing yields. Historically, equity markets tend to decline in such environment. So likely downwards.
+
+But we need to consider the asset's past performance: Asset_A world equity had trailing 12m return 0.182, vol 0.099. But macro state indicates negative environment. So likely down.
+
+We need to produce Direction: -1 or 0 or 1. Likely -1.
+
+Confidence: between 0 and 1. We need to estimate confidence. Macro signals strongly negative: inflation below mean, yield curve inverted, housing yields negative. That is a strong recession signal. So high confidence maybe 0.8? But we don't know the exact date. But we can give moderate-high confidence. Let's say 0.75.
+
+Thus final lines:
+
+Direction: -1
+Confidence: 0.75
+
+But we need to be careful: The macro state is z-scores relative to rolling 5-year window. So -0.34 CPI yoy indicates inflation slightly below mean. t10y2y_z = -0.83 indicates yield curve inverted. hy_oas_z = -0.97 indicates housing yields below mean. That suggests a recession. Equity markets often decline. So direction -1.
+
+Confidence: maybe ",-1,0.75000000,1,False
+2024-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.45
+  t10y2y_z = -0.77
+  hy_oas_z = -0.94
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.218, trailing annualized vol=0.094
+  - Asset_B (tech_sector), trailing 12m return=0.335, trailing annualized vol=0.178
+  - Asset_C (gold_commodity), trailing 12m return=0.215, trailing annualized vol=0.131
+  - Asset_D (short_treasury_cash), trailing 12m return=0.054, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2024-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.48
+  t10y2y_z = -0.54
+  hy_oas_z = -0.89
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.196, trailing annualized vol=0.095
+  - Asset_B (tech_sector), trailing 12m return=0.236, trailing annualized vol=0.193
+  - Asset_C (gold_commodity), trailing 12m return=0.245, trailing annualized vol=0.137
+  - Asset_D (short_treasury_cash), trailing 12m return=0.054, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0",-1,0.00000000,1,False
+2024-09-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.62
+  t10y2y_z = -0.25
+  hy_oas_z = -0.94
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.185, trailing annualized vol=0.101
+  - Asset_B (tech_sector), trailing 12m return=0.27, trailing annualized vol=0.209
+  - Asset_C (gold_commodity), trailing 12m return=0.284, trailing annualized vol=0.14
+  - Asset_D (short_treasury_cash), trailing 12m return=0.054, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,-1,False
+2024-10-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.7
+  t10y2y_z = -0.03
+  hy_oas_z = -1.04
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.2, trailing annualized vol=0.104
+  - Asset_B (tech_sector), trailing 12m return=0.392, trailing annualized vol=0.211
+  - Asset_C (gold_commodity), trailing 12m return=0.406, trailing annualized vol=0.144
+  - Asset_D (short_treasury_cash), trailing 12m return=0.054, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2024-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.64
+  t10y2y_z = -0.07
+  hy_oas_z = -1.14
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.233, trailing annualized vol=0.101
+  - Asset_B (tech_sector), trailing 12m return=0.365, trailing annualized vol=0.214
+  - Asset_C (gold_commodity), trailing 12m return=0.379, trailing annualized vol=0.144
+  - Asset_D (short_treasury_cash), trailing 12m return=0.053, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,1,True
+2024-12-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.59
+  t10y2y_z = -0.17
+  hy_oas_z = -1.22
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.272, trailing annualized vol=0.1
+  - Asset_B (tech_sector), trailing 12m return=0.274, trailing annualized vol=0.214
+  - Asset_C (gold_commodity), trailing 12m return=0.298, trailing annualized vol=0.151
+  - Asset_D (short_treasury_cash), trailing 12m return=0.053, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,-1,False
+2016-01-04,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.97
+  t10y2y_z = -1.41
+  hy_oas_z = 1.53
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.04, trailing annualized vol=0.161
+  - Asset_B (tech_sector), trailing 12m return=0.055, trailing annualized vol=0.177
+  - Asset_C (gold_commodity), trailing 12m return=-0.106, trailing annualized vol=0.143
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,-1,True
+2016-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.41
+  t10y2y_z = -1.44
+  hy_oas_z = 2.15
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.003, trailing annualized vol=0.167
+  - Asset_B (tech_sector), trailing 12m return=0.039, trailing annualized vol=0.185
+  - Asset_C (gold_commodity), trailing 12m return=-0.113, trailing annualized vol=0.143
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2016-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.74
+  t10y2y_z = -1.87
+  hy_oas_z = 2.01
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.012, trailing annualized vol=0.175
+  - Asset_B (tech_sector), trailing 12m return=-0.032, trailing annualized vol=0.186
+  - Asset_C (gold_commodity), trailing 12m return=0.024, trailing annualized vol=0.147
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2016-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.68
+  t10y2y_z = -1.62
+  hy_oas_z = 1.37
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.005, trailing annualized vol=0.178
+  - Asset_B (tech_sector), trailing 12m return=0.091, trailing annualized vol=0.187
+  - Asset_C (gold_commodity), trailing 12m return=0.038, trailing annualized vol=0.151
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2016-05-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.39
+  t10y2y_z = -1.56
+  hy_oas_z = 0.65
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=-0.015, trailing annualized vol=0.177
+  - Asset_B (tech_sector), trailing 12m return=0.008, trailing annualized vol=0.186
+  - Asset_C (gold_commodity), trailing 12m return=0.091, trailing annualized vol=0.154
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.0, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2016-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.46
+  t10y2y_z = -1.72
+  hy_oas_z = 0.44
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.012, trailing annualized vol=0.176
+  - Asset_B (tech_sector), trailing 12m return=0.036, trailing annualized vol=0.185
+  - Asset_C (gold_commodity), trailing 12m return=0.019, trailing annualized vol=0.154
+  - Asset_D (short_treasury_cash), trailing 12m return=0.0, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,1,False
+2016-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.43
+  t10y2y_z = -1.82
+  hy_oas_z = 0.62
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.133, trailing annualized vol=0.182
+  - Asset_B (tech_sector), trailing 12m return=0.061, trailing annualized vol=0.19
+  - Asset_C (gold_commodity), trailing 12m return=0.129, trailing annualized vol=0.165
+  - Asset_D (short_treasury_cash), trailing 12m return=-0.0, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2016-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.61
+  t10y2y_z = -2.01
+  hy_oas_z = 0.19
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.169, trailing annualized vol=0.18
+  - Asset_B (tech_sector), trailing 12m return=0.109, trailing annualized vol=0.187
+  - Asset_C (gold_commodity), trailing 12m return=0.239, trailing annualized vol=0.168
+  - Asset_D (short_treasury_cash), trailing 12m return=0.0, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2016-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.4
+  t10y2y_z = -1.93
+  hy_oas_z = -0.28
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.275, trailing annualized vol=0.182
+  - Asset_B (tech_sector), trailing 12m return=0.23, trailing annualized vol=0.184
+  - Asset_C (gold_commodity), trailing 12m return=0.143, trailing annualized vol=0.166
+  - Asset_D (short_treasury_cash), trailing 12m return=0.0, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2016-10-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.18
+  t10y2y_z = -1.74
+  hy_oas_z = -0.36
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.303, trailing annualized vol=0.163
+  - Asset_B (tech_sector), trailing 12m return=0.232, trailing annualized vol=0.166
+  - Asset_C (gold_commodity), trailing 12m return=0.179, trailing annualized vol=0.163
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2016-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.4
+  t10y2y_z = -1.37
+  hy_oas_z = -0.39
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.279, trailing annualized vol=0.151
+  - Asset_B (tech_sector), trailing 12m return=0.107, trailing annualized vol=0.16
+  - Asset_C (gold_commodity), trailing 12m return=0.118, trailing annualized vol=0.162
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2016-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.45
+  t10y2y_z = -0.74
+  hy_oas_z = -0.58
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.232, trailing annualized vol=0.151
+  - Asset_B (tech_sector), trailing 12m return=0.092, trailing annualized vol=0.159
+  - Asset_C (gold_commodity), trailing 12m return=0.095, trailing annualized vol=0.164
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,1,True
+2017-01-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.98
+  t10y2y_z = -0.75
+  hy_oas_z = -0.98
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.325, trailing annualized vol=0.151
+  - Asset_B (tech_sector), trailing 12m return=0.15, trailing annualized vol=0.156
+  - Asset_C (gold_commodity), trailing 12m return=0.083, trailing annualized vol=0.162
+  - Asset_D (short_treasury_cash), trailing 12m return=0.001, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,-1,True
+2017-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.63
+  t10y2y_z = -0.71
+  hy_oas_z = -1.16
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.355, trailing annualized vol=0.145
+  - Asset_B (tech_sector), trailing 12m return=0.232, trailing annualized vol=0.147
+  - Asset_C (gold_commodity), trailing 12m return=0.07, trailing annualized vol=0.159
+  - Asset_D (short_treasury_cash), trailing 12m return=0.002, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2017-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 2.04
+  t10y2y_z = -0.94
+  hy_oas_z = -1.36
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.342, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.302, trailing annualized vol=0.125
+  - Asset_C (gold_commodity), trailing 12m return=0.004, trailing annualized vol=0.154
+  - Asset_D (short_treasury_cash), trailing 12m return=0.002, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2017-04-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.55
+  t10y2y_z = -0.93
+  hy_oas_z = -1.15
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.322, trailing annualized vol=0.12
+  - Asset_B (tech_sector), trailing 12m return=0.213, trailing annualized vol=0.117
+  - Asset_C (gold_commodity), trailing 12m return=0.017, trailing annualized vol=0.141
+  - Asset_D (short_treasury_cash), trailing 12m return=0.002, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,-1,True
+2017-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.2
+  t10y2y_z = -1.14
+  hy_oas_z = -1.21
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.306, trailing annualized vol=0.118
+  - Asset_B (tech_sector), trailing 12m return=0.302, trailing annualized vol=0.116
+  - Asset_C (gold_commodity), trailing 12m return=-0.002, trailing annualized vol=0.136
+  - Asset_D (short_treasury_cash), trailing 12m return=0.002, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,1,False
+2017-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.76
+  t10y2y_z = -1.28
+  hy_oas_z = -1.25
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.305, trailing annualized vol=0.116
+  - Asset_B (tech_sector), trailing 12m return=0.301, trailing annualized vol=0.115
+  - Asset_C (gold_commodity), trailing 12m return=0.041, trailing annualized vol=0.131
+  - Asset_D (short_treasury_cash), trailing 12m return=0.002, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2017-07-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.47
+  t10y2y_z = -1.25
+  hy_oas_z = -1.18
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.201, trailing annualized vol=0.116
+  - Asset_B (tech_sector), trailing 12m return=0.283, trailing annualized vol=0.119
+  - Asset_C (gold_commodity), trailing 12m return=-0.064, trailing annualized vol=0.126
+  - Asset_D (short_treasury_cash), trailing 12m return=0.003, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2017-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.57
+  t10y2y_z = -1.17
+  hy_oas_z = -1.29
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.166, trailing annualized vol=0.106
+  - Asset_B (tech_sector), trailing 12m return=0.251, trailing annualized vol=0.107
+  - Asset_C (gold_commodity), trailing 12m return=-0.061, trailing annualized vol=0.112
+  - Asset_D (short_treasury_cash), trailing 12m return=0.003, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2017-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.84
+  t10y2y_z = -1.47
+  hy_oas_z = -1.02
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.2, trailing annualized vol=0.104
+  - Asset_B (tech_sector), trailing 12m return=0.273, trailing annualized vol=0.111
+  - Asset_C (gold_commodity), trailing 12m return=0.01, trailing annualized vol=0.109
+  - Asset_D (short_treasury_cash), trailing 12m return=0.004, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2017-10-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.17
+  t10y2y_z = -1.29
+  hy_oas_z = -1.26
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.145, trailing annualized vol=0.101
+  - Asset_B (tech_sector), trailing 12m return=0.263, trailing annualized vol=0.109
+  - Asset_C (gold_commodity), trailing 12m return=-0.033, trailing annualized vol=0.111
+  - Asset_D (short_treasury_cash), trailing 12m return=0.005, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2017-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.96
+  t10y2y_z = -1.4
+  hy_oas_z = -1.26
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.14, trailing annualized vol=0.102
+  - Asset_B (tech_sector), trailing 12m return=0.349, trailing annualized vol=0.109
+  - Asset_C (gold_commodity), trailing 12m return=-0.009, trailing annualized vol=0.107
+  - Asset_D (short_treasury_cash), trailing 12m return=0.005, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,-1,True
+2017-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.15
+  t10y2y_z = -1.61
+  hy_oas_z = -1.13
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.152, trailing annualized vol=0.099
+  - Asset_B (tech_sector), trailing 12m return=0.365, trailing annualized vol=0.11
+  - Asset_C (gold_commodity), trailing 12m return=0.085, trailing annualized vol=0.107
+  - Asset_D (short_treasury_cash), trailing 12m return=0.006, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.58",1,0.58000000,1,True
+2018-01-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.07
+  t10y2y_z = -1.77
+  hy_oas_z = -1.07
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.118, trailing annualized vol=0.098
+  - Asset_B (tech_sector), trailing 12m return=0.332, trailing annualized vol=0.104
+  - Asset_C (gold_commodity), trailing 12m return=0.123, trailing annualized vol=0.1
+  - Asset_D (short_treasury_cash), trailing 12m return=0.006, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,-1,True
+2018-02-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.08
+  t10y2y_z = -1.58
+  hy_oas_z = -1.35
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.12, trailing annualized vol=0.099
+  - Asset_B (tech_sector), trailing 12m return=0.388, trailing annualized vol=0.107
+  - Asset_C (gold_commodity), trailing 12m return=0.107, trailing annualized vol=0.098
+  - Asset_D (short_treasury_cash), trailing 12m return=0.008, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.68",-1,0.68000000,-1,True
+2018-03-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.22
+  t10y2y_z = -1.45
+  hy_oas_z = -1.14
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.046, trailing annualized vol=0.114
+  - Asset_B (tech_sector), trailing 12m return=0.322, trailing annualized vol=0.138
+  - Asset_C (gold_commodity), trailing 12m return=0.051, trailing annualized vol=0.099
+  - Asset_D (short_treasury_cash), trailing 12m return=0.008, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2018-04-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.27
+  t10y2y_z = -1.64
+  hy_oas_z = -0.89
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.006, trailing annualized vol=0.124
+  - Asset_B (tech_sector), trailing 12m return=0.245, trailing annualized vol=0.156
+  - Asset_C (gold_commodity), trailing 12m return=0.055, trailing annualized vol=0.101
+  - Asset_D (short_treasury_cash), trailing 12m return=0.009, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.70",-1,0.70000000,1,False
+2018-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.4
+  t10y2y_z = -1.59
+  hy_oas_z = -1.1
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.068, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.221, trailing annualized vol=0.165
+  - Asset_C (gold_commodity), trailing 12m return=0.034, trailing annualized vol=0.101
+  - Asset_D (short_treasury_cash), trailing 12m return=0.01, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2018-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.72
+  t10y2y_z = -1.58
+  hy_oas_z = -0.92
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.083, trailing annualized vol=0.131
+  - Asset_B (tech_sector), trailing 12m return=0.254, trailing annualized vol=0.167
+  - Asset_C (gold_commodity), trailing 12m return=0.021, trailing annualized vol=0.099
+  - Asset_D (short_treasury_cash), trailing 12m return=0.011, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2018-07-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.69
+  t10y2y_z = -1.67
+  hy_oas_z = -0.83
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.101, trailing annualized vol=0.13
+  - Asset_B (tech_sector), trailing 12m return=0.286, trailing annualized vol=0.166
+  - Asset_C (gold_commodity), trailing 12m return=0.005, trailing annualized vol=0.096
+  - Asset_D (short_treasury_cash), trailing 12m return=0.012, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2018-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.69
+  t10y2y_z = -1.68
+  hy_oas_z = -1.02
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.125, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.258, trailing annualized vol=0.166
+  - Asset_C (gold_commodity), trailing 12m return=-0.039, trailing annualized vol=0.096
+  - Asset_D (short_treasury_cash), trailing 12m return=0.013, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,1,False
+2018-09-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.39
+  t10y2y_z = -1.7
+  hy_oas_z = -0.97
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.126, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.303, trailing annualized vol=0.166
+  - Asset_C (gold_commodity), trailing 12m return=-0.096, trailing annualized vol=0.098
+  - Asset_D (short_treasury_cash), trailing 12m return=0.013, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.65",-1,0.65000000,-1,True
+2018-10-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.0
+  t10y2y_z = -1.64
+  hy_oas_z = -1.12
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.148, trailing annualized vol=0.129
+  - Asset_B (tech_sector), trailing 12m return=0.301, trailing annualized vol=0.165
+  - Asset_C (gold_commodity), trailing 12m return=-0.075, trailing annualized vol=0.096
+  - Asset_D (short_treasury_cash), trailing 12m return=0.014, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,-1,True
+2018-11-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 1.15
+  t10y2y_z = -1.53
+  hy_oas_z = -0.65
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.049, trailing annualized vol=0.135
+  - Asset_B (tech_sector), trailing 12m return=0.116, trailing annualized vol=0.193
+  - Asset_C (gold_commodity), trailing 12m return=-0.044, trailing annualized vol=0.097
+  - Asset_D (short_treasury_cash), trailing 12m return=0.015, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.78",-1,0.78000000,1,False
+2018-12-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = 0.73
+  t10y2y_z = -1.61
+  hy_oas_z = -0.23
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.064, trailing annualized vol=0.137
+  - Asset_B (tech_sector), trailing 12m return=0.079, trailing annualized vol=0.21
+  - Asset_C (gold_commodity), trailing 12m return=-0.044, trailing annualized vol=0.097
+  - Asset_D (short_treasury_cash), trailing 12m return=0.016, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.75",-1,0.75000000,-1,True
+2025-01-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.54
+  t10y2y_z = 0.24
+  hy_oas_z = -1.05
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.224, trailing annualized vol=0.101
+  - Asset_B (tech_sector), trailing 12m return=0.216, trailing annualized vol=0.216
+  - Asset_C (gold_commodity), trailing 12m return=0.269, trailing annualized vol=0.15
+  - Asset_D (short_treasury_cash), trailing 12m return=0.052, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,1,True
+2025-02-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.49
+  t10y2y_z = 0.28
+  hy_oas_z = -1.22
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.231, trailing annualized vol=0.104
+  - Asset_B (tech_sector), trailing 12m return=0.151, trailing annualized vol=0.225
+  - Asset_C (gold_commodity), trailing 12m return=0.373, trailing annualized vol=0.149
+  - Asset_D (short_treasury_cash), trailing 12m return=0.051, trailing annualized vol=0.003
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,-1,False
+2025-03-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.57
+  t10y2y_z = 0.12
+  hy_oas_z = -1.03
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.146, trailing annualized vol=0.106
+  - Asset_B (tech_sector), trailing 12m return=0.104, trailing annualized vol=0.228
+  - Asset_C (gold_commodity), trailing 12m return=0.403, trailing annualized vol=0.151
+  - Asset_D (short_treasury_cash), trailing 12m return=0.05, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,-1,False
+2025-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.75
+  t10y2y_z = 0.25
+  hy_oas_z = -0.45
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.045, trailing annualized vol=0.116
+  - Asset_B (tech_sector), trailing 12m return=-0.004, trailing annualized vol=0.237
+  - Asset_C (gold_commodity), trailing 12m return=0.421, trailing annualized vol=0.152
+  - Asset_D (short_treasury_cash), trailing 12m return=0.049, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,-1,False
+2025-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.8
+  t10y2y_z = 0.58
+  hy_oas_z = -0.0
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.045, trailing annualized vol=0.148
+  - Asset_B (tech_sector), trailing 12m return=0.058, trailing annualized vol=0.298
+  - Asset_C (gold_commodity), trailing 12m return=0.405, trailing annualized vol=0.167
+  - Asset_D (short_treasury_cash), trailing 12m return=0.048, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.60",1,0.60000000,1,True
+2025-06-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.81
+  t10y2y_z = 0.51
+  hy_oas_z = -0.68
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.081, trailing annualized vol=0.151
+  - Asset_B (tech_sector), trailing 12m return=0.076, trailing annualized vol=0.299
+  - Asset_C (gold_commodity), trailing 12m return=0.395, trailing annualized vol=0.173
+  - Asset_D (short_treasury_cash), trailing 12m return=0.048, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,1,True
+2025-07-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.71
+  t10y2y_z = 0.51
+  hy_oas_z = -1.12
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.069, trailing annualized vol=0.151
+  - Asset_B (tech_sector), trailing 12m return=0.127, trailing annualized vol=0.298
+  - Asset_C (gold_commodity), trailing 12m return=0.435, trailing annualized vol=0.174
+  - Asset_D (short_treasury_cash), trailing 12m return=0.047, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2025-08-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.7
+  t10y2y_z = 0.38
+  hy_oas_z = -1.21
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.137, trailing annualized vol=0.152
+  - Asset_B (tech_sector), trailing 12m return=0.229, trailing annualized vol=0.295
+  - Asset_C (gold_commodity), trailing 12m return=0.377, trailing annualized vol=0.17
+  - Asset_D (short_treasury_cash), trailing 12m return=0.046, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 0
+Confidence: 0.60",0,0.60000000,1,False
+2025-09-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.64
+  t10y2y_z = 0.68
+  hy_oas_z = -1.2
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.131, trailing annualized vol=0.148
+  - Asset_B (tech_sector), trailing 12m return=0.188, trailing annualized vol=0.281
+  - Asset_C (gold_commodity), trailing 12m return=0.364, trailing annualized vol=0.168
+  - Asset_D (short_treasury_cash), trailing 12m return=0.045, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,1,True
+2025-10-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.62
+  t10y2y_z = 0.57
+  hy_oas_z = -1.23
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.162, trailing annualized vol=0.146
+  - Asset_B (tech_sector), trailing 12m return=0.248, trailing annualized vol=0.272
+  - Asset_C (gold_commodity), trailing 12m return=0.441, trailing annualized vol=0.167
+  - Asset_D (short_treasury_cash), trailing 12m return=0.044, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: -1
+Confidence: 0.60",-1,0.60000000,1,False
+2025-11-03,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.62
+  t10y2y_z = 0.57
+  hy_oas_z = -1.23
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.192, trailing annualized vol=0.445
+  - Asset_B (tech_sector), trailing 12m return=0.297, trailing annualized vol=0.271
+  - Asset_C (gold_commodity), trailing 12m return=0.44, trailing annualized vol=0.189
+  - Asset_D (short_treasury_cash), trailing 12m return=0.043, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,-1,False
+2025-12-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.69
+  t10y2y_z = 0.56
+  hy_oas_z = -1.02
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.121, trailing annualized vol=0.446
+  - Asset_B (tech_sector), trailing 12m return=0.233, trailing annualized vol=0.275
+  - Asset_C (gold_commodity), trailing 12m return=0.601, trailing annualized vol=0.192
+  - Asset_D (short_treasury_cash), trailing 12m return=0.043, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.68",1,0.68000000,-1,False
+2026-01-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.71
+  t10y2y_z = 0.8
+  hy_oas_z = -1.13
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.116, trailing annualized vol=0.445
+  - Asset_B (tech_sector), trailing 12m return=0.22, trailing annualized vol=0.276
+  - Asset_C (gold_commodity), trailing 12m return=0.644, trailing annualized vol=0.185
+  - Asset_D (short_treasury_cash), trailing 12m return=0.042, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,1,True
+2026-02-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.81
+  t10y2y_z = 0.86
+  hy_oas_z = -1.01
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.074, trailing annualized vol=0.446
+  - Asset_B (tech_sector), trailing 12m return=0.249, trailing annualized vol=0.274
+  - Asset_C (gold_commodity), trailing 12m return=0.754, trailing annualized vol=0.218
+  - Asset_D (short_treasury_cash), trailing 12m return=0.041, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,1,True
+2026-03-02,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.9
+  t10y2y_z = 0.67
+  hy_oas_z = -0.67
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.144, trailing annualized vol=0.445
+  - Asset_B (tech_sector), trailing 12m return=0.209, trailing annualized vol=0.274
+  - Asset_C (gold_commodity), trailing 12m return=0.8, trailing annualized vol=0.241
+  - Asset_D (short_treasury_cash), trailing 12m return=0.041, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.65",1,0.65000000,-1,False
+2026-04-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.6
+  t10y2y_z = 0.6
+  hy_oas_z = -0.45
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.16, trailing annualized vol=0.444
+  - Asset_B (tech_sector), trailing 12m return=0.295, trailing annualized vol=0.275
+  - Asset_C (gold_commodity), trailing 12m return=0.517, trailing annualized vol=0.263
+  - Asset_D (short_treasury_cash), trailing 12m return=0.04, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,1,True
+2026-05-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.6
+  t10y2y_z = 0.6
+  hy_oas_z = -0.45
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.275, trailing annualized vol=0.443
+  - Asset_B (tech_sector), trailing 12m return=0.534, trailing annualized vol=0.271
+  - Asset_C (gold_commodity), trailing 12m return=0.386, trailing annualized vol=0.268
+  - Asset_D (short_treasury_cash), trailing 12m return=0.039, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,1,True
+2026-06-01,"You are a macroeconomic analyst. You are given a point-in-time macro state (z-scored against a rolling 5-year window) and an anonymized list of assets identified only by letter and category. You do not know the calendar date, the year, or the real identity of any asset. Reason only from the numeric state in front of you.
+
+Macro state (z-scores):
+  cpi_yoy_z = -0.6
+  t10y2y_z = 0.6
+  hy_oas_z = -0.45
+
+Assets:
+  - Asset_A (world_equity), trailing 12m return=0.278, trailing annualized vol=0.433
+  - Asset_B (tech_sector), trailing 12m return=0.662, trailing annualized vol=0.21
+  - Asset_C (gold_commodity), trailing 12m return=0.375, trailing annualized vol=0.261
+  - Asset_D (short_treasury_cash), trailing 12m return=0.039, trailing annualized vol=0.002
+
+Task: forecast the next-period direction of the FIRST listed asset (Asset_A) given this macro state.
+
+Think step by step, then answer with EXACTLY these two final lines and nothing after them:
+Direction: <one of -1, 0, 1>   (-1 = down, 0 = flat, 1 = up)
+Confidence: <a decimal between 0 and 1>
+
+Example of the required final lines:
+Direction: 0
+Confidence: 0.50
+","Direction: 1
+Confidence: 0.70",1,0.70000000,1,True

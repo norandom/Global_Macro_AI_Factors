@@ -209,9 +209,10 @@ def test_appendix_e_protocol_cutoff_labels_and_honest_reading() -> None:
     source = _all_source(NOTEBOOKS["appendix_e"])
     assert CONFIG_IDS <= {token for token in CONFIG_IDS if token in source}
     assert "2024-06-01" in source
-    assert "PIT unguarded — guard-disabled diagnostic; non-deployable" in source
-    assert "non-PIT unguarded — identifying guard-disabled diagnostic; non-deployable" in source
-    assert "Only guarded PIT is" in source and "deployable" in source
+    assert "PIT information, guard on (deployable)" in source
+    assert "Identifying information, guard off (combined diagnostic)" in source
+    assert "Turning the guard off does not" in source
+    assert "Only PIT information with the guard on" in source and "deployable" in source
     assert "not proof" in source.lower()
     assert "no significant change" in source.lower()
     assert "no visible change" in source.lower()
@@ -224,11 +225,11 @@ def test_appendix_e_keeps_controlled_and_combined_relative_wealth_distinct() -> 
     source = _code_source(NOTEBOOKS["appendix_e"])
     assert "controlled_pit_unguarded_vs_guarded" in source
     assert "combined_nonpit_unguarded_vs_pit_guarded_stress" in source
-    assert "Controlled PIT ablation" in source
-    assert "Combined naïve stress" in source
-    assert "PIT unguarded / PIT guarded" in source
-    assert "non-PIT unguarded / PIT guarded" in source
-    assert "Distinct estimands" in source
+    assert "Guard-only comparison: same PIT information" in source
+    assert "Combined stress: information and guard both change" in source
+    assert "PIT guard off divided by PIT guard on" in source
+    assert "Identifying guard off divided by PIT guard on" in source
+    assert "Two different comparisons" in source
 
 
 def test_appendix_e_mechanism_uses_persisted_panel_fields() -> None:
@@ -239,7 +240,7 @@ def test_appendix_e_mechanism_uses_persisted_panel_fields() -> None:
     assert "persisted_observed_attenuation" in source
     assert "expected_attenuation" in source
     assert "relation_error" in source
-    assert "no portfolio outcome is rederived" in source
+    assert "portfolio performance is not recalculated" in source
 
 
 def test_appendix_e_figure_and_manifest_inventory() -> None:

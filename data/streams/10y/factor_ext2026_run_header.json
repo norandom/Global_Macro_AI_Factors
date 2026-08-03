@@ -1,0 +1,134 @@
+{
+  "built_utc": "2026-07-27T15:11:37.269204+00:00",
+  "calibrator": {
+    "dir": "factor_calibrator_openai_gpt-oss-20b",
+    "holdout_auc": 0.9667774086378738,
+    "is_weak": false
+  },
+  "consistency": {
+    "in_training_premium": 0.39777868013276885,
+    "in_training_reproduction_abs_diff": 1.1102230246251565e-16,
+    "published_v1_premium": 0.3995801783229548,
+    "replay_equity_max_rel_diff_vs_v1": 0.0014412936415471034,
+    "replay_equity_tolerance": 0.002,
+    "replay_targets_max_abs_diff_vs_v1": 0.0037749979524599464
+  },
+  "cutoff_date": "2024-06-01",
+  "head_to_head": {
+    "Baseline (ext2026)": {
+      "annualized_return": 0.024229535343837538,
+      "annualized_vol": 0.05671673596489794,
+      "avg_turnover": 0.14889208896399309,
+      "calmar": 0.15073111007462947,
+      "crisis_max_drawdown": -0.1554465849493104,
+      "crisis_return": -0.12282029150092633,
+      "defensive_lead_date": "2016-03-01",
+      "max_drawdown": -0.16074674519308652,
+      "sharpe": 0.4504556119340027,
+      "sortino": 0.642923379442697,
+      "total_return": 0.22419337147992896
+    },
+    "Factor PIT (ext2026)": {
+      "annualized_return": 0.13974494360263012,
+      "annualized_vol": 0.09932108637517868,
+      "avg_turnover": 0.25139911113678115,
+      "calmar": 1.225268241635909,
+      "crisis_max_drawdown": -0.11285112580371048,
+      "crisis_return": -0.035410493362795115,
+      "defensive_lead_date": "already defensive at sample start",
+      "max_drawdown": -0.11405253058387488,
+      "sharpe": 1.3669031181311837,
+      "sortino": 1.9804905176033198,
+      "total_return": 2.019853934250398
+    },
+    "Non-PIT DIAGNOSTIC (ext2026)": {
+      "annualized_return": 0.14665777546566594,
+      "annualized_vol": 0.09679669246707448,
+      "avg_turnover": 0.27834550875155634,
+      "calmar": 1.3259998433561964,
+      "crisis_max_drawdown": -0.10116654529239344,
+      "crisis_return": -0.03585064502439517,
+      "defensive_lead_date": "already defensive at sample start",
+      "max_drawdown": -0.11060165368833308,
+      "sharpe": 1.4624770976777082,
+      "sortino": 2.1271828497666787,
+      "total_return": 2.1781549974523315
+    },
+    "Track B (ext2026)": {
+      "annualized_return": 0.1349222944773547,
+      "annualized_vol": 0.13528608112198484,
+      "avg_turnover": 0.16745698048517318,
+      "calmar": 0.5476407968526378,
+      "crisis_max_drawdown": -0.18122300181089335,
+      "crisis_return": -0.13462808401114157,
+      "defensive_lead_date": "2017-07-03",
+      "max_drawdown": -0.24637005725791528,
+      "sharpe": 1.0033972878600206,
+      "sortino": 1.424220134077374,
+      "total_return": 1.913574507019911
+    }
+  },
+  "immutability": "all outputs under NEW *_ext2026 names; v1/v2 artifacts untouched (data-v2 immutable)",
+  "luck_vs_skill_ssr": {
+    "differential": 0.04054180124213429,
+    "nonpit": 0.1342632150335707,
+    "pit": 0.13120513740825793
+  },
+  "n_rebalances": {
+    "live_new": 54,
+    "replayed_v1": 72,
+    "total": 126
+  },
+  "naive_eval": {
+    "accuracy": 0.43548387096774194,
+    "half_inside_ci": true,
+    "n_directional": 124,
+    "wilson_ci": [
+      0.35145103373797243,
+      0.5233940870990632
+    ]
+  },
+  "nim_model": "openai/gpt-oss-20b",
+  "panel": {
+    "rows": 196,
+    "source": "committed data/macro_panel_monthly.parquet (FRED live rebuild unavailable: ConnectionError)",
+    "span": "2010-01-31..2026-04-30"
+  },
+  "parse": {
+    "n_rows": 126,
+    "nonpit_parsed": 113,
+    "pit_parsed": 125
+  },
+  "prediction_outcome": "PREDICTION FALSIFIED: the p_memorized premium did NOT collapse post-cutoff (in-training +0.3978 -> post-cutoff +0.3834) \u2014 reported either way per task 8.1.",
+  "prices": {
+    "source": "yfinance (documented DB substitution)",
+    "span": "2014-01-02..2026-06-30"
+  },
+  "split_table": {
+    "full_stream": {
+      "mean_delta": 0.3949236351444278,
+      "median_delta": 0.41760019568380347,
+      "n_pairs": 126,
+      "paired_d": 1.3515987348253349
+    },
+    "in_training": {
+      "mean_delta": 0.39777868013276885,
+      "median_delta": 0.4170350971228135,
+      "n_pairs": 101,
+      "paired_d": 1.3832249230331604
+    },
+    "post_cutoff": {
+      "mean_delta": 0.3833892533915303,
+      "median_delta": 0.42200454933254516,
+      "n_pairs": 25,
+      "paired_d": 1.237240109043598
+    }
+  },
+  "task": "8.1 post-cutoff extension (data-v3)",
+  "window": {
+    "first_rebalance": "2016-01-04",
+    "last_rebalance": "2026-06-01",
+    "sim_end": "2026-06-30",
+    "sim_start": "2016-01-01"
+  }
+}

@@ -1,0 +1,4 @@
+portfolio,start,end,n_obs,total_return_ann_arith,market_component_beta_x_spy,alpha_ann_vs_spy,beta_spy,t_alpha_hac,r2_market,r2_basket_4etf,idio_vol_ann_vs_basket
+Buy & hold 25%,2016-02-02,2026-01-30,2468,0.154955,0.098723,0.056232,0.604760,2.966624,0.710092,0.984532,0.016085
+AI macro-factor (PIT),2016-02-01,2026-01-30,2469,0.109130,0.032956,0.076173,0.202014,3.371716,0.188559,0.909699,0.025188
+SJM v3 overlay,2016-02-01,2026-01-30,2469,0.094400,0.023468,0.070932,0.143852,3.607328,0.130964,0.865183,0.026296

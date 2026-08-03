@@ -1,0 +1,47 @@
+=== Task 8.1: extend the stream to 2026 (post-cutoff natural experiment) ===
+replay mode: evidence=/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/evidence_staging/run_20260729T192357Z/factor_evidence_ext2026.parquet | naive=/home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/naive_directional_eval_ext2026.parquet | zero provider calls for Factor loadings, scores, and naive direction
+macro panel: (196, 6) | 2010-01-31 -> 2026-04-30
+panel source: committed data/macro_panel_monthly.parquet (replay mode: zero-provider panel replay)
+prices: (3212, 5) | 2014-01-02 -> 2026-06-30
+price source: completed market snapshot provisional_market_total_return_fx_2026-06-30_v1 @ d56e1d0a17dd...
+90 monthly rebalances  2019-01-02 -> 2026-06-01
+stream: 90 prompts total | replayed v1: 72 | live new (2025+): 18
+FactorScorer metadata loaded from factor_calibrator_openai_gpt-oss-20b: holdout_auc=0.9668 is_weak=False (replay mode)
+dated evidence: 180 records (90 dates x 2 variants) -> /home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/evidence_staging/run_20260730T095839Z/factor_evidence_ext2026.parquet
+loadings parsed: PIT 89/90 | non-PIT 84/90
+[replay] naive directional replay for 18 new dates ...
+naive directional accuracy (full stream, n=88): 0.443 Wilson 95% CI [0.344, 0.547] | 0.5 inside: True
+[sim] extended PIT deployable line ...
+[sim] extended non-PIT diagnostic line ...
+replay audit: source==consumption for 180 (variant, date) keys -> /home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/factor_ext2026_replay_audit.json
+metric records: 9 reader/legacy/differential/attribution/crisis records -> /home/mc/projects/Global_Macro_AI_Factors/data/provisional_remediation/factor_metric_records_ext2026.json
+recall-guarded decisions: PIT 89/90 | non-PIT 84/90
+consistency: replayed-vs-v1 equity max rel diff = 5.57e-04 (tol 2e-03) | targets max abs diff = 4.50e-03
+[sim] extended baseline (HRP+momentum, nb07 logic) ...
+[sim] extended track B (MC-Nash, nb08 logic; slow MC step) ...
+[track_b @ 2026-02-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-03-02] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-04-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-05-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+[track_b @ 2026-06-01] weight_fn failed: ValueError('Invalid input for linprog: A_ub must not contain values inf, nan, or None'); holding previous
+
+=== SPLIT TABLE: PIT-vs-non-PIT p_memorized premium ===
+             n_pairs  mean_delta  median_delta  paired_d
+in_training     65.0      0.3970        0.4170    1.3485
+post_cutoff     25.0      0.3403        0.2923    1.5710
+full_stream     90.0      0.3813        0.3826    1.3804
+
+PREDICTION FALSIFIED: the p_memorized premium did NOT collapse post-cutoff (in-training +0.3970 -> post-cutoff +0.3403) — reported either way per task 8.1.
+(on v1's own dates reproduces published +0.400 within 0.0000)
+[csv] writing ext2026 mirrors (US + _de) ...
+Traceback (most recent call last):
+  File "/home/mc/projects/Global_Macro_AI_Factors/scripts/extend_stream_2026.py", line 4362, in <module>
+    main()
+  File "/home/mc/projects/Global_Macro_AI_Factors/scripts/extend_stream_2026.py", line 4244, in main
+    factor_run_dir = build_factor_run_bundle(
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mc/projects/Global_Macro_AI_Factors/scripts/extend_stream_2026.py", line 3553, in build_factor_run_bundle
+    _canonicalize_bundle_targets_on_factor_calendar(
+  File "/home/mc/projects/Global_Macro_AI_Factors/scripts/extend_stream_2026.py", line 3476, in _canonicalize_bundle_targets_on_factor_calendar
+    raise ValueError(
+ValueError: factor_targets_ext2026.parquet: target rows outside the executed factor calendar carry weights: ['2019-09-02', '2021-05-03', '2022-01-03', '2022-05-02', '2023-05-01']
