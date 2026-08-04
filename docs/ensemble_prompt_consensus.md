@@ -373,10 +373,14 @@ consumes the budget and the reply is truncated before the JSON object.
 
 Measured on the same prompt and 64 draws:
 
-| draw budget | parsed | projection failures |
+| draw budget | parsed | failures |
 |---|---|---|
-| `max_tokens=512` (client default) | 31/64 (48%) | 28 |
-| `max_tokens=2048` (production) | **61/64 (95%)** | 2 |
+| `max_tokens=512` (client default) | 31/64 (48%) | 28 projection, 5 http |
+| `max_tokens=2048` (production) | **61/64 (95%)** | 3 total (breakdown not retained) |
+
+The 95% figure is consistent with the raw study's 977/1000 (97.7%) at the same
+budget, so the parse collapse is attributable to the token budget rather than to
+the ensemble path.
 
 An ensemble that silently samples under different generation settings than production
 is not measuring the production decision. This repo passes a `ProductionDefaultsLM`
