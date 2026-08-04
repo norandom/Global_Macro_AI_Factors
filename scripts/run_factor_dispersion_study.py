@@ -19,17 +19,26 @@ Usage::
         --draws 1000 --workers 24
 
 Resumable: an existing output CSV is read first and only the missing draws run.
+
+``--ensemble`` switches from the raw dump to ``recall_guard.generate_ensemble``
+(0.3.0+), which performs the same N draws and additionally returns the reduced
+answer: a robust per-axis location, decision agreement with a Wilson interval,
+any axis whose draws form separated clusters, and a hash over the draw set. The
+raw dump remains the default because it is what the Appendix I evidence CSV was
+built from and re-running it must keep reproducing that file.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections.abc import Mapping
 from pathlib import Path
 
 import pandas as pd
@@ -64,6 +73,10 @@ DEFAULT_REBALANCE = "2020-03-02"
 #: Production generation settings (scripts/extend_stream_2026.py::_generate_big).
 PRODUCTION_TEMPERATURE = 0.0
 PRODUCTION_MAX_TOKENS = 2048
+
+#: The grid the model emits loadings on. Drives the scale floor and the
+#: separated-cluster test, both of which are meaningless without it.
+LOADING_GRID = 0.1
 
 FIELDS = (
     "draw",
@@ -106,6 +119,110 @@ def build_prompt(rebalance_date: pd.Timestamp) -> tuple[str, pd.Timestamp, dict[
     return prompt, row.name, {k: float(v) for k, v in macro_state.items()}
 
 
+class ProductionDefaultsLM(NvidiaLM):
+    """An ``NvidiaLM`` whose per-call defaults match the production stream.
+
+    ``generate_ensemble`` issues its draws as ``lm.generate(prompt)`` with no
+    per-call overrides, so a draw inherits the client's defaults —
+    ``max_tokens=512``. That is well under what this reasoning model needs: the
+    chain of thought consumes the budget and the reply is truncated before the
+    JSON object, which the parser then rejects. Measured at 512, 28 of 59
+    delivered replies failed to parse (47%) against 2.3% at the production 2048.
+
+    Overriding the default here (rather than at the call site) is what lets the
+    ensemble draw under the same settings the deployed run uses.
+    """
+
+    def generate(  # type: ignore[override]
+        self,
+        prompt: str,
+        temperature: float = PRODUCTION_TEMPERATURE,
+        max_tokens: int = PRODUCTION_MAX_TOKENS,
+    ):
+        return super().generate(prompt, temperature=temperature, max_tokens=max_tokens)
+
+
+#: Categories whose exposure tilt the factor line treats as risk-seeking and as
+#: protective. The decision an ensemble is asked to agree on is the sign of
+#: (defensive tilt - risk tilt), i.e. the posture, not the loading values.
+RISK_CATEGORIES = ("world_equity", "tech_sector")
+DEFENSIVE_CATEGORIES = ("gold_commodity", "short_treasury_cash")
+
+
+def defensive_spread(loadings: Mapping[str, float]) -> float:
+    """(gold + cash) - (equity + tech) exposure tilt for one loading vector.
+
+    An axis absent from ``loadings`` contributes nothing. That is the case when
+    the ensemble refuses to reduce a separated component to one location: the
+    honest response is to stop tilting on that axis rather than to substitute a
+    centre the draws do not support, so the refusal propagates into a smaller
+    tilt instead of a fabricated one.
+    """
+    total = 0.0
+    for category in DEFENSIVE_CATEGORIES:
+        exposure = fs.REGIME_ASSET_EXPOSURE[category]
+        total += sum(loadings[axis] * exposure[axis] for axis in fs.MACRO_AXES if axis in loadings)
+    for category in RISK_CATEGORIES:
+        exposure = fs.REGIME_ASSET_EXPOSURE[category]
+        total -= sum(loadings[axis] * exposure[axis] for axis in fs.MACRO_AXES if axis in loadings)
+    return total
+
+
+def run_ensemble(
+    lm: NvidiaLM,
+    prompt: str,
+    rebalance: pd.Timestamp,
+    *,
+    draws: int,
+    workers: int,
+) -> dict[str, object]:
+    """Reduce N draws through the library's consensus contract.
+
+    ``decide`` returns the posture, so agreement is measured on the decision the
+    portfolio acts on rather than on the loading values (which almost never
+    repeat). ``components`` exposes the five axes so location and the
+    separated-cluster test run per axis. A reply that does not parse raises out
+    of ``decide`` and is counted as a projection failure rather than being
+    silently treated as a vote.
+    """
+    from recall_guard import EnsembleSpec, generate_ensemble
+
+    def parse(result) -> Mapping[str, float]:
+        loadings = fs.parse_loadings(result.content, rebalance)
+        if loadings is None:
+            raise ValueError("reply did not yield a full five-axis vector")
+        return {axis: float(loadings.loadings[axis]) for axis in fs.MACRO_AXES}
+
+    spec = EnsembleSpec(
+        draws=draws,
+        max_workers=workers,
+        min_parsed=max(8, draws // 4),
+        grid=LOADING_GRID,
+        retain_draws=True,
+    )
+    result = generate_ensemble(
+        lm,
+        prompt,
+        spec,
+        decide=lambda r: "defensive" if defensive_spread(parse(r)) > 0 else "risk_on",
+        components=parse,
+    )
+    return {
+        "consensus_reply": result.consensus.content,
+        "location": dict(result.location),
+        "location_snapped": dict(result.location_snapped or {}),
+        "consensus_spread": defensive_spread(result.location),
+        "abstained_axes": [a for a in fs.MACRO_AXES if a not in result.location],
+        "agreement": result.agreement,
+        "agreement_ci": list(result.agreement_ci or ()),
+        "multimodal_axes": list(result.multimodal),
+        "n_requested": result.n_requested,
+        "n_parsed": result.n_parsed,
+        "fail_counts": dict(result.fail_counts),
+        "draws_sha256": result.draws_sha256,
+    }
+
+
 def completed_draws(path: Path) -> set[int]:
     """Draw indices already answered, after dropping transport failures.
 
@@ -137,6 +254,12 @@ def main() -> None:
         "--out",
         default="data/appendix_i_factor_dispersion/factor_dispersion_draws.csv",
     )
+    parser.add_argument(
+        "--ensemble",
+        action="store_true",
+        help="reduce the draws through recall_guard.generate_ensemble and write "
+             "a consensus JSON instead of the raw per-draw CSV",
+    )
     args = parser.parse_args()
 
     load_dotenv(REPO / ".env")
@@ -149,33 +272,53 @@ def main() -> None:
     out_path = REPO / args.out if not Path(args.out).is_absolute() else Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    done = completed_draws(out_path)
-    todo = [i for i in range(args.draws) if i not in done]
     print(f"rebalance {rebalance.date()} | macro source {macro_date.date()} "
           f"{ {k: round(v, 3) for k, v in macro_state.items()} }")
     print(f"model {ext.NIM_MODEL} | T={args.temperature} | max_tokens={PRODUCTION_MAX_TOKENS}")
+
+    # One shared client is correct from recall-guard 0.3.0 on: the pacing lock
+    # now covers only the send-slot bookkeeping, not the HTTP round trip, so
+    # concurrent calls through one client actually run concurrently. (Under
+    # 0.2.0 the lock spanned the POST and any worker count behaved like one,
+    # which is why this file used to build a client per thread.)
+    lm = ProductionDefaultsLM(
+        api_key=api_key,
+        model=ext.NIM_MODEL,
+        timeout_s=args.timeout_s,
+        max_retries=1,
+    )
+
+    if args.ensemble:
+        consensus_path = out_path.with_name(
+            out_path.stem.replace("_draws", "") + "_consensus.json"
+        )
+        print(f"ensemble mode | draws {args.draws} | workers {args.workers}")
+        started = time.monotonic()
+        summary = run_ensemble(
+            lm, prompt, rebalance, draws=args.draws, workers=args.workers
+        )
+        summary["rebalance_date"] = rebalance.date().isoformat()
+        summary["macro_source_date"] = macro_date.date().isoformat()
+        summary["model"] = ext.NIM_MODEL
+        summary["temperature"] = args.temperature
+        summary["elapsed_s"] = round(time.monotonic() - started, 1)
+        consensus_path.write_text(json.dumps(summary, indent=2, sort_keys=True))
+        print(f"  parsed {summary['n_parsed']}/{summary['n_requested']} | "
+              f"agreement {summary['agreement']:.4f} {tuple(summary['agreement_ci'])}")
+        print(f"  location {summary['location_snapped'] or summary['location']}")
+        print(f"  consensus spread {summary['consensus_spread']:+.3f} | "
+              f"multimodal axes {summary['multimodal_axes'] or 'none'} | "
+              f"abstained {summary['abstained_axes'] or 'none'}")
+        print(f"  draws_sha256 {summary['draws_sha256']}")
+        print(f"[done] {consensus_path}")
+        return
+
+    done = completed_draws(out_path)
+    todo = [i for i in range(args.draws) if i not in done]
     print(f"draws requested {args.draws} | already stored {len(done)} | to run {len(todo)}")
     if not todo:
         print("nothing to do")
         return
-
-    # One client PER THREAD. NvidiaLM serialises every request through a
-    # per-instance pacing lock (recall_guard.core.nvidia_lm holds it across the
-    # whole HTTP POST), so a single shared client would make any worker count
-    # behave like one. Independent clients give real concurrency.
-    local = threading.local()
-
-    def client() -> NvidiaLM:
-        existing = getattr(local, "lm", None)
-        if existing is None:
-            existing = NvidiaLM(
-                api_key=api_key,
-                model=ext.NIM_MODEL,
-                timeout_s=args.timeout_s,
-                max_retries=1,
-            )
-            local.lm = existing
-        return existing
 
     write_lock = threading.Lock()
     new_file = not out_path.is_file()
@@ -203,7 +346,7 @@ def main() -> None:
         for axis in fs.MACRO_AXES:
             record[axis] = ""
         try:
-            result = client().generate(
+            result = lm.generate(
                 prompt,
                 temperature=args.temperature,
                 max_tokens=PRODUCTION_MAX_TOKENS,

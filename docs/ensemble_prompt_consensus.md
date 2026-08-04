@@ -1,14 +1,21 @@
 # Ensemble prompt consensus — asking N times and keeping the answer that survives
 
-*Design proposal. Companion to `notebooks/appendix_i_factor_dispersion.ipynb` and the
-measurements in `data/appendix_i_factor_dispersion/`. Nothing described in §5–§8 is
-implemented yet; §9 (the concurrency defect) is real, diagnosed, and currently worked
-around in `scripts/run_factor_dispersion_study.py` and `scripts/run_factor_guard_dispersion.py`.*
+*Companion to `notebooks/appendix_i_factor_dispersion.ipynb` and the measurements in
+`data/appendix_i_factor_dispersion/`.*
 
-> **Status: proposal, not shipped.** The evidence in §2–§4 is measured. The API in
-> §5 is a sketch for review. No production line consumes an ensemble today; every
-> factor run in `data/provisional_remediation/factor_runs/` still takes one draw
-> per rebalance.
+> **Status: shipped in `recall-guard` 0.3.0; this repo is on it.** The proposal in
+> §5 was implemented upstream as `generate_ensemble` / `EnsembleSpec` /
+> `EnsembleResult` plus the `recall_guard.core.consensus` primitives, and the §9
+> concurrency defect is fixed. This project is pinned to `v0.3.0` and consumes the
+> ensemble path via `scripts/run_factor_dispersion_study.py --ensemble`.
+>
+> **Not yet wired into production.** Every factor run in
+> `data/provisional_remediation/factor_runs/` still takes one draw per rebalance.
+> Moving the deployed line onto ensembles still needs the evidence/replay decision
+> in §7, which is unchanged.
+>
+> §11 records what the integration itself turned up — two behaviours a caller has
+> to get right that are not obvious from the API surface.
 
 ## 1. What this proposes
 
@@ -133,7 +140,10 @@ draw that production actually used sits **below all of them**, at +6.11. Note it
 `growth` of **+0.40** against an ensemble median of −0.60: the deployed run took a
 draw whose growth sign was the minority one, and no downstream artifact records that.
 
-## 5. Proposed design
+## 5. The design, as shipped
+
+Implemented in `recall-guard` 0.3.0. The sketch below is kept because it states the
+intent; the shipped names differ in detail, and where they do, the shipped API wins.
 
 ### 5.1 The flag
 
@@ -274,10 +284,10 @@ Sequential stopping should cut that substantially on the many prompts that conve
 early. This is affordable for a periodic canonical rebuild; it is not affordable as
 a default for every exploratory run, which is why the flag is opt-in.
 
-## 9. Prerequisite: the client serialises concurrent calls
+## 9. The client used to serialise concurrent calls — fixed in 0.3.0
 
-**This is a real defect in `recall_guard`, found while building Appendix I, and it
-gates the whole feature.**
+**A real defect in `recall_guard` 0.2.0, found while building Appendix I. It gated
+the whole feature and is now fixed upstream.**
 
 `recall_guard/core/nvidia_lm.py` holds a per-instance pacing lock across the entire
 HTTP request:
@@ -307,12 +317,9 @@ Measured on the Appendix I workload (32 workers, same prompt):
 A ~370× difference, and the reason a 1000-draw study is a coffee break rather than
 an overnight job.
 
-**Current workaround.** `scripts/run_factor_dispersion_study.py` and
-`scripts/run_factor_guard_dispersion.py` keep a `threading.local()` client (and, for
-the guard, a thread-local `FactorScorer`, since a scorer owns one client).
-
-**Proper fix, upstream.** Hold the lock only around the pacing bookkeeping, release
-it before the POST:
+**Fixed in 0.3.0** by `NvidiaLM._reserve_call_slot()`, which holds the lock only for
+the send-slot bookkeeping and returns the wait, so the POST happens outside it —
+the shape proposed here:
 
 ```python
 with self._pace_lock:
@@ -323,14 +330,16 @@ if wait > 0:
 response = requests.post(...)          # outside the lock
 ```
 
-This preserves the call-interval guarantee while allowing genuine concurrency. Until
-it lands, any ensemble implementation must build clients per thread or it will be
-370× slower than necessary.
+This preserves the call-interval guarantee while allowing genuine concurrency.
+Verified after upgrading: 16 calls at 16 workers through **one shared client** ran
+10.9× faster than the sum of their latencies (88 calls/min), where 0.2.0 would have
+serialised them.
 
-**Other affected callers** (currently paying the same penalty, unrelated to
-ensembling): `FactorScorer.score_many` in `macro_framework/factor_scoring.py` and
-`_generate_big` / `_score_with_retry` in `scripts/extend_stream_2026.py`. Their
-`max_workers` arguments do nothing today.
+The thread-local workarounds in the two runner scripts have been removed accordingly.
+**The other callers get the fix for free** — `FactorScorer.score_many` in
+`macro_framework/factor_scoring.py` and `_generate_big` / `_score_with_retry` in
+`scripts/extend_stream_2026.py` now actually honour their `max_workers` arguments,
+which were inert under 0.2.0.
 
 ## 10. What this does not solve
 
@@ -349,3 +358,57 @@ ensembling): `FactorScorer.score_many` in `macro_framework/factor_scoring.py` an
   base allocation. Under an ensemble, parse failures should be reported as a
   first-class outcome (`n_parsed` vs `n_requested`), since a rising failure rate is
   itself a signal about prompt or model health.
+
+## 11. Integration notes (`recall-guard` 0.3.0)
+
+Two behaviours cost a debugging cycle each when wiring
+`scripts/run_factor_dispersion_study.py --ensemble`. Neither is a defect; both are
+easy to get silently wrong.
+
+**11.1 The ensemble draws with the client's defaults, not production's.**
+`generate_ensemble` issues each draw as `lm.generate(prompt)` with no per-call
+overrides, so a draw inherits `max_tokens=512` — while the deployed factor stream
+generates at 2048. For a reasoning model that gap is decisive: the chain of thought
+consumes the budget and the reply is truncated before the JSON object.
+
+Measured on the same prompt and 64 draws:
+
+| draw budget | parsed | projection failures |
+|---|---|---|
+| `max_tokens=512` (client default) | 31/64 (48%) | 28 |
+| `max_tokens=2048` (production) | **61/64 (95%)** | 2 |
+
+An ensemble that silently samples under different generation settings than production
+is not measuring the production decision. This repo passes a `ProductionDefaultsLM`
+subclass whose `generate` defaults match the deployed stream. A `max_tokens` field on
+`EnsembleSpec` would remove the need for the subclass and make the mismatch
+impossible to introduce by accident — worth raising upstream.
+
+**11.2 A flagged component is dropped from `location`, and the caller must decide
+what that means.** With `MultimodalAction.FLAG`, `_reduce_components` skips a
+separated component entirely — "refusing to reduce it to one location" — so
+`result.location` simply has no key for it. Indexing it raises `KeyError`, which is
+the API doing its job: it will not hand back a centre the draws do not support.
+
+This project treats a missing axis as **abstention**: it contributes nothing to the
+tilt, so the ensemble's refusal propagates into a *smaller* exposure rather than a
+fabricated one, and the abstained axes are recorded in the consensus JSON.
+
+**11.3 The separated-cluster test needs enough draws to fire.** On the full 977-draw
+set the library flags exactly the axis this document identified by hand:
+
+```
+policy  separated=True  lower_mass=0.360  upper_mass=0.627  trough_mass=0.012  gap=(-0.2, +0.2)
+```
+
+— matching the measured 36.1% / 63.3% split, from an independent implementation. But
+across two 64-draw runs the flag was unstable: one run flagged `policy` and abstained,
+the next did not and returned a *sign-flipped* location for it (`−0.5`, against `+0.5`
+from the 977-draw reduction).
+
+So at n≈64 the bimodality is real but not reliably detected, and the reduction can
+return a confident-looking value on the one axis that has no single answer. The §5.4
+sizing table was derived for the precision of the *decision*; detecting a split
+component evidently needs more draws than estimating a location does. Until that
+threshold is measured, `min_cluster_draws` should be treated as unvalidated for small
+ensembles, and small-n consensus on a known-bimodal axis should not be trusted.

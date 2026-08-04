@@ -21,9 +21,7 @@ import argparse
 import csv
 import os
 import sys
-import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -74,33 +72,22 @@ def main() -> None:
     def lm_factory(key: str, model: str) -> NvidiaLM:
         return NvidiaLM(api_key=key, model=model, timeout_s=args.timeout_s, max_retries=1)
 
-    calibrator_dir = REPO / "data" / f"factor_calibrator_{ext.SLUG}"
-
-    def load_scorer() -> fs.FactorScorer:
-        return fs.FactorScorer.load(calibrator_dir, api_key=api_key, lm_factory=lm_factory)
-
-    scorer = load_scorer()
+    scorer = fs.FactorScorer.load(
+        REPO / "data" / f"factor_calibrator_{ext.SLUG}",
+        api_key=api_key,
+        lm_factory=lm_factory,
+    )
     print(f"calibrator holdout_auc={scorer.holdout_auc:.4f} is_weak={scorer.is_weak}")
     if scorer.is_weak:
         raise RuntimeError("calibrator is weak — the guard would pass everything through (R4.3)")
     print(f"rebalance {rebalance.date()} | macro source {macro_date.date()} | draws {args.draws}")
 
-    # A FactorScorer owns ONE NvidiaLM, and that client serialises every request
-    # through a per-instance pacing lock, so score_many() on a single scorer runs
-    # effectively sequentially regardless of max_workers. Give each worker thread
-    # its own scorer (hence its own client) to score the repeats concurrently.
-    local = threading.local()
-
-    def thread_scorer() -> fs.FactorScorer:
-        existing = getattr(local, "scorer", None)
-        if existing is None:
-            existing = load_scorer()
-            local.scorer = existing
-        return existing
-
+    # score_many fans out through the scorer's single client, which is genuinely
+    # concurrent from recall-guard 0.3.0 on (the pacing lock no longer spans the
+    # HTTP round trip). Before that this file scored through one scorer per
+    # thread to work around the serialisation.
     started = time.monotonic()
-    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        scores = list(pool.map(lambda _: thread_scorer().score(prompt), range(args.draws)))
+    scores = scorer.score_many([prompt] * args.draws, max_workers=args.workers)
     elapsed = time.monotonic() - started
 
     with out_path.open("w", newline="", encoding="utf-8") as handle:
