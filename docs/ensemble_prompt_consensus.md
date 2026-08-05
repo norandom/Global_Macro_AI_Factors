@@ -18,7 +18,8 @@
 > §11 records what the integration turned up. Both gaps found against 0.3.0 are
 > **fixed in 0.4.0** and re-verified live; §12 assesses that release and reports a
 > separate finding about the model's own distribution drifting; §13 assesses 0.4.1,
-> which corrects §12.2's own numbers.
+> which corrects §12.2's own numbers; §14 defines the staleness policy that drift
+> requires.
 
 ## 1. What this proposes
 
@@ -566,3 +567,159 @@ is on this side, not upstream: production still takes one draw per rebalance, an
 moving it onto ensembles still needs the evidence/replay decision in §7. The drift in
 §12.3 raises the priority of that decision — a stored consensus now carries its own
 sampling time, so a staleness policy is expressible; nothing yet defines one.
+
+## 14. Staleness policy
+
+§12.3 established that the sampled distribution moves between sessions; §13.2 gave a
+consensus a `sampled_at` to reason about. This section defines when a stored consensus
+may still be used, and what happens when it may not.
+
+### 14.1 The one rule that is not negotiable: staleness is a *decision-time* concept
+
+A stored consensus plays two entirely different roles, and conflating them would break
+the audit contract:
+
+| context | question being asked | staleness |
+|---|---|---|
+| **Decision time** — sizing a live rebalance | "is this still what the model thinks?" | **applies** |
+| **Replay / audit** — reproducing a completed run | "what did we decide, and on what evidence?" | **never applies** |
+
+A replay must reproduce a completed bundle byte-for-byte. A consensus stored in a
+`factor_run.v1` bundle is the *record of a past decision*; it is correct forever by
+construction, because it is what was acted on. **Re-sampling during a replay is
+prohibited** — it would silently rewrite history and break `replay_audit`.
+
+This is why `reduce_draws` reading no clock (§13.2) matters beyond tidiness: replay
+runs through the pure path and cannot acquire a staleness verdict at all.
+
+### 14.2 Invalidate on identity before invalidating on age
+
+Most staleness is deterministic and free to detect — no sampling required. A stored
+consensus is stale **immediately**, regardless of `sampled_at`, if any of these differ
+from the decision being made now:
+
+| pinned field | why it invalidates |
+|---|---|
+| `model` id | a different model is a different distribution, not a drifted one |
+| `max_tokens`, `temperature` | §11.1: the ensemble stops measuring the production decision |
+| prompt sha256 | a different question |
+| `REGIME_ASSET_EXPOSURE` digest | the projection from loadings to posture changed |
+| calibrator dir + `holdout_auc` | the guard's scale changed (§6) |
+| `grid`, and the `EnsembleSpec` threshold block | the reduction itself changed |
+
+These are cheap, exact, and catch the majority of real invalidation. Age is the
+fallback for the one thing this cannot see: a **server-side model update under an
+unchanged model id**, which is the most likely explanation for the §12.3 drift.
+
+### 14.3 Tolerance is a property of what you consume, not of the consensus
+
+The measurement makes this concrete. Over the two days:
+
+| quantity | 08-03 | 08-05 | verdict |
+|---|---|---|---|
+| `growth` mean | −0.504 | −0.089 | **+7.8 SE**, KS p=4e-12 — moved decisively |
+| `credit_stress` distribution | — | — | KS p=2e-07 — shape moved |
+| consensus spread | +6.77 [6.64, 6.90] | +5.80 [5.30, 6.25] | moved ~14%, intervals do **not** overlap |
+| **share defensive (the posture)** | 98.6% [97.7, 99.3] | 95.8% [91.6, 98.9] | intervals **overlap** — not distinguishable |
+
+So the same drift is decisive at the parameter level, material at the spread level, and
+invisible at the posture level. A consumer of the *sign* of the posture can tolerate
+far more drift than a consumer of the loading vector or of the guard multiplier.
+
+Three tiers, in increasing strictness:
+
+| tier | consumer | tolerance |
+|---|---|---|
+| **A — posture only** | a defensive/risk-on gate | widest; the decision survived a 7.8 SE parameter move |
+| **B — magnitude** | tilt sizing from the consensus spread | tighter; the spread moved 14% in two days |
+| **C — scaling factor** | `p_memorized` as an exposure multiplier | tightest; §6 shows it is the noisiest input *before* drift is considered |
+
+A run must declare which tier it consumes. A tier-C consumer may not reuse a consensus
+that a tier-A consumer would happily accept.
+
+### 14.4 The mechanism: canary first, TTL as a backstop
+
+The §12.3 drift is more consistent with a **discrete serving update** than with smooth
+diffusion — three of five axes did not move at all, which is not what gradual drift
+looks like. That matters for the design: **a pure TTL is a poor instrument for
+step changes.** It is simultaneously too permissive in the hours after a deploy and
+needlessly strict through a long stable period.
+
+So detection is primary and age is only a bound on how long we are willing to be blind.
+
+**The canary.** Re-draw a small ensemble on a *fixed reference prompt* and compare it
+against the stored reference distribution with a two-sample KS test per component.
+Sizing, measured against the drift actually observed:
+
+| canary draws | power vs `growth` (largest shift) | power vs `credit_stress` (moderate) |
+|---|---|---|
+| 24 | 90% | 60% |
+| 48 | 100% | 88% |
+| **64** | **100%** | **98%** |
+| 128 | 100% | 100% |
+
+**64 parsed draws** is the recommended canary: full power against a shift of the
+observed size, ~98% against a moderate one, and roughly half a minute at measured
+throughput. Note this is *parsed* draws (§13.1) — configure above 64 to land there.
+
+**Adopted policy:**
+
+1. **Identity check** (§14.2) — any mismatch ⇒ stale. Free.
+2. **Canary** — run on the reference prompt at the start of any session that will
+   consume a stored consensus, and on a daily schedule. Any component with KS
+   p < 0.01 versus the reference ⇒ every consensus sampled before that canary is
+   stale.
+3. **TTL backstop** — a consensus older than the tier's TTL is stale even if no canary
+   has fired, because absence of a canary is not evidence of stability.
+
+**Provisional TTLs — and why they are provisional.** Two observations cannot fit a
+drift rate. The values below are placed one safe step inside the *only* interval ever
+measured (drift was present at 2 days; nothing was sampled between), and are explicitly
+a starting point, not a finding:
+
+| tier | TTL | reasoning |
+|---|---|---|
+| A — posture | 7 days | the posture survived the 2-day drift intact |
+| B — magnitude | 24 hours | the spread moved 14% across 2 days |
+| C — guard multiplier | re-sample per decision | §6: single scorings are near-uninformative even without drift |
+
+**The experiment that replaces these guesses.** Log a 64-draw canary daily against the
+frozen reference and record per-component KS p-values and the consensus spread. After a
+few weeks the distribution of *intervals between drift events* is observable, and each
+TTL should be set at a low percentile of it. Until then the numbers above carry no
+empirical weight beyond the single 2-day observation, and this document should not be
+read as claiming otherwise.
+
+### 14.5 What happens when a consensus is stale
+
+Never silently. In order of preference:
+
+1. **Re-ensemble** and use the fresh consensus. This is the normal path; at ~64 draws
+   it costs well under a minute.
+2. **If re-sampling is impossible** (no credential, provider down, request budget
+   exhausted) — do **not** fall back to the stale consensus and do **not** fall back to
+   a single fresh draw, which is the very failure the ensemble exists to prevent.
+   Fall back to the **base allocation**, matching the existing convention for an
+   unparseable reply, and record the reason.
+3. **Record the outcome either way.** A stale-and-refreshed decision and a
+   stale-and-degraded decision must be distinguishable after the fact.
+
+A degraded rebalance is a portfolio event, not just a logging event: it should surface
+in the run header alongside parse failures, not only in a log line.
+
+### 14.6 What must be persisted
+
+For a decision to be auditable, the bundle needs enough to re-derive the verdict:
+
+- `sampled_at`, `draws_sha256`, `max_tokens`, `temperature` — already on
+  `EnsembleResult` and already written by `--ensemble`.
+- The identity block of §14.2 (model id, prompt sha256, exposure-map digest,
+  calibrator id, spec thresholds).
+- The consumed **tier**, and the TTL in force at decision time.
+- The canary verdict the decision relied on: its own `sampled_at`, per-component KS
+  p-values, and pass/fail.
+- On a degraded decision, the reason and the fallback taken.
+
+Only the first bullet exists today. The rest is the concrete work item this policy
+creates, and it should land together with the §7 evidence decision rather than
+separately — both change what a run bundle stores.
