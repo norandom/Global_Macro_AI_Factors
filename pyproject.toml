@@ -47,4 +47,4 @@ markers = [
 ]
 
 [tool.uv.sources]
-recall-guard = { git = "https://github.com/norandom/memguard_alpha.git", rev = "v0.3.0" }
+recall-guard = { git = "https://github.com/norandom/memguard_alpha.git", rev = "v0.4.0" }

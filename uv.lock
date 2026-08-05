@@ -809,7 +809,7 @@ requires-dist = [
     { name = "pyarrow" },
     { name = "python-dotenv" },
     { name = "quantstats", specifier = ">=0.0.81" },
-    { name = "recall-guard", git = "https://github.com/norandom/memguard_alpha.git?rev=v0.3.0" },
+    { name = "recall-guard", git = "https://github.com/norandom/memguard_alpha.git?rev=v0.4.0" },
     { name = "requests" },
     { name = "riskfolio-lib", specifier = ">=7.2.1" },
     { name = "scikit-learn" },
@@ -2374,8 +2374,8 @@ wheels = [
 
 [[package]]
 name = "recall-guard"
-version = "0.3.0"
-source = { git = "https://github.com/norandom/memguard_alpha.git?rev=v0.3.0#5c1df70ba259c341ffa2671c33720b595ee60182" }
+version = "0.4.0"
+source = { git = "https://github.com/norandom/memguard_alpha.git?rev=v0.4.0#b2d8df5d04f6c481718d9cb4a79bdc33895bd7c4" }
 dependencies = [
     { name = "numpy" },
     { name = "python-dotenv" },

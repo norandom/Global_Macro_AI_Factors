@@ -3,10 +3,11 @@
 *Companion to `notebooks/appendix_i_factor_dispersion.ipynb` and the measurements in
 `data/appendix_i_factor_dispersion/`.*
 
-> **Status: shipped in `recall-guard` 0.3.0; this repo is on it.** The proposal in
+> **Status: shipped in `recall-guard` 0.3.0, completed in 0.4.0; this repo is on
+> 0.4.0.** The proposal in
 > §5 was implemented upstream as `generate_ensemble` / `EnsembleSpec` /
 > `EnsembleResult` plus the `recall_guard.core.consensus` primitives, and the §9
-> concurrency defect is fixed. This project is pinned to `v0.3.0` and consumes the
+> concurrency defect is fixed. This project is pinned to `v0.4.0` and consumes the
 > ensemble path via `scripts/run_factor_dispersion_study.py --ensemble`.
 >
 > **Not yet wired into production.** Every factor run in
@@ -14,8 +15,9 @@
 > Moving the deployed line onto ensembles still needs the evidence/replay decision
 > in §7, which is unchanged.
 >
-> §11 records what the integration itself turned up — two behaviours a caller has
-> to get right that are not obvious from the API surface.
+> §11 records what the integration turned up. Both gaps found against 0.3.0 are
+> **fixed in 0.4.0** and re-verified live; §12 assesses that release and reports a
+> separate finding about the model's own distribution drifting.
 
 ## 1. What this proposes
 
@@ -142,8 +144,10 @@ draw whose growth sign was the minority one, and no downstream artifact records 
 
 ## 5. The design, as shipped
 
-Implemented in `recall-guard` 0.3.0. The sketch below is kept because it states the
-intent; the shipped names differ in detail, and where they do, the shipped API wins.
+Implemented across `recall-guard` 0.3.0 and 0.4.0. The sketch below is kept because it
+states the intent; the shipped names differ in detail, and where they do, the shipped
+API wins — `EnsembleSpec` carries `max_tokens` / `temperature` and the multimodality
+knobs, and `EnsembleResult` carries `component_verdicts`.
 
 ### 5.1 The flag
 
@@ -416,3 +420,85 @@ sizing table was derived for the precision of the *decision*; detecting a split
 component evidently needs more draws than estimating a location does. Until that
 threshold is measured, `min_cluster_draws` should be treated as unvalidated for small
 ensembles, and small-n consensus on a known-bimodal axis should not be trusted.
+
+## 12. Assessment of `recall-guard` 0.4.0
+
+Both §11 gaps are closed, and the fixes were verified live rather than read off the
+diff. Two things are worth recording beyond "it works".
+
+### 12.1 Both fixes land
+
+**`max_tokens` / `temperature` on `EnsembleSpec` (§11.1).** `_safe_draw` now forwards
+only the overrides a caller actually set, so an unset spec still reproduces the
+client's defaults exactly. Verified live at the production budget with a plain
+`NvidiaLM` and **no subclass**: 59 of 64 draws parsed (92%), against 31 of 64 (48%)
+under 0.3.0's forced 512-token default. The settings are also echoed on
+`EnsembleResult.max_tokens` / `.temperature`, so a stored consensus now says what it
+was sampled under — which is what makes it an audit artifact rather than a number.
+`ProductionDefaultsLM` has been deleted from `scripts/run_factor_dispersion_study.py`.
+
+**`component_verdicts` and `smallest_detectable_split_n` (§11.2/§11.3).** The result
+now carries the separated-cluster verdict for *every* component, flagged or not, so a
+near-miss is distinguishable from a clearly unimodal axis. `smallest_detectable_split_n`
+returns 21 for the shape of the `policy` split measured here (14 occupied lattice
+positions), and its docstring is explicit that this is a necessary condition, not a
+sufficient one.
+
+### 12.2 Detection power at the default `draws` — a refinement, not a defect
+
+The 0.4.0 docstring reports that detection "missed roughly 3% of 64-draw subsamples"
+on an unambiguous corpus. That reproduces here — **2.0%** measured over 400 subsamples
+of the 977-draw `policy` set, drawn *without replacement*.
+
+Sampling without replacement from a finite pool understates the variance of a fresh
+ensemble, which draws i.i.d. from the model. Re-measured as a bootstrap:
+
+| parsed draws | miss rate, without replacement | miss rate, bootstrap (i.i.d.-like) |
+|---|---|---|
+| 48 | 7.2% | 7.2% |
+| 61 | 5.6% | **6.6%** |
+| 64 (library default) | 1.4% | **4.0%** |
+| 128 | 0.8% | 1.0% |
+| 192 | 0.0% | 0.2% |
+
+So the honest figure at the shipped default is a **4–7% miss rate**, not ~3%, and the
+earlier live miss (run B in §11.3, 61 parsed) was a ~1-in-15 event rather than a
+~1-in-50 one. Reaching ≥99% detection needs **n≈128**. None of this contradicts the
+library's own framing — `draws` is documented as sized for agreement precision — but
+a caller who wants the split guard to be reliable should double the default and knows
+that only if the number is stated. Worth folding into the docstring.
+
+### 12.3 The model's answer distribution drifts between days
+
+While checking a suspected false positive, a live 64-draw ensemble flagged `growth` as
+separated, which the archived 977-draw corpus does not consider split (bootstrap
+false-positive rate at n=64: 0.2%). The detector was right and the corpus was stale.
+
+Same prompt, same macro row, same model id, two days apart:
+
+| axis | archive median (08-03) | today median (08-05) | KS p |
+|---|---|---|---|
+| growth | −0.60 | **−0.20** | **4e-12** |
+| credit_stress | +0.60 | **+0.90** | **2e-07** |
+| inflation | +0.80 | +0.85 | 0.43 |
+| policy | +0.50 | +0.50 | 0.99 |
+| risk_appetite | −0.70 | −0.70 | 0.92 |
+
+`growth` mass at or above +0.2 went from **12.4% to 48.4%**. The prompt is
+deterministic from the committed macro panel, so nothing on this side changed; the
+serving distribution did.
+
+Three consequences:
+
+- **Appendix I's per-axis numbers are a snapshot, not a constant.** Its headline
+  survives — the posture is still overwhelmingly defensive today (95.8% of draws,
+  mean spread +5.80, against 98.6% and +6.77 on 08-03) — but any statement about a
+  specific axis needs a date attached.
+- **This strengthens the case for ensembling rather than weakening it.** If the
+  distribution a single draw is sampled from moves week to week, one draw is even
+  less representative than the static analysis suggested, and re-ensembling at
+  decision time is the correct architecture.
+- **It puts a shelf life on the guard calibration too.** `p_memorized` is produced by
+  the same serving stack; §6 already showed it is the noisier component, and drift
+  means its measured range is also dated. Re-measuring both on a schedule, rather
+  than once, should be part of whatever production integration §7 settles on.

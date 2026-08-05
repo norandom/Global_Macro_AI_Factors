@@ -119,29 +119,6 @@ def build_prompt(rebalance_date: pd.Timestamp) -> tuple[str, pd.Timestamp, dict[
     return prompt, row.name, {k: float(v) for k, v in macro_state.items()}
 
 
-class ProductionDefaultsLM(NvidiaLM):
-    """An ``NvidiaLM`` whose per-call defaults match the production stream.
-
-    ``generate_ensemble`` issues its draws as ``lm.generate(prompt)`` with no
-    per-call overrides, so a draw inherits the client's defaults —
-    ``max_tokens=512``. That is well under what this reasoning model needs: the
-    chain of thought consumes the budget and the reply is truncated before the
-    JSON object, which the parser then rejects. Measured at 512, 28 of 59
-    delivered replies failed to parse (47%) against 2.3% at the production 2048.
-
-    Overriding the default here (rather than at the call site) is what lets the
-    ensemble draw under the same settings the deployed run uses.
-    """
-
-    def generate(  # type: ignore[override]
-        self,
-        prompt: str,
-        temperature: float = PRODUCTION_TEMPERATURE,
-        max_tokens: int = PRODUCTION_MAX_TOKENS,
-    ):
-        return super().generate(prompt, temperature=temperature, max_tokens=max_tokens)
-
-
 #: Categories whose exposure tilt the factor line treats as risk-seeking and as
 #: protective. The decision an ensemble is asked to agree on is the sign of
 #: (defensive tilt - risk tilt), i.e. the posture, not the loading values.
@@ -175,6 +152,7 @@ def run_ensemble(
     *,
     draws: int,
     workers: int,
+    temperature: float,
 ) -> dict[str, object]:
     """Reduce N draws through the library's consensus contract.
 
@@ -193,12 +171,18 @@ def run_ensemble(
             raise ValueError("reply did not yield a full five-axis vector")
         return {axis: float(loadings.loadings[axis]) for axis in fs.MACRO_AXES}
 
+    # recall-guard 0.4.0 forwards these to every draw. Before it, the ensemble
+    # sampled at the client default of 512 tokens while production generated at
+    # 2048, which truncated this reasoning model's reply before the JSON and cut
+    # the parse rate from 95% to 48%.
     spec = EnsembleSpec(
         draws=draws,
         max_workers=workers,
         min_parsed=max(8, draws // 4),
         grid=LOADING_GRID,
         retain_draws=True,
+        max_tokens=PRODUCTION_MAX_TOKENS,
+        temperature=temperature,
     )
     result = generate_ensemble(
         lm,
@@ -220,6 +204,18 @@ def run_ensemble(
         "n_parsed": result.n_parsed,
         "fail_counts": dict(result.fail_counts),
         "draws_sha256": result.draws_sha256,
+        "max_tokens": result.max_tokens,
+        "temperature": result.temperature,
+        "component_verdicts": {
+            axis: (None if verdict is None else {
+                "separated": bool(verdict.separated),
+                "lower_mass": verdict.lower_mass,
+                "upper_mass": verdict.upper_mass,
+                "trough_mass": verdict.trough_mass,
+                "gap": list(verdict.gap) if verdict.gap else None,
+            })
+            for axis, verdict in result.component_verdicts
+        },
     }
 
 
@@ -281,7 +277,7 @@ def main() -> None:
     # concurrent calls through one client actually run concurrently. (Under
     # 0.2.0 the lock spanned the POST and any worker count behaved like one,
     # which is why this file used to build a client per thread.)
-    lm = ProductionDefaultsLM(
+    lm = NvidiaLM(
         api_key=api_key,
         model=ext.NIM_MODEL,
         timeout_s=args.timeout_s,
@@ -295,7 +291,8 @@ def main() -> None:
         print(f"ensemble mode | draws {args.draws} | workers {args.workers}")
         started = time.monotonic()
         summary = run_ensemble(
-            lm, prompt, rebalance, draws=args.draws, workers=args.workers
+            lm, prompt, rebalance, draws=args.draws, workers=args.workers,
+            temperature=args.temperature,
         )
         summary["rebalance_date"] = rebalance.date().isoformat()
         summary["macro_source_date"] = macro_date.date().isoformat()
