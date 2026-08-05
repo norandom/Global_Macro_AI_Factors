@@ -206,6 +206,10 @@ def run_ensemble(
         "draws_sha256": result.draws_sha256,
         "max_tokens": result.max_tokens,
         "temperature": result.temperature,
+        # 0.4.1+. None on a replay through reduce_draws, which reads no clock.
+        # The sampled distribution shifts between sessions, so a consensus has a
+        # shelf life and draws_sha256 alone does not record when it was taken.
+        "sampled_at": result.sampled_at,
         "component_verdicts": {
             axis: (None if verdict is None else {
                 "separated": bool(verdict.separated),

@@ -3,11 +3,11 @@
 *Companion to `notebooks/appendix_i_factor_dispersion.ipynb` and the measurements in
 `data/appendix_i_factor_dispersion/`.*
 
-> **Status: shipped in `recall-guard` 0.3.0, completed in 0.4.0; this repo is on
-> 0.4.0.** The proposal in
+> **Status: shipped in `recall-guard` 0.3.0, completed in 0.4.0/0.4.1; this repo is
+> on 0.4.1.** The proposal in
 > §5 was implemented upstream as `generate_ensemble` / `EnsembleSpec` /
 > `EnsembleResult` plus the `recall_guard.core.consensus` primitives, and the §9
-> concurrency defect is fixed. This project is pinned to `v0.4.0` and consumes the
+> concurrency defect is fixed. This project is pinned to `v0.4.1` and consumes the
 > ensemble path via `scripts/run_factor_dispersion_study.py --ensemble`.
 >
 > **Not yet wired into production.** Every factor run in
@@ -17,7 +17,8 @@
 >
 > §11 records what the integration turned up. Both gaps found against 0.3.0 are
 > **fixed in 0.4.0** and re-verified live; §12 assesses that release and reports a
-> separate finding about the model's own distribution drifting.
+> separate finding about the model's own distribution drifting; §13 assesses 0.4.1,
+> which corrects §12.2's own numbers.
 
 ## 1. What this proposes
 
@@ -502,3 +503,66 @@ Three consequences:
   the same serving stack; §6 already showed it is the noisier component, and drift
   means its measured range is also dated. Re-measuring both on a schedule, rather
   than once, should be part of whatever production integration §7 settles on.
+
+## 13. Assessment of `recall-guard` 0.4.1 — and a correction to §12.2
+
+0.4.1 acts on both §12 observations. One of them corrects this document rather than
+the library.
+
+### 13.1 The detection-power numbers: theirs are right, §12.2's were noisy
+
+`smallest_detectable_split_n`'s docstring now quotes the bootstrap figure, ~128 draws
+for 99% detection, and — the part that matters most in practice — states that the
+figure tracks **parsed** draws, not the configured `draws`.
+
+§12.2 of this document reported 4.0% at n=64 and 6.6% at n=61 against the library's
+3.6% and 5.5%. Those were measured at only 500 repetitions. Re-measured at 10,000
+repetitions on the same corpus (the vendored fixture is byte-equivalent to ours — the
+977 `policy` values match as a multiset):
+
+| parsed draws | this doc, §12.2 (500 reps) | 0.4.1 docstring | re-measured, 10,000 reps (95% CI) |
+|---|---|---|---|
+| 61 | 6.6% | **5.5%** | **5.40%** [4.97%, 5.86%] |
+| 64 | 4.0% | **3.6%** | **3.36%** [3.02%, 3.73%] |
+| 128 | 1.0% | ~1% (99% detection) | **0.81%** [0.65%, 1.01%] |
+
+The library's figures sit inside the tightened intervals; §12.2's do not. **The
+correction runs in the library's favour** — the numbers this repo sent upstream were
+the imprecise ones, and 500 repetitions was too few to quote to two significant
+figures. §12.2's qualitative point stands (bootstrap is the right analogue for a fresh
+ensemble, and the without-replacement figure understates it), but its specific
+percentages should be read from the table above.
+
+### 13.2 `sampled_at`, and why it is placed where it is
+
+`EnsembleResult.sampled_at` records when the draws were taken. The design is better
+than the "add a timestamp" this repo asked for:
+
+- `generate_ensemble` stamps it at the start of execution.
+- `reduce_draws` **reads no clock** and leaves it `None`, so replaying a stored draw
+  set yields `sampled_at=None` — the honest answer, because a replay was not sampled.
+
+That keeps `reduce_draws` a pure function, which is what makes a stored ensemble
+replayable into a bit-identical result. A timestamp assigned at reduction time would
+have quietly broken that property in exchange for a field that would have been a lie.
+
+Verified live (32 draws, then replayed through `reduce_draws` on the retained set):
+
+```
+live generate_ensemble : sampled_at 2026-08-05T12:01:42.043610+00:00, parsed 32/32
+replay via reduce_draws: sampled_at None
+                         draws_sha256, location and agreement all identical
+```
+
+The consensus JSON written by `scripts/run_factor_dispersion_study.py --ensemble` now
+carries `sampled_at` alongside `draws_sha256`, `max_tokens` and `temperature`, so a
+stored consensus records what it was sampled under *and when* — which is what §12.3's
+drift finding requires to be actionable.
+
+### 13.3 Net position
+
+Everything this repo raised across 0.3.0 → 0.4.1 is now closed, and the remaining work
+is on this side, not upstream: production still takes one draw per rebalance, and
+moving it onto ensembles still needs the evidence/replay decision in §7. The drift in
+§12.3 raises the priority of that decision — a stored consensus now carries its own
+sampling time, so a staleness policy is expressible; nothing yet defines one.
