@@ -18,8 +18,9 @@
 > §11 records what the integration turned up. Both gaps found against 0.3.0 are
 > **fixed in 0.4.0** and re-verified live; §12 assesses that release and reports a
 > separate finding about the model's own distribution drifting; §13 assesses 0.4.1,
-> which corrects §12.2's own numbers; §14 defines the staleness policy that drift
-> requires.
+> which corrects §12.2's own numbers; §14 scopes staleness down to what is actually
+> needed, after §15's follow-up measurements failed to reproduce the drift as a
+> general phenomenon.
 
 ## 1. What this proposes
 
@@ -470,7 +471,12 @@ library's own framing — `draws` is documented as sized for agreement precision
 a caller who wants the split guard to be reliable should double the default and knows
 that only if the number is stated. Worth folding into the docstring.
 
-### 12.3 The model's answer distribution drifts between days
+### 12.3 The model's answer distribution moved between days at this prompt
+
+> **Read with §15.** Follow-up measurement did not reproduce this as a general
+> property: the guard did not move, and 30 other prompts show no shift. What is
+> established is the narrower claim in this section's title.
+
 
 While checking a suspected false positive, a live 64-draw ensemble flagged `growth` as
 separated, which the archived 977-draw corpus does not consider split (bootstrap
@@ -568,35 +574,21 @@ moving it onto ensembles still needs the evidence/replay decision in §7. The dr
 §12.3 raises the priority of that decision — a stored consensus now carries its own
 sampling time, so a staleness policy is expressible; nothing yet defines one.
 
-## 14. Staleness policy
+## 14. Staleness — what is actually needed
 
-§12.3 established that the sampled distribution moves between sessions; §13.2 gave a
-consensus a `sampled_at` to reason about. This section defines when a stored consensus
-may still be used, and what happens when it may not.
+An earlier revision of this section defined a full staleness regime: consumption
+tiers, per-tier TTLs, a scheduled canary. Measurement since then removed most of its
+justification (§15), and the tiers and TTLs were solving a problem this pipeline does
+not have. What survives is short.
 
-### 14.1 The one rule that is not negotiable: staleness is a *decision-time* concept
+**14.1 Staleness is a decision-time concept and never a replay-time one.** A consensus
+stored in a run bundle is the record of a past decision. It is correct forever by
+construction, because it is what was acted on. Re-sampling during a replay would
+rewrite history and break `replay_audit`, so it is prohibited. `reduce_draws` reading
+no clock (§13.2) makes this structural rather than a rule someone has to remember.
 
-A stored consensus plays two entirely different roles, and conflating them would break
-the audit contract:
-
-| context | question being asked | staleness |
-|---|---|---|
-| **Decision time** — sizing a live rebalance | "is this still what the model thinks?" | **applies** |
-| **Replay / audit** — reproducing a completed run | "what did we decide, and on what evidence?" | **never applies** |
-
-A replay must reproduce a completed bundle byte-for-byte. A consensus stored in a
-`factor_run.v1` bundle is the *record of a past decision*; it is correct forever by
-construction, because it is what was acted on. **Re-sampling during a replay is
-prohibited** — it would silently rewrite history and break `replay_audit`.
-
-This is why `reduce_draws` reading no clock (§13.2) matters beyond tidiness: replay
-runs through the pure path and cannot acquire a staleness verdict at all.
-
-### 14.2 Invalidate on identity before invalidating on age
-
-Most staleness is deterministic and free to detect — no sampling required. A stored
-consensus is stale **immediately**, regardless of `sampled_at`, if any of these differ
-from the decision being made now:
+**14.2 Invalidate on identity, not on age.** If a stored consensus is ever reused,
+these are exact, free to check, and catch the invalidation that actually occurs:
 
 | pinned field | why it invalidates |
 |---|---|
@@ -604,122 +596,80 @@ from the decision being made now:
 | `max_tokens`, `temperature` | §11.1: the ensemble stops measuring the production decision |
 | prompt sha256 | a different question |
 | `REGIME_ASSET_EXPOSURE` digest | the projection from loadings to posture changed |
-| calibrator dir + `holdout_auc` | the guard's scale changed (§6) |
-| `grid`, and the `EnsembleSpec` threshold block | the reduction itself changed |
+| calibrator dir + `holdout_auc` | the guard's scale changed |
+| `grid` and the `EnsembleSpec` threshold block | the reduction itself changed |
 
-These are cheap, exact, and catch the majority of real invalidation. Age is the
-fallback for the one thing this cannot see: a **server-side model update under an
-unchanged model id**, which is the most likely explanation for the §12.3 drift.
+**14.3 No TTL is proposed.** Time-based expiry was motivated by a suspected global
+model drift that §15 could not reproduce, and the pipeline caches no consensus anyway:
+production takes its draw at decision time, and the natural ensemble design does the
+same. A TTL would be an untested number guarding a code path that does not exist.
 
-### 14.3 Tolerance is a property of what you consume, not of the consensus
+If ensembles are ever cached across sessions, the question reopens — and §15.4 gives
+the experiment that would set the number.
 
-The measurement makes this concrete. Over the two days:
+## 15. Follow-up measurements: the drift does not generalise
 
-| quantity | 08-03 | 08-05 | verdict |
-|---|---|---|---|
-| `growth` mean | −0.504 | −0.089 | **+7.8 SE**, KS p=4e-12 — moved decisively |
-| `credit_stress` distribution | — | — | KS p=2e-07 — shape moved |
-| consensus spread | +6.77 [6.64, 6.90] | +5.80 [5.30, 6.25] | moved ~14%, intervals do **not** overlap |
-| **share defensive (the posture)** | 98.6% [97.7, 99.3] | 95.8% [91.6, 98.9] | intervals **overlap** — not distinguishable |
+§12.3 reported that the sampled distribution "drifts between days" on the strength of
+one prompt measured twice. Three follow-up measurements do not support that as a
+general claim, and the section should be read with this attached.
 
-So the same drift is decisive at the parameter level, material at the spread level, and
-invisible at the posture level. A consumer of the *sign* of the posture can tolerate
-far more drift than a consumer of the loading vector or of the guard multiplier.
+**15.1 The guard did not move.** `p_memorized`, 100 scorings of the identical prompt
+with the identical calibrator, two days apart:
 
-Three tiers, in increasing strictness:
-
-| tier | consumer | tolerance |
+| | 08-03 | 08-05 |
 |---|---|---|
-| **A — posture only** | a defensive/risk-on gate | widest; the decision survived a 7.8 SE parameter move |
-| **B — magnitude** | tilt sizing from the consensus spread | tighter; the spread moved 14% in two days |
-| **C — scaling factor** | `p_memorized` as an exposure multiplier | tightest; §6 shows it is the noisiest input *before* drift is considered |
+| mean | 0.2114 | 0.2284 |
+| median | 0.1220 | 0.1897 |
+| | KS p = **0.28** | Welch p = **0.58** |
 
-A run must declare which tier it consumes. A tier-C consumer may not reuse a consensus
-that a tier-A consumer would happily accept.
+Attenuation kept 78.9% then, 77.2% now. The calibrator was built 2026-07-03 and its
+feature standardisation is fitted to the model's logprob distribution as of that date,
+so a shifted model could have mis-scaled live exposure. It did not.
 
-### 14.4 The mechanism: canary first, TTL as a backstop
+**15.2 The oldest evidence segment still matches today's model.** The 126-date factor
+signal was generated at three different times — 2019-01→2024-12 from
+`factor_loadings_v1.parquet` (2026-07-09 era), 2016-01→2018-12 on 2026-07-27, and
+2025-01→2026-06 on 2026-07-29/30 — which raised the concern that the line's behaviour
+could shift at those seams for reasons unrelated to the macro regime.
 
-The §12.3 drift is more consistent with a **discrete serving update** than with smooth
-diffusion — three of five axes did not move at all, which is not what gradual drift
-looks like. That matters for the design: **a pure TTL is a poor instrument for
-step changes.** It is simultaneously too permissive in the hours after a deploy and
-needlessly strict through a long stable period.
+Tested directly: 30 dates sampled from the v1-era segment, prompts rebuilt and asserted
+byte-identical to the stored ones, 5 fresh draws per date today, compared paired
+against the recorded values.
 
-So detection is primary and age is only a bound on how long we are willing to be blind.
+| axis | recorded | today | delta | Wilcoxon p |
+|---|---|---|---|---|
+| inflation | +0.218 | +0.218 | −0.000 | 0.97 |
+| growth | −0.304 | −0.345 | −0.041 | 0.84 |
+| credit_stress | −0.095 | −0.033 | +0.063 | 0.49 |
+| policy | +0.152 | +0.127 | −0.025 | 0.71 |
+| risk_appetite | −0.353 | −0.521 | −0.168 | 0.20 |
 
-**The canary.** Re-draw a small ensemble on a *fixed reference prompt* and compare it
-against the stored reference distribution with a two-sample KS test per component.
-Sizing, measured against the drift actually observed:
+Defensive spread +2.22 → +2.90 (delta +0.67, p = 0.12); posture sign unchanged on 80%
+of dates, which is what a single recorded draw per date predicts given the per-draw
+dispersion in §2. **No axis shifted significantly.** The corpus is not detectably
+heterogeneous across its oldest seam, despite spanning ~3 weeks of generation.
 
-| canary draws | power vs `growth` (largest shift) | power vs `credit_stress` (moderate) |
-|---|---|---|
-| 24 | 90% | 60% |
-| 48 | 100% | 88% |
-| **64** | **100%** | **98%** |
-| 128 | 100% | 100% |
+**15.3 So what was §12.3?** Whatever changed at the 2020-03-02 prompt is not a uniform
+shift in the model's loadings behaviour, because 30 other prompts show none. Two
+readings remain open, and the evidence does not separate them:
 
-**64 parsed draws** is the recommended canary: full power against a shift of the
-observed size, ~98% against a moderate one, and roughly half a minute at measured
-throughput. Note this is *parsed* draws (§13.1) — configure above 64 to land there.
+- a model change that affects only part of the input space, or
+- **unstable mode weights at a prompt that is genuinely split.** The 0.4.0 run flagged
+  `growth` as separated at that prompt (lower mass 0.356, upper 0.644). If the growth
+  axis there sits on a boundary, the *share* of draws taking each reading can move a
+  lot between sessions without the model having changed — which would make §12.3 a
+  measurement of bimodality, not of drift.
 
-**Adopted policy:**
+The second is the more economical explanation and it is testable: re-measure that one
+prompt on several separate days and see whether the mode weights wander while other
+prompts stay put. Until that runs, §12.3's headline should be read as *"one prompt's
+mode weights moved substantially between two sessions"*, not as a general property of
+the serving stack.
 
-1. **Identity check** (§14.2) — any mismatch ⇒ stale. Free.
-2. **Canary** — run on the reference prompt at the start of any session that will
-   consume a stored consensus, and on a daily schedule. Any component with KS
-   p < 0.01 versus the reference ⇒ every consensus sampled before that canary is
-   stale.
-3. **TTL backstop** — a consensus older than the tier's TTL is stale even if no canary
-   has fired, because absence of a canary is not evidence of stability.
-
-**Provisional TTLs — and why they are provisional.** Two observations cannot fit a
-drift rate. The values below are placed one safe step inside the *only* interval ever
-measured (drift was present at 2 days; nothing was sampled between), and are explicitly
-a starting point, not a finding:
-
-| tier | TTL | reasoning |
-|---|---|---|
-| A — posture | 7 days | the posture survived the 2-day drift intact |
-| B — magnitude | 24 hours | the spread moved 14% across 2 days |
-| C — guard multiplier | re-sample per decision | §6: single scorings are near-uninformative even without drift |
-
-**The experiment that replaces these guesses.** Log a 64-draw canary daily against the
-frozen reference and record per-component KS p-values and the consensus spread. After a
-few weeks the distribution of *intervals between drift events* is observable, and each
-TTL should be set at a low percentile of it. Until then the numbers above carry no
-empirical weight beyond the single 2-day observation, and this document should not be
-read as claiming otherwise.
-
-### 14.5 What happens when a consensus is stale
-
-Never silently. In order of preference:
-
-1. **Re-ensemble** and use the fresh consensus. This is the normal path; at ~64 draws
-   it costs well under a minute.
-2. **If re-sampling is impossible** (no credential, provider down, request budget
-   exhausted) — do **not** fall back to the stale consensus and do **not** fall back to
-   a single fresh draw, which is the very failure the ensemble exists to prevent.
-   Fall back to the **base allocation**, matching the existing convention for an
-   unparseable reply, and record the reason.
-3. **Record the outcome either way.** A stale-and-refreshed decision and a
-   stale-and-degraded decision must be distinguishable after the fact.
-
-A degraded rebalance is a portfolio event, not just a logging event: it should surface
-in the run header alongside parse failures, not only in a log line.
-
-### 14.6 What must be persisted
-
-For a decision to be auditable, the bundle needs enough to re-derive the verdict:
-
-- `sampled_at`, `draws_sha256`, `max_tokens`, `temperature` — already on
-  `EnsembleResult` and already written by `--ensemble`.
-- The identity block of §14.2 (model id, prompt sha256, exposure-map digest,
-  calibrator id, spec thresholds).
-- The consumed **tier**, and the TTL in force at decision time.
-- The canary verdict the decision relied on: its own `sampled_at`, per-component KS
-  p-values, and pass/fail.
-- On a degraded decision, the reason and the fallback taken.
-
-Only the first bullet exists today. The rest is the concrete work item this policy
-creates, and it should land together with the §7 evidence decision rather than
-separately — both change what a run bundle stores.
+**15.4 What this changes.** The Appendix I conclusion is untouched — it never depended
+on cross-session stability, and the posture held in every measurement here. The
+practical consequences are smaller than §12.3 implied: no staleness regime is needed
+(§14), the guard's calibration is not visibly ageing, and the released 2016-2026 corpus
+is not detectably seam-damaged. The one durable point is the narrow one: a per-axis
+number quoted from a single session should carry the date it was measured, because at
+least one prompt's axis has been observed to move materially between two of them.
